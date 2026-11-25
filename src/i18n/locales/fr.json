@@ -17,7 +17,6 @@
   "A 阻断部分强 Ax，后位允许更宽地争夺盲注。": "Un blocage d'un fort ax, le bac permet une bataille plus large pour les notes aveugles.",
   "Card Player · Dwan 原采访": "Joueur de cartes · Dwan",
   "Card Player · 对手调整访谈": "Le joueur de carte · Ajuster l'interview de l'opposant",
-  "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "L’EV est le gain attendu en jetons lorsqu’une même stratégie est répétée à long terme. Une seule main gagnée ne prouve pas sa rentabilité. L’analyse fournit des estimations simulées à partir des informations visibles avant votre action et de ranges adverses supposées ; elle n’évalue pas votre choix à partir des cartes cachées adverses ou des cartes distribuées ensuite, et ne garantit ni solution optimale ni victoire. Ouvrez « Raisonnement adverse » pour voir les raisons des actions des adversaires informatiques de cette partie.",
   "FLOP · 三张公共牌": "FLOP · Trois cartes de bord",
   "NOIR Poker · 德州扑克单机练习": "NOIR Poker · Entraînement au Hold’em hors ligne",
   "NOIR Poker 隐私政策": "Politique de confidentialité de poker",
@@ -72,7 +71,6 @@
   "{0}{1} · 获得": "{0} {1} • Obtenir",
   "{0}{1} · 获得 {2}": "{0} {1} • Obtenir {2}",
   "{0}{1} · 获得 {2} 筹码": "{0}{1} · Gains : {2} jetons",
-  "{0}{1} 筹码 · 本次练习净变化": "{0}{1} jetons · Variation nette de la session",
   "{0}策略": "{0} Stratégie",
   "{0}面对小额、宽范围 3-bet 才考虑有位置防守；大尺度或 4-bet 优先收紧。翻后顶对弱踢脚以控池为主，未中牌时结合牌面与对手范围决定是否持续下注。": "{0} face à petite, large gamme 3-bet seulement considérer la défense de la position; grande échelle ou 4-bet priorité pour la consolidation. backward top à faible kicker est principalement contrôlé par la piscine, quand pas la carte moyenne combinée avec la gamme de l'opposant pour décider s'il s'agit d'une paris continu.",
   "{1} / 门槛 {2} · {3}": "{1} / Le seuil {2} · {3}",
@@ -2033,7 +2031,6 @@
   "当时底池 {0}，你还剩 {1}，这手强牌可比较价值全下，让{2}为剩余筹码付费。": "Le pot était de {0} et il te restait {1} jetons ; cette main forte permet de comparer un all-in de value pour faire payer {2} pour les jetons restants.",
   "翻前牌组对比：{0}比 {1} 的点数或踢脚更好，但面对 {2} 会处于下风，之后仍要看公共牌。": "Comparaison préflop : {0} a de meilleures valeurs ou un meilleur kicker que {1}, mais reste derrière {2} ; les cartes communes détermineront encore la suite.",
   "翻前牌组对比：{0}领先例如 {1}，这手强起手牌可以向较弱对子或高牌取值。": "Comparaison préflop : {0} domine par exemple {1} ; cette forte main de départ peut prendre de la value aux paires ou cartes hautes plus faibles.",
-  "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Sur le board {0}, le pot est joué à plusieurs ; une paire rencontre plus facilement deux paires ou un brelan. Tu peux chercher de la value, sans engager forcément les {1} jetons d'un coup.",
   "这张 {0} 较干燥，对手已经主动下注，平跟 {1} 是埋牌路线，留住这条下注线中的弱牌和诈唬，双方仍有筹码继续下一街。": "Le board {0} est sec et l’adversaire a déjà misé : suivre {1} est un slowplay qui garde les mains faibles et les bluffs de cette ligne, et les deux joueurs gardent des jetons pour la street suivante.",
   "这手 {0} 可以藏在平跟里，对手已有主动加注，你有位置，平跟 {1} 保留其弱牌和诈唬。": "Tu peux cacher {0} dans un call ; l'adversaire a déjà relancé et tu as la position. Suivre pour {1} garde ses mains faibles et ses bluffs.",
   "这手 {0} 可用普通加注建立底池，给较弱对子和高牌留下继续的机会，当前 {1} 的筹码不必一次全部推出。": "Tu peux construire le pot avec une relance ordinaire en utilisant {0}, en laissant continuer les paires et cartes hautes plus faibles ; inutile de pousser tes {1} jetons d'un seul coup.",
@@ -2650,7 +2647,6 @@
   "此前{0}{1}，仍需回应最新加注。": "Auparavant, {0}{1} ; la dernière relance exige encore une réponse.",
   "比较": "Comparer",
   "比较{0}": "Comparer {0}",
-  "翻前牌组对比：{0}已经成对，{1}仍未成对，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Comparaison préflop : {0} forme déjà une paire, tandis que {1} n'est pas appariée. Elle est toutefois désavantagée face à une paire servie supérieure comme {2}. Le tableau peut encore modifier la hiérarchie.",
   "翻前牌组对比：{0}按当前牌型与点数高于 {1}，但低于 {2}，公共牌仍可能改变强弱。": "Comparaison préflop : selon la catégorie de main et les valeurs actuelles, {0} est au-dessus de {1}, mais au-dessous de {2}. Le tableau peut encore modifier la hiérarchie.",
   "翻牌前加注 {0} 次，本轮还有 {1} 位对手等待回应": "Il y a eu {0} relances préflop et {1} adversaires doivent encore répondre dans ce tour",
   "若跟注 {0} 主要依赖{1}获利，还需估计成牌后哪些较弱牌愿意付费；本次跟注只支付当前所需金额，之后若再遇下注或加注，仍需重新判断投入。": "Si la rentabilité du call de {0} dépend surtout de {1}, il faut estimer quelles mains plus faibles paieraient une fois la main améliorée. Ce call ne couvre que le montant actuellement dû ; une mise ou une relance ultérieure exige de réévaluer l'investissement.",
@@ -3015,5 +3011,6 @@
   "河牌已发完，若较弱成牌愿意支付这个尺度，下注可能取值。若主要争取更好的牌弃牌，则需判断弃牌空间，不能仅凭当前牌型肯定收益。": "La river est tombée. Si des mains faites plus faibles paient ce montant, miser peut prendre de la value. Si le but est surtout de faire coucher de meilleures mains, évaluez cette possibilité : la combinaison seule ne prouve pas la rentabilité.",
   "这笔大注需要还在场的对手有足够共同弃牌空间，若他们只用强牌跟注，单靠这些补牌较难弥补投入。": "Cette grosse mise exige une probabilité suffisante de faire coucher tous les adversaires encore dans le coup. S’ils ne paient qu’avec des mains fortes, ces outs seuls auront du mal à compenser l’investissement.",
   "重打 {0} 这手，{1}，比较{2}与较小投入，核对{3}是否愿意支付这个尺度，若它们退出而更强牌继续，就不能仅凭强起手牌把加注当作取值。": "En rejouant {0} : {1}. Comparez {2} à un investissement plus petit et vérifiez si {3} paieraient ce montant. Si ces mains se couchent alors que les plus fortes continuent, une forte main de départ ne suffit pas à faire de cette relance une relance de value.",
-  "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "En rejouant {0}, comparez d’abord {1} et vérifiez l’équité de {3} nécessaire pour ajouter {2}. Un call permet de voir le turn et la river : les {4} cartes ne concernent que la prochaine carte, et cette probabilité ne remplace pas la chance finale de gagner."
+  "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "En rejouant {0}, comparez d’abord {1} et vérifiez l’équité de {3} nécessaire pour ajouter {2}. Un call permet de voir le turn et la river : les {4} cartes ne concernent que la prochaine carte, et cette probabilité ne remplace pas la chance finale de gagner.",
+  "{0}{1} 筹码 · 本局净变化": "{0}{1} jetons · Variation nette de la partie"
 }

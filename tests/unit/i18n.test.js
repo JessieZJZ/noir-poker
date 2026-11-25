@@ -105,22 +105,51 @@ test('practice comparisons translate complete trailing sentences after adjacent 
   await loadLocale('zh-CN');
 });
 
-test('the practice heading describes the current session in every supported locale', async () => {
+test('the practice heading describes the current game in every supported locale', async () => {
   for (const [locale, expected] of Object.entries({
     'zh-CN': '本局练习',
-    en: 'Session practice',
+    en: 'Current game',
     'zh-TW': '本局練習',
     ja: 'このゲームの練習',
     ko: '이번 게임 연습',
-    es: 'Práctica de esta sesión',
-    it: 'Pratica della sessione',
+    es: 'Partida en curso',
+    it: 'Partita in corso',
     pt: 'Treino desta partida',
-    de: 'Übung dieser Sitzung',
+    de: 'Aktuelles Spiel',
     fr: 'Partie en cours',
-    ru: 'Практика в этой сессии',
+    ru: 'Текущая игра',
   })) {
     await loadLocale(locale);
     assert.equal(localizeText('本局练习'), expected, locale);
+  }
+  await loadLocale('zh-CN');
+});
+
+test('filled-in pronouns are capitalized only at a sentence start and joins keep one space', async () => {
+  const opener =
+    '他也把跟注后仍可能面对的后街下注计入了这次收紧的考虑，没有只按眼前的跟注门槛继续。';
+  const inner = 'Q7o不够这个位置的全下标准，她选择弃牌，留着筹码等更好的机会。';
+  const observer = '这次你在 CO 位 2-bet 开池至 600，';
+  await loadLocale('en');
+  assert.match(localizeText(opener), /^They also factored/);
+  assert.match(localizeText(inner), /, so she folded/);
+  assert.equal(localizeText(observer), 'This time, you in CO 2-bet open to 600,');
+  assert.equal(localizeText('Mia在 CO 位 2-bet 开池至 600'), 'Mia in CO 2-bet open to 600');
+  assert.match(localizeText('你在 CO 位 2-bet 开池至 600'), /^You in CO 2-bet/);
+  // German keeps its own spelling of a sentence-start pronoun.
+  await loadLocale('de');
+  assert.match(localizeText(observer), / du /);
+  assert.doesNotMatch(localizeText(observer), / {2}/);
+  // Russian keeps the capitalized polite form, while a noun subject inside a
+  // sentence is lowercase.
+  await loadLocale('ru');
+  assert.match(localizeText(observer), /Вы/);
+  assert.match(localizeText(inner), /соперница/);
+  assert.doesNotMatch(localizeText(inner), /Соперница/);
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    for (const source of [opener, inner, observer])
+      assert.doesNotMatch(localizeText(source), /[\uE300\uE301]/u, locale);
   }
   await loadLocale('zh-CN');
 });

@@ -431,7 +431,7 @@ export function handMatchups(s, c) {
   const text = !s.street
     ? lead && lose
       ? c.handClass === 'pocket' && lead.score[0] === 0
-        ? `翻前牌组对比：${c.handLabel}已经成对，${lead.text}仍未成对，但面对 ${lose.text} 这样的更大对子会处于下风，公共牌仍可能改变强弱。`
+        ? `翻前牌组对比：${c.handLabel}已经成对，领先仍未成对的 ${lead.text}，但面对 ${lose.text} 这样的更大对子会处于下风，公共牌仍可能改变强弱。`
         : `翻前牌组对比：${c.handLabel}按当前牌型与点数高于 ${lead.text}，但低于 ${lose.text}，公共牌仍可能改变强弱。`
       : lead
         ? `翻前牌组对比：${c.handLabel}领先例如 ${lead.text}，这手强起手牌可以向较弱对子或高牌取值。`
@@ -769,7 +769,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
       : c.opponents > 1 && (c.handClass === 'top-pair' || c.handClass === 'overpair')
         ? c.texture.paired
           ? `这张 ${cardText(s.board)} 已经配对，公共牌的一对由所有玩家共享，对手持有相同点数的底牌就可能有三条。取值仍要有较弱牌愿意付费，不能只凭两对的总牌型扩大投入。`
-          : `这张 ${cardText(s.board)} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 ${number(s.stack)} 一次当成必需投入。`
+          : `这是多人底池，在 ${cardText(s.board)} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 ${number(s.stack)} 一次当成必需投入。`
         : s.street === 3
           ? `当前成牌可向较弱成牌取值，在 ${cardText(s.board)} 上加注，收益来自它们愿意跟注付费，尺度仍要给弱牌留下继续空间。`
           : `当前成牌可向较弱牌取值，在 ${cardText(s.board)} 上加注既收取跟注，也让听牌付费，尺度仍要给弱牌留下继续空间。`,

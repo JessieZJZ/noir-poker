@@ -2885,7 +2885,7 @@ test('WeChat practice heading owns reset during the hand', () => {
     readFileSync(new URL('../../miniprogram/pages/table/parity.wxss', import.meta.url), 'utf8'),
     /\.practice-reset\s*\{[^}]*width: 70px;[^}]*min-height: 32px/s,
   );
-  assert.match(template, /本次练习净变化/);
+  assert.match(template, /本局净变化/);
   assert.match(template, /<text>本手动态<\/text><text>{{done \? 'FINISHED' : 'LIVE'}}<\/text>/);
 });
 

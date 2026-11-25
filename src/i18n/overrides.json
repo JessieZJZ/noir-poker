@@ -116,7 +116,7 @@
     "复盘这一手": "Review this hand",
     "本手复盘": "Review hand",
     "本手决策复盘": "Decision review",
-    "本局练习": "Session practice",
+    "本局练习": "Current game",
     "当前筹码": "Stack",
     "已完成": "Played",
     "获胜手数": "Won",
@@ -155,7 +155,6 @@
     "牌型从强到弱：同花顺 → 四条 → 葫芦 → 同花 → 顺子 → 三条 → 两对 → 一对 → 高牌": "Hand rankings: straight flush → four of a kind → full house → flush → straight → three of a kind → two pair → one pair → high card",
     "同一牌型先比组成牌型的点数，再比剩余牌的点数（踢脚）。最佳五张完全相同就平分，花色不分大小。A 可以作最大牌，也可以组成 A2345 的最小顺子。": "For hands of the same category, compare the ranks that make the hand first, then the remaining cards (kickers). Identical best five-card hands split the pot; suits are never ranked. An ace can play high or make the lowest straight, A2345.",
     "全下后只能争夺自己有投入的部分。筹码多的人继续下注会形成边池，各池分别比较；弃牌者已投入的筹码仍留在池里，无法争夺。没有人跟上的超额投入会退还，不能把退款当作额外赢得的筹码。": "An all-in player can win only the pots they contributed to. Further betting by players with chips left creates side pots, settled separately. Chips from folded players stay in the pots, but those players cannot win them. Uncalled excess is returned; it is not extra winnings.",
-    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "EV is the expected chip return from repeating a strategy over the long term. Winning one hand does not prove long-term profitability. Reviews use simulations based on information available before your action and assumed opponent ranges. They do not grade decisions using hidden opponent cards or later cards, and do not guarantee optimal play or a win. Switch to Opponent reasoning to see why the computers took their actual actions in this session.",
     "“重打这手牌”保留原底牌、庄位、起始筹码和发牌顺序，从翻牌前重新选择。原结算与统计会撤回，采用最新一次结果；电脑会重新响应你的打法。你已经知道部分牌局，适合练习思路，不能用重打后的盈利证明长期收益。“下一手”则开始新的牌局。": "Replay this hand keeps the original hole cards, button, starting stacks and deck order so you can choose again from preflop. The previous payouts and statistics are undone, and the latest result counts. The computer players respond to your new choices. Since you already know some of the cards, replays are good for practicing your thinking, but replay winnings can't prove long-term profit. Next hand starts a new deal.",
     "当前信息不足以确认这一步长期赚或亏。": "There isn't enough information to say whether this decision wins or loses in the long run.",
     "按这两种对手范围估计，这次跟注长期会亏筹码。": "Under both assumed ranges, this call has negative estimated chip EV.",
@@ -522,7 +521,7 @@
     "可玩": "Playable",
     "强牌": "Strong hand",
     "4 手内三次面对同一对手加注后弃牌": "Folded to the same raiser in three of four hands",
-    "本局信息": "Session info",
+    "本局信息": "Game info",
     "座位 {0}": "Seat {0}",
     "暂不在桌": "Not seated",
     "{0}先跟注 {1} 入池。": "{0} limped in for {1}.",
@@ -1458,7 +1457,8 @@
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "This bet tries to make better hands fold; if called, reassess the opponent's remaining range on the next card rather than automatically betting again.",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "This call depends on enough weaker hands or bluffs in the opponent's range. If the range is mainly stronger made hands, fold even when the price is low.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Replay {0}. First compare {1} with {2}. If you call instead, you'd put in all your remaining {3} and make no more betting or folding decisions; other players' later raises won't require more chips from you.",
-    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Replay {0}. First compare {1}, then check the {3} equity needed to add {2}. A call lets you see both the turn and the river; the {4} outs refer only to the next card, so the next-card chance cannot replace the final chance of winning. "
+    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Replay {0}. First compare {1}, then check the {3} equity needed to add {2}. A call lets you see both the turn and the river; the {4} outs refer only to the next card, so the next-card chance cannot replace the final chance of winning. ",
+    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV is the expected chip return from repeating a strategy over the long term. Winning one hand does not prove long-term profitability. Reviews use simulations based on information available before your action and assumed opponent ranges. They do not grade decisions using hidden opponent cards or later cards, and do not guarantee optimal play or a win. Switch to Opponent reasoning to see why the computers took their actual actions in this hand."
   },
   "zh-TW": {
     "设置": "設定",
@@ -3654,7 +3654,6 @@
     "过牌后直接摊牌，可能错过价值，但不会给听牌新的改善机会。": "チェックするとそのままショーダウンになります。バリューを逃す可能性はありますが、ドローに新たな改善の機会は与えません。",
     "还没有轮到你行动。": "まだあなたの番ではありません。",
     "这两张低牌不是对子或强高牌，击中一对后点数仍偏低": "この低い 2 枚はペアでも強いハイカードでもなく、ペアができてもランクは低めです",
-    "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "{0} のボードでマルチウェイのポットなので、ワンペアはツーペアやセットに当たりやすくなります。バリューは取れますが、{1} を一度にすべて入れる必要はありません。",
     "这手牌已经结算。": "このハンドのポットはすでに分配されています。",
     "这手起手牌被跟注后的成牌质量有限，进攻主要依赖对手弃牌。": "このスターティングハンドはコールされた場合にできる役の質が限られ、攻撃は主に相手のフォールドに頼ります。",
     "这是 donk 半诈唬：前一街进攻者还没行动，{0}用{1}先领打 {2}，{3}。既想直接拿池，也保留被跟注后的补牌机会。": "これはドンク（donk）のセミブラフです。前のストリートのアグレッサーがまだ行動していないうちに、{0}は{1}で先に {2} をベットしました。{3}。そのままポットを取ることを狙いつつ、コールされた場合の改善の機会も残します。",
@@ -3745,7 +3744,8 @@
     "当前 {0} 带{1}，但公共牌已有四张同花色，对手底牌只需有一张该花色就已成同花，即使补成顺子，也仍会输给同花，不能把 {2} 张顺子改善候选都当作获胜补牌。": "現在は {0}、{1} もありますが、ボードには同じスートが4枚あります。相手はそのスートのホールカードが1枚あればフラッシュです。ストレートになってもフラッシュには負けます。ストレートへの改善候補 {2} 枚をすべて勝てるアウツとは数えられません。",
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "このベットは強いハンドを降ろす狙いです。コールされたら、次のカードで相手に残ったレンジを見直し、自動的には打ち続けません。",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "このコールには、相手のレンジに弱いハンドやブラフが十分にあることが必要です。主に強い完成ハンドなら、安くてもフォールドします。",
-    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "{0} のハンドをやり直すなら、まず{1}と{2}を比較します。コールに変えると残りの {3} をすべて投入し、その後のベットやフォールドの判断はありません。ほかのプレイヤーがその後レイズしても、追加でチップを払う必要はありません。"
+    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "{0} のハンドをやり直すなら、まず{1}と{2}を比較します。コールに変えると残りの {3} をすべて投入し、その後のベットやフォールドの判断はありません。ほかのプレイヤーがその後レイズしても、追加でチップを払う必要はありません。",
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "{0} のボードでマルチウェイのポットなので、ワンペアはツーペアやセットに当たりやすくなります。バリューは取れますが、{1} を一度にすべて入れる必要はありません。"
   },
   "ko": {
     "设置": "설정",
@@ -5868,7 +5868,7 @@
     "可玩": "Jugables",
     "强牌": "Mano fuerte",
     "4 手内三次面对同一对手加注后弃牌": "Se retiró tres veces en 4 manos ante subidas del mismo rival",
-    "本局信息": "Información de esta sesión",
+    "本局信息": "Información de la partida",
     "座位 {0}": "Asiento {0}",
     "暂不在桌": "Fuera de la mesa",
     "{0}先跟注 {1} 入池。": "{0} entró de limp por {1}.",
@@ -6831,7 +6831,6 @@
     "过牌后直接摊牌，可能错过价值，但不会给听牌新的改善机会。": "Pasar lleva directamente al showdown: puede perder valor, pero no da a los proyectos nuevas opciones de mejorar.",
     "过牌后，": "tras pasar, ",
     "还没有轮到你行动。": "Aún no es tu turno.",
-    "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "En el board {0} hay varios jugadores, y una pareja puede encontrarse más fácilmente con doble pareja o un set; puedes buscar valor, pero no es obligatorio invertir {1} de golpe.",
     "这手 {0} 的跟注成本为 0，重打时先选择过牌，保留免费机会。": "Con {0}, continuar cuesta 0. Al repetir, elige primero pasar y conserva la oportunidad gratuita.",
     "这手对子遇到更大对子明显落后，如果主要靠翻牌中暗三条获利，还要有合适的跟注价格和成牌后的可赢筹码": "Esta pareja va claramente por detrás de parejas mayores. Si dependes sobre todo de ligar un set en el flop, necesitas un precio de call adecuado y suficientes fichas por ganar cuando mejores",
     "这手建议弃牌，保住行动前剩下的 {0}，不再付出筹码。": "Aquí se recomienda retirarte y conservar los {0} que te quedaban antes de actuar, sin pagar más fichas.",
@@ -6928,7 +6927,8 @@
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "Esta apuesta intenta que se retiren manos mejores; si pagan, reevalúa con la siguiente carta el rango que le queda al rival, sin volver a apostar automáticamente.",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Este call depende de que el rango rival contenga suficientes manos más débiles o faroles. Si predominan manos hechas más fuertes, hay que retirarse aunque el precio sea bajo.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Repite {0}. Compara primero {1} con {2}. Elegir el call invertiría los {3} restantes. Después no tendrás más decisiones de apuesta ni de retirarte, y las subidas posteriores de otros no te exigen añadir fichas.",
-    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Repite {0}. Primero compara {1} y revisa la probabilidad de ganar de {3} necesaria para añadir {2}. Si pagas verás turn y river. Las {4} cartas solo se refieren a la siguiente carta; esa probabilidad no sustituye la posibilidad final de ganar. "
+    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Repite {0}. Primero compara {1} y revisa la probabilidad de ganar de {3} necesaria para añadir {2}. Si pagas verás turn y river. Las {4} cartas solo se refieren a la siguiente carta; esa probabilidad no sustituye la posibilidad final de ganar. ",
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "En el board {0} hay varios jugadores, y una pareja puede encontrarse más fácilmente con doble pareja o un set; puedes buscar valor, pero no es obligatorio invertir {1} de golpe."
   },
   "it": {
     "设置": "Impostazioni",
@@ -7839,7 +7839,6 @@
     "{0}{1} · 获得": "{0}{1} · vince",
     "{0}{1} · 获得 {2}": "{0}{1} · vince {2}",
     "{0}{1} · 获得 {2} 筹码": "{0}{1} · vince {2} fiches",
-    "{0}{1} 筹码 · 本次练习净变化": "{0}{1} fiches · variazione netta della sessione",
     "{0}策略": "Strategia {0}",
     "{2} {3} 的底牌": "{2} carte coperte di {3}",
     "{5} 的训练风格": "Stile di allenamento di {5}",
@@ -7947,7 +7946,6 @@
     "A 阻断部分强 Ax，后位允许更宽地争夺盲注。": "L’asso blocca alcuni Ax forti; dalle ultime posizioni puoi contendere i bui con un range più ampio.",
     "AA 翻前领先其他起手牌，面对加注仍有很强的继续依据": "AA preflop è avanti a tutte le altre mani iniziali: anche contro un rilancio ha ottime ragioni per continuare",
     "AK 击中 A 或 K 时有顶对顶踢脚潜力，未击中时仍需结合价格和对手范围判断": "AK può fare top pair con top kicker se esce un A o un K; se non chiude nulla, decidi in base al prezzo e al range avversario",
-    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "L’EV è il guadagno atteso in fiches ripetendo una giocata nel lungo periodo: vincere una mano non dimostra che sia redditizia nel tempo. L’analisi stima con simulazioni basate sulle informazioni visibili prima della tua azione e su range ipotetici degli avversari. Non giudica le scelte usando le carte coperte degli avversari o le carte uscite dopo, e non garantisce la giocata ottimale né una linea vincente. Apri «Ragionamento avversario» per vedere perché il computer ha giocato così in questa mano.",
     "NOIR Poker 隐私政策": "Informativa sulla privacy di NOIR Poker",
     "{0} 在 {1} {2}，加注至 {3}（{4} BB）。{5}加注可让部分弱连张和高牌退出，收益包含弃牌权益，被跟注后，留下的范围可能更强{6}。{7}": "Con {0} in {1} {2}, rilanci a {3} ({4} BB). {5}Il rilancio può far foldare alcuni connettori deboli e carte alte, e il guadagno include la fold equity; se ricevi call, il range che resta può essere più forte{6}. {7}",
     "{0} 在 {1} 跟注 {2}，{3} 位对手仍在局中，{4} 位尚可行动。{5}": "{0} in {1} chiama {2}; avversari ancora in mano: {3}, ancora da agire: {4}. {5}",
@@ -8369,7 +8367,9 @@
     "本轮还有 {0} 位对手等待回应，若出现加注或者再加注，你需要重新决定是否继续。": "Avversari che devono ancora rispondere in questo giro: {0}. Se arriva un rilancio o un controrilancio, devi decidere di nuovo se continuare.",
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "Questa puntata cerca di far foldare mani migliori; se ricevi call, alla carta successiva devi rivalutare il range rimasto all’avversario, senza continuare a puntare in automatico.",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Questo call richiede abbastanza mani più deboli o bluff nel range avversario: se prevalgono mani fatte più forti, bisogna foldare anche quando il prezzo è basso.",
-    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Rigiocando {0}, confronta prima {1} con {2}. Con il call metteresti tutti i {3} rimasti e poi non avresti più decisioni di puntata o di fold: gli eventuali rilanci successivi degli altri non ti chiederebbero altre fiches."
+    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Rigiocando {0}, confronta prima {1} con {2}. Con il call metteresti tutti i {3} rimasti e poi non avresti più decisioni di puntata o di fold: gli eventuali rilanci successivi degli altri non ti chiederebbero altre fiches.",
+    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "L’EV è il guadagno atteso in fiches ripetendo una giocata nel lungo periodo: vincere una mano non dimostra che sia redditizia nel tempo. L’analisi stima con simulazioni basate sulle informazioni visibili prima della tua azione e su range ipotetici degli avversari. Non giudica le scelte usando le carte coperte degli avversari o le carte uscite dopo, e non garantisce la giocata ottimale né una linea vincente. Apri «Ragionamento avversario» per vedere perché il computer ha giocato così in questa mano.",
+    "{0}{1} 筹码 · 本局净变化": "{0}{1} fiches · variazione netta della partita"
   },
   "pt": {
     "设置": "Configurações",
@@ -9376,7 +9376,6 @@
     "A 阻断部分强 Ax，后位允许更宽地争夺盲注。": "O A bloqueia parte dos Ax fortes; posições finais permitem disputar os blinds com um range mais amplo.",
     "AA 翻前领先其他起手牌，面对加注仍有很强的继续依据": "AA está à frente de todas as outras mãos iniciais no pré-flop; mesmo diante de um aumento, há bons motivos para continuar",
     "AK 击中 A 或 K 时有顶对顶踢脚潜力": "AK pode formar top pair com top kicker se sair um A ou um K",
-    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "EV é o ganho esperado em fichas ao repetir uma estratégia no longo prazo. Ganhar uma mão não comprova lucro no longo prazo. A análise faz estimativas por simulação com base nas informações visíveis antes da sua ação e em ranges supostos dos adversários. Não avalia decisões usando cartas ocultas dos adversários ou cartas distribuídas depois, nem garante a jogada ideal ou um caminho para vencer. Mude para “Raciocínio do adversário” para ver os motivos reais das ações dos bots nesta mão.",
     "NOIR Poker 隐私政策": "Política de Privacidade do NOIR Poker",
     "{0} 仍能赢较弱成牌，但这次可被匹配的新增投入最多 {1}，约为底池的 {2} 倍。{3}愿意接下如此大下注的范围可能比当前未弃牌范围更强，现有摊牌机会不能单独证明全下有价值。": "{0} ainda pode vencer mãos feitas mais fracas, mas o investimento adicional que pode ser pago é de no máximo {1}, cerca de {2} vezes o pote. {3}O range disposto a pagar uma aposta tão grande pode ser mais forte que o range que ainda segue na mão; as chances atuais de showdown, sozinhas, não provam que o all-in tem valor.",
     "{0} 可被匹配的新增投入最多 {1}，约底池的 {2}，公共牌{3}，{4} 位对手尚在。{5}": "{0} O investimento adicional que pode ser pago é de no máximo {1}, cerca de {2} do pote; board {3}; restam {4} adversários. {5}",
@@ -9768,7 +9767,6 @@
     "过牌后，": "depois do check, ",
     "还没有轮到你行动。": "Ainda não é sua vez de agir.",
     "这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。": "Os ranges desses jogadores que pagaram também afetam a chance de ganhar o pote; não basta avaliar se quem apostou está blefando.",
-    "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "No board {0}, o pote é multiway e um par encontra dois pares ou sets com mais facilidade; dá para buscar valor, mas sem tratar {1} como investimento obrigatório de uma vez.",
     "这手对子可以等翻牌中暗三条": "Este par pode esperar acertar um set no flop",
     "这手小对子已有摊牌机会，也能争取翻牌击中暗三条，需要结合位置、跟注价格、有效筹码和后面的再加注风险判断。": "Esse par de mão pequeno já tem chances no showdown e pode acertar um set no flop. Considere posição, preço do call, stacks efetivos e risco de reaumento de quem age depois.",
     "这手小对子未中暗三条时，面对高张牌面和持续下注不容易继续。": "Se esse par pequeno não acertar um set, será difícil continuar em boards com cartas altas e contra apostas repetidas.",
@@ -9876,7 +9874,9 @@
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Ao rejogar {0}, compare primeiro {1} com {2}. Pagar investiria todos os {3} restantes; depois você não terá mais decisões de aposta ou desistência, e aumentos posteriores dos outros não exigem fichas extras suas.",
     "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Ao rejogar {0}, compare primeiro {1} e confira a chance de vitória de {3} necessária para acrescentar {2}. Se pagar, você verá o turn e o river; as {4} cartas valem só para a próxima carta, e essa probabilidade não substitui a chance final de ganhar.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Você tem posição no {0}. Este check não acrescenta fichas e deixa {1}. Se não completar seu {2} no river, o adversário der check e o board permitir representar uma mão feita mais forte, considere transformar a mão em blefe. Se ele apostar de novo, decida pelo novo valor se deve desistir.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Você tem posição no {0}. Após este investimento restam {1}. Se não completar seu {2} no river, o adversário der check e o board permitir representar uma mão feita mais forte, considere transformar a mão em blefe. Se ele apostar de novo, decida pelo novo valor se deve desistir."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Você tem posição no {0}. Após este investimento restam {1}. Se não completar seu {2} no river, o adversário der check e o board permitir representar uma mão feita mais forte, considere transformar a mão em blefe. Se ele apostar de novo, decida pelo novo valor se deve desistir.",
+    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV é o ganho esperado em fichas ao repetir uma estratégia no longo prazo. Ganhar uma mão não comprova lucro no longo prazo. A análise faz estimativas por simulação com base nas informações visíveis antes da sua ação e em ranges supostos dos adversários. Não avalia decisões usando cartas ocultas dos adversários ou cartas distribuídas depois, nem garante a jogada ideal ou um caminho para vencer. Mude para “Raciocínio do adversário” para ver os motivos reais das ações dos bots nesta mão.",
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "No board {0}, o pote é multiway e um par encontra dois pares ou sets com mais facilidade; dá para buscar valor, mas sem tratar {1} como investimento obrigatório de uma vez."
   },
   "de": {
     "设置": "Einstellungen",
@@ -10285,7 +10285,7 @@
     "可玩": "Spielbar",
     "强牌": "Starke Hand",
     "4 手内三次面对同一对手加注后弃牌": "Innerhalb von 4 Händen dreimal gegen Raises desselben Gegners gefoldet",
-    "本局信息": "Infos dieser Sitzung",
+    "本局信息": "Infos zu diesem Spiel",
     "座位 {0}": "Platz {0}",
     "暂不在桌": "Nicht am Tisch",
     "{0}先跟注 {1} 入池。": "{0} ist zuvor mit einem Call von {1} in den Pot eingestiegen.",
@@ -11214,7 +11214,6 @@
     "结合下方数字与具体条件判断，不把模拟领先当成必须执行。": "Anhand der Zahlen unten und der konkreten Bedingungen entscheiden; ein Vorsprung in der Simulation ist kein Muss.",
     "给诈唬一个明确目标范围，而不是用很大金额补偿弱牌。": "Gib dem Bluff eine klare Ziel-Range, statt eine schwache Hand mit einem großen Betrag auszugleichen.",
     "缺少开池者宽范围、平跟者可弃牌的依据时，优先收紧。": "Ohne Hinweise auf eine breite Opener-Range und Flat Caller, die folden würden, zuerst enger spielen.",
-    "翻前牌组对比：{0}已经成对，{1}仍未成对，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Vergleich vor dem Flop: {0} ist bereits ein Paar, {1} dagegen ungepaart. Gegen ein höheres Pocket Pair wie {2} liegt die Hand jedoch zurück. Das Board kann die Rangfolge noch verändern.",
     "翻后位置与对手退出空间支持比较主动开池。": "Position nach dem Flop und Foldspielraum der Gegner sprechen dafür, ein aktives Open zu vergleichen.",
     "节省投入，不是保证免费看牌，仍需为后续下注设定条件。": "Spart Chips, garantiert aber keine Gratiskarte; für spätere Bets weiterhin Bedingungen festlegen.",
     "花色分散、连接较少": "Gemischte Farben, wenig verbundene Karten",
@@ -11261,7 +11260,6 @@
     "过牌后，": "nach einem Check, ",
     "还没有轮到你行动。": "Du bist noch nicht am Zug.",
     "这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。": "Du antwortest in dieser Setzrunde als Letzter; spielst du weiter, warten auf der nächsten Street ein neues Board und neue Bets.",
-    "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Auf dem Board {0} im Multiway-Pot trifft ein Paar leichter auf zwei Paare oder ein Set. Value ist möglich, aber die {1} müssen nicht auf einmal investiert werden.",
     "这张 {0} 较干燥，对手已经主动下注，平跟 {1} 是埋牌路线，留住这条下注线中的弱牌和诈唬，双方仍有筹码继续下一街。": "Das Board {0} ist eher trocken, und der Gegner hat bereits gesetzt. Ein Flat Call von {1} ist eine Slowplay-Linie, die schwache Hände und Bluffs aus seiner Linie im Pot hält; beide haben noch Chips für die nächste Street.",
     "这手 {0} 的跟注成本为 0，重打时先选择过牌，保留免费机会。": "Mit {0} kostet der Call 0. Wähle beim erneuten Spielen zuerst den Check, um die kostenlose Chance zu behalten.",
     "这手对子遇到更大对子明显落后，如果主要靠翻牌中暗三条获利，还要有合适的跟注价格和成牌后的可赢筹码": "Dieses Paar liegt gegen größere Paare deutlich hinten. Soll der Gewinn vor allem aus einem Set am Flop kommen, braucht es einen passenden Preis für den Call und genug Chips, die danach noch zu gewinnen sind",
@@ -11364,7 +11362,9 @@
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Dieser Call setzt genügend schwächere Hände oder Bluffs in der gegnerischen Range voraus. Besteht sie hauptsächlich aus stärkeren fertigen Händen, solltest du auch bei günstigem Preis folden.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Spiele die Hand mit {0} erneut und vergleiche zuerst {1} mit {2}. Ein Call würde deine gesamten restlichen {3} einsetzen; danach triffst du keine Setz- oder Foldentscheidungen mehr, und spätere Raises anderer Spieler kosten dich keine weiteren Chips.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Du hast auf {0} Position. Dieser Check kostet keine Chips; es bleiben {1}. Kommt dein {2} am River nicht an, checkt der Gegner und lässt das Board dich eine stärkere fertige Hand repräsentieren, kannst du einen Bluff erwägen. Setzt der Gegner weiter, entscheide anhand des neuen Betrags, ob du foldest.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Du hast auf {0} Position. Nach diesem Einsatz bleiben {1}. Kommt dein {2} am River nicht an, checkt der Gegner und lässt das Board dich eine stärkere fertige Hand repräsentieren, kannst du einen Bluff erwägen. Setzt der Gegner weiter, entscheide anhand des neuen Betrags, ob du foldest."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Du hast auf {0} Position. Nach diesem Einsatz bleiben {1}. Kommt dein {2} am River nicht an, checkt der Gegner und lässt das Board dich eine stärkere fertige Hand repräsentieren, kannst du einen Bluff erwägen. Setzt der Gegner weiter, entscheide anhand des neuen Betrags, ob du foldest.",
+    "翻前牌组对比：{0}已经成对，领先仍未成对的 {1}，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Vergleich vor dem Flop: {0} ist bereits ein Paar, {1} dagegen ungepaart. Gegen ein höheres Pocket Pair wie {2} liegt die Hand jedoch zurück. Das Board kann die Rangfolge noch verändern.",
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Auf dem Board {0} im Multiway-Pot trifft ein Paar leichter auf zwei Paare oder ein Set. Value ist möglich, aber die {1} müssen nicht auf einmal investiert werden."
   },
   "fr": {
     "设置": "Réglages",
@@ -12286,7 +12286,6 @@
     "左右滑动查看完整参数": "Faites défiler horizontalement pour voir tous les paramètres",
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "Les conseils de table donnent un bref rappel pour la phase en cours. Sur écran large, activez-les sur la carte de conseils à droite. Sur écran étroit, passez par les réglages : les conseils apparaissent en haut à gauche de la table, se lisent en faisant défiler horizontalement et se replient après quelques secondes. Le son se règle aussi dans les réglages. Tous les réglages sont enregistrés sur cet appareil ; rejouer une main conserve le style et les émotions d’origine des adversaires.",
     "点击“复盘这一手”，先看最值得调整的决策，再逐步查看当时局面、实际动作和可练习的替代路线。输了，检查能否降低损失或争取更多价值；赢了，也检查操作是否有依据、有没有被好结果掩盖的失误，以及还能怎样多拿价值。": "Touchez « Analyser cette main ». Commencez par la décision la plus utile à retravailler, puis examinez à chaque étape la situation, l’action jouée et les autres options. Après une défaite, cherchez comment limiter les pertes ou prendre plus de value. Après une victoire, vérifiez aussi si vos choix étaient justifiés, si le bon résultat masque une erreur et s’il était possible de gagner davantage.",
-    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "L’EV est le gain moyen en jetons attendu lorsqu’on répète une même stratégie sur le long terme. Une main gagnée ne prouve pas qu’elle est rentable. L’analyse fournit des estimations simulées à partir des informations visibles avant votre action et de ranges adverses supposées ; elle ne juge pas votre choix d’après les cartes cachées adverses ou les cartes distribuées ensuite, et ne garantit ni solution optimale ni victoire. Ouvrez « Raisonnement adverse » pour voir pourquoi les bots ont agi ainsi dans cette partie.",
     "第 {0} 手 · 决策复盘": "Main {0} · Analyse des décisions",
     "使用说明": "Fonctionnement",
     "对手风格与座位": "Styles et sièges des adversaires",
@@ -12847,7 +12846,6 @@
     "给诈唬一个明确目标范围，而不是用很大金额补偿弱牌。": "Donnez au bluff une range cible précise, plutôt que de compenser une main faible par un gros montant.",
     "缺少开池者宽范围、平跟者可弃牌的依据时，优先收紧。": "Sans indices que l’ouvreur est large et que les joueurs qui ont suivi peuvent se coucher, resserrez en priorité.",
     "翻前大盲算第一级下注，首次开池为 2-bet，之后依次是 3-bet、4-bet。翻后首次下注为 bet，首次加注为 2-bet，每条街重新计数。": "Préflop, la grosse blinde compte comme la première mise : l’ouverture est un 2-bet, puis viennent le 3-bet, le 4-bet, etc. Postflop, la première mise est un bet et la première relance un 2-bet ; le compte repart à zéro à chaque street.",
-    "翻前牌组对比：{0}已经成对，{1}仍未成对，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Comparaison préflop : {0} forme déjà une paire, tandis que {1} n’est pas appariée ; elle reste toutefois derrière une paire servie supérieure comme {2}. Les cartes communes peuvent encore modifier la hiérarchie.",
     "翻前牌组对比：{0}按当前牌型与点数高于 {1}，但低于 {2}，公共牌仍可能改变强弱。": "Comparaison préflop : selon la catégorie de main et les valeurs actuelles, {0} est au-dessus de {1}, mais au-dessous de {2}. Les cartes communes peuvent encore modifier la hiérarchie.",
     "翻后仍可能有对手在你后面行动，能否取得位置要看实际入池阵容。": "Des adversaires peuvent encore agir après vous postflop ; avoir la position dépend des joueurs qui entrent réellement dans le pot.",
     "翻后位置与对手退出空间支持比较主动开池。": "La position après le flop et la propension adverse à se coucher justifient de comparer une ouverture.",
@@ -12912,7 +12910,6 @@
     "这个建议全下中至少 {0} 无法被匹配，会退回。可被匹配的新增投入最多 {1}": "Sur ce tapis conseillé, au moins {0} ne peuvent pas être suivis et seront rendus. Le montant ajouté pouvant être suivi atteint au plus {1}",
     "这个建议出价中至少 {0} 无法被匹配，会退回。新增投入最多 {1} 可被匹配。": "Au moins {0} de cette mise conseillée ne peuvent pas être suivis et seront rendus. Le montant ajouté pouvant être suivi atteint au plus {1}.",
     "这些潜力可以支持先考虑{0}，不能单独证明本次最多 {1} 的可匹配新增投入划算。": "Ce potentiel permet d’abord d’envisager {0}, mais ne suffit pas à justifier jusqu’à {1} de jetons supplémentaires pouvant être suivis.",
-    "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Sur le board {0}, le pot se joue à plusieurs ; une paire tombe plus facilement sur deux paires ou un set. Vous pouvez chercher de la value, sans forcément engager les {1} d’un coup.",
     "这手 {0} 可以藏在平跟里，对手已有主动加注，你有位置，平跟 {1} 保留其弱牌和诈唬。": "Vous pouvez cacher {0} dans un call : l’adversaire a déjà relancé et vous avez la position. Suivre {1} garde ses mains faibles et ses bluffs.",
     "这手 {0} 可比较普通加注，核对{1}是否愿意按这个尺度继续，当前 {2} 的筹码不必一次全部推出。": "Avec {0}, comparez une relance normale et vérifiez si {1} continueraient à cette taille : inutile d’engager d’un coup tout votre tapis actuel de {2}.",
     "这手建议{0}。继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "Conseil : {0}. Continuer exige assez de mains plus faibles ou de bluffs sans main faite dans la range de mise ; un tirage seul ne justifie pas un investissement supplémentaire.",
@@ -13038,7 +13035,10 @@
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Ce call suppose assez de mains plus faibles ou de bluffs dans la range adverse. Si les mains faites plus fortes dominent, il faut se coucher même à un prix faible.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "En rejouant {0}, comparez d’abord {1} et {2}. Suivre engagerait les {3} restants : vous n’auriez ensuite plus de décision de mise ou de fold, et les relances ultérieures des autres ne vous demanderaient aucun jeton supplémentaire.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Vous avez la position en {0}. Ce check n’ajoute aucun jeton et laisse{1}. Si vous ne complétez pas votre {2} à la river, que l’adversaire checke et que le board vous permet de représenter une main faite plus forte, vous pouvez envisager de transformer votre main en bluff. S’il mise à nouveau, décidez de vous coucher ou non selon le nouveau montant.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Vous avez la position en {0}. Après cet investissement, il vous reste{1}. Si vous ne complétez pas votre {2} à la river, que l’adversaire checke et que le board vous permet de représenter une main faite plus forte, vous pouvez envisager de transformer votre main en bluff. S’il mise à nouveau, décidez de vous coucher ou non selon le nouveau montant."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Vous avez la position en {0}. Après cet investissement, il vous reste{1}. Si vous ne complétez pas votre {2} à la river, que l’adversaire checke et que le board vous permet de représenter une main faite plus forte, vous pouvez envisager de transformer votre main en bluff. S’il mise à nouveau, décidez de vous coucher ou non selon le nouveau montant.",
+    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "L’EV est le gain moyen en jetons attendu lorsqu’on répète une même stratégie sur le long terme. Une main gagnée ne prouve pas qu’elle est rentable. L’analyse fournit des estimations simulées à partir des informations visibles avant votre action et de ranges adverses supposées ; elle ne juge pas votre choix d’après les cartes cachées adverses ou les cartes distribuées ensuite, et ne garantit ni solution optimale ni victoire. Ouvrez « Raisonnement adverse » pour voir pourquoi les bots ont agi ainsi dans cette main.",
+    "翻前牌组对比：{0}已经成对，领先仍未成对的 {1}，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Comparaison préflop : {0} forme déjà une paire, tandis que {1} n’est pas appariée ; elle reste toutefois derrière une paire servie supérieure comme {2}. Les cartes communes peuvent encore modifier la hiérarchie.",
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Sur le board {0}, le pot se joue à plusieurs ; une paire tombe plus facilement sur deux paires ou un set. Vous pouvez chercher de la value, sans forcément engager les {1} d’un coup."
   },
   "ru": {
     "设置": "Настройки",
@@ -13447,7 +13447,7 @@
     "可玩": "Играбельные",
     "强牌": "Сильная рука",
     "4 手内三次面对同一对手加注后弃牌": "Сброс на рейзы одного и того же соперника в трёх раздачах из четырёх",
-    "本局信息": "Сведения об этой сессии",
+    "本局信息": "Сведения об этой игре",
     "座位 {0}": "Место {0}",
     "暂不在桌": "Не за столом",
     "{0}先跟注 {1} 入池。": "{0} вошёл лимпом за {1}.",
@@ -13964,7 +13964,6 @@
     "左右滑动查看完整参数": "Прокрутите по горизонтали, чтобы увидеть все параметры",
     "牌桌提示提供当前阶段的简短练习提醒。宽屏在右侧提示卡上开关；窄屏在设置中开关，提醒出现在牌桌左上方，可左右滑动阅读，几秒后收起。声音也可在设置中开关。所有设置保存在此设备，重打保留原来的对手风格与情绪。": "Подсказки за столом кратко напоминают, на что обратить внимание на текущей улице. На широком экране они включаются на карточке подсказок справа, на узком — в настройках. Подсказки появляются в левом верхнем углу стола: прокручивайте их по горизонтали, чтобы прочитать; через несколько секунд они сворачиваются. Звук также включается в настройках. Все настройки сохраняются на этом устройстве; при переигрывании сохраняются исходные стиль и эмоции соперников.",
     "点击“复盘这一手”，先看最值得调整的决策，再逐步查看当时局面、实际动作和可练习的替代路线。输了，检查能否降低损失或争取更多价值；赢了，也检查操作是否有依据、有没有被好结果掩盖的失误，以及还能怎样多拿价值。": "Нажмите «Разобрать эту раздачу». Сначала рассмотрите решение, которое полезнее всего улучшить, затем по шагам изучите ситуацию, сделанное действие и альтернативные варианты. После проигрыша проверьте, можно ли было сократить потери или получить больше вэлью. После выигрыша тоже оцените, были ли решения обоснованы, не скрыл ли удачный результат ошибку и можно ли было выиграть больше.",
-    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "EV — ожидаемый выигрыш в фишках при многократном повторении одной стратегии. Одна выигранная раздача не доказывает долгосрочную прибыльность. Разбор строит симуляционные оценки по информации, доступной до вашего действия, и по предполагаемым диапазонам соперников. Скрытые карты соперников и карты, открытые позже, не используются для оценки выбора. Оптимальное решение или победа не гарантируются. Переключитесь на «Решения соперников», чтобы увидеть, почему компьютерные соперники действовали так в этой раздаче.",
     "第 {0} 手 · 决策复盘": "Раздача {0} · Разбор решений",
     "使用说明": "Как это работает",
     "对手风格与座位": "Стили и места соперников",
@@ -14555,7 +14554,6 @@
     "过牌后直接摊牌，可能错过价值，但不会给听牌新的改善机会。": "После чека сразу вскрытие: можно упустить вэлью, но и новых шансов на усиление дро не получат.",
     "过牌后，": "после чека,",
     "这一轮已经轮到你最后回应，继续后，下一街还要面对新的牌面与下注。": "В этом круге вы отвечаете последним; после продолжения на следующей улице придётся учитывать новый борд и ставки.",
-    "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "На борде {0} в мультипоте одна пара чаще встречает две пары или сет; добирать можно, но не обязательно вкладывать сразу {1}.",
     "这张 {0} 较干燥，对手已经主动下注，平跟 {1} 是埋牌路线，留住这条下注线中的弱牌和诈唬，双方仍有筹码继续下一街。": "Борд {0} довольно сухой, соперник уже поставил; колл {1} — линия слоуплея, сохраняющая в его линии слабые руки и блефы. У обеих сторон ещё есть фишки для следующей улицы.",
     "这手 {0} 可以藏在平跟里，对手已有主动加注，你有位置，平跟 {1} 保留其弱牌和诈唬。": "{0} можно скрыть в обычном колле: соперник уже рейзил, вы в позиции, и колл {1} оставляет в банке его слабые руки и блефы.",
     "这手 {0} 的跟注成本为 0，重打时先选择过牌，保留免费机会。": "С {0} цена продолжения — 0. При переигровке сначала выберите чек, сохранив бесплатный шанс.",
@@ -14675,6 +14673,8 @@
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Переиграйте раздачу с {0}. Сначала сравните {1} и {2}. Колл вложит все оставшиеся {3}; после этого решений о ставках или фолде больше нет, а последующие рейзы других не потребуют от вас доплаты.",
     "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Переиграйте {0}. Сначала сравните {1} и проверьте эквити {3}, необходимое для доплаты {2}. Колл откроет тёрн и ривер; карты-кандидаты ({4}) относятся лишь к следующей карте, и её вероятность не заменяет итоговый шанс победы.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "На {0} у вас есть позиция. Этот чек не добавляет фишек; остаётся {1}. Если на ривере вы не соберёте {2}, соперник сделает чек, а борд позволит изобразить более сильную готовую руку, можно рассмотреть переход в блеф. Если он поставит снова, решайте о фолде по новой цене.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "На {0} у вас есть позиция. После этого вложения остаётся {1}. Если на ривере вы не соберёте {2}, соперник сделает чек, а борд позволит изобразить более сильную готовую руку, можно рассмотреть переход в блеф. Если он поставит снова, решайте о фолде по новой цене."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "На {0} у вас есть позиция. После этого вложения остаётся {1}. Если на ривере вы не соберёте {2}, соперник сделает чек, а борд позволит изобразить более сильную готовую руку, можно рассмотреть переход в блеф. Если он поставит снова, решайте о фолде по новой цене.",
+    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV — ожидаемый выигрыш в фишках при многократном повторении одной стратегии. Одна выигранная раздача не доказывает долгосрочную прибыльность. Разбор строит симуляционные оценки по информации, доступной до вашего действия, и по предполагаемым диапазонам соперников. Скрытые карты соперников и карты, открытые позже, не используются для оценки выбора. Оптимальное решение или победа не гарантируются. Переключитесь на «Решения соперников», чтобы увидеть, почему компьютерные соперники действовали так в этой раздаче.",
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "На борде {0} в мультипоте одна пара чаще встречает две пары или сет; добирать можно, но не обязательно вкладывать сразу {1}."
   }
 }
