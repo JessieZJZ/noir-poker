@@ -8,7 +8,7 @@ const practiceTitles = {
   ko: '이번 게임 연습',
   es: 'Práctica de esta sesión',
   it: 'Pratica della sessione',
-  pt: 'Prática desta sessão',
+  pt: 'Treino desta partida',
   de: 'Übung dieser Sitzung',
   fr: 'Partie en cours',
   ru: 'Практика в этой сессии',
