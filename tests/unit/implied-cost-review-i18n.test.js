@@ -345,7 +345,7 @@ const riverVisibilitySource = '本轮跟注后即可看到最后一张河牌。'
 const riverVisibilityTruth = {
   en: 'Calling this round lets you see the river, the last community card.',
   'zh-TW': '本輪跟注後即可看到最後一張河牌。',
-  ja: 'このラウンドでコールすれば、最後のコミュニティカードであるリバーを見ることができます。',
+  ja: 'このラウンドでコールすれば、最後のリバーカードを見られます。',
   ko: '이번 라운드에 콜하면 마지막 공용 카드인 리버를 볼 수 있습니다.',
   es: 'Al pagar en esta ronda, puedes ver la última carta comunitaria, el river.',
   it: 'Chiamando in questo giro, puoi vedere l’ultima carta comune, il river.',

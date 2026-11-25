@@ -90,8 +90,8 @@ test('PR70 replay guide restores the original deal, retracts old results and dis
     '“重打这手牌”保留原底牌、庄位、起始筹码和发牌顺序，从翻牌前重新选择。原结算与统计会撤回，采用最新一次结果；电脑会重新响应你的打法。你已经知道部分牌局，适合练习思路，不能用重打后的盈利证明长期收益。“下一手”则开始新的牌局。';
   const terms = {
     ja: [
-      '配札順',
-      '精算と統計は取り消され',
+      'ディール順',
+      '結果と統計は取り消され',
       '最新の結果',
       '一部のカードを知って',
       '長期的な収益性は証明できません',
@@ -130,7 +130,15 @@ test('PR70 real rollout note retains eight samples, sunk costs and non-GTO model
   const before = JSON.stringify(game);
   const note = compareCandidateActions(game.decisions[0], [], { trials: 2 }).note;
   const terms = {
-    ja: ['8', '埋没費用', '分割', '返却', 'レンジ／戦略モデルの誤りは含みません', 'GTO', '最適 EV'],
+    ja: [
+      '8',
+      'サンクコスト',
+      'スプリット',
+      '返却',
+      'レンジや戦略モデルの誤りは含みません',
+      'GTO',
+      '最適 EV',
+    ],
     ko: ['8', '매몰비용', '팟 분배', '반환', '모델의 오류는 포함하지 않습니다', 'GTO', '최적 EV'],
     de: [
       '8',
@@ -221,7 +229,7 @@ test('PR70 result summaries describe completed outcomes and keep public-only rev
 
 test('PR70 dynamic logs preserve actors, hand numbers, blind amounts and translated status', async () => {
   const terms = {
-    ja: ['ハンド 12', 'ボタン'],
+    ja: ['第 12 ハンド', 'ボタン'],
     ko: ['12번째 핸드', '버튼'],
     de: ['Hand 12', 'Button'],
   };
@@ -244,7 +252,7 @@ test('PR70 new countdown, local saving and close names identify the intended obj
       count: ['このハンド終了後', 'さらに 4 ハンド'],
       close: ['設定を閉じる'],
       save: ['自動保存', '次のハンド', '元の設定'],
-      cl: ['すべてのチップを失った', '3 回', '半分', 'ファイナルテーブルでは補充できません'],
+      cl: ['チップをすべて失った', '3 回', '半分', 'ファイナルテーブルでは補充できません'],
     },
     ko: {
       count: ['이번 핸드 종료 후', '4핸드를 더'],
