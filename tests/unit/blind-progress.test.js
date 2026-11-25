@@ -35,9 +35,9 @@ test('blind progress counts hands after this hand and names the actual next leve
 
 test('a restored hand on the old ladder previews the next higher blind', () => {
   const restored = game({ levelIndex: 6, bigBlind: 2500 });
-  assert.equal(blindProgressText(restored), '再打 9 手后涨盲到 2000 / 4000');
+  assert.equal(blindProgressText(restored), '再打 9 手后涨盲到 1500 / 3000');
   restored.levelHands = 10;
-  assert.equal(blindProgressText(restored), '下一手涨盲到 2000 / 4000');
+  assert.equal(blindProgressText(restored), '下一手涨盲到 1500 / 3000');
 });
 
 test('countdown derives non-linear levels and each game cap without changing its state', () => {

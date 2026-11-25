@@ -268,7 +268,7 @@ export function newGame(
     risingBlinds,
     levelIndex: 0,
     levelHands: 0,
-    levelLength: levelLengthFor(playerCount),
+    levelLength: levelLengthFor(playerCount, playerCount),
     finalTable: false,
     notices: [],
     playerObservationRevision: 0,

@@ -10,14 +10,14 @@ test('the ready table and settings describe this game’s rising blinds and fina
   await expect(page.locator('#entry-structure')).toBeVisible();
   const count = (await state(page)).playerCount;
   const cap = {
-    5: '1.8K / 3.6K',
-    6: '2.1K / 4.2K',
-    7: '2.5K / 5K',
-    8: '2.9K / 5.8K',
-    9: '3.2K / 6.4K',
+    5: '4.2K / 8.4K',
+    6: '5K / 10K',
+    7: '5.8K / 11.6K',
+    8: '6.7K / 13.4K',
+    9: '7.5K / 15K',
   };
   await expect(page.locator('#entry-structure-levels')).toHaveText(
-    `每 10 手涨盲，最高 ${cap[count]}`,
+    `每 8 手涨盲，最高 ${cap[count]}`,
   );
   await expect(page.locator('#entry-structure-final')).toHaveText(
     `剩 ${count <= 6 ? 2 : 3} 人进入决赛圈`,
@@ -34,7 +34,7 @@ test('the ready table and settings describe this game’s rising blinds and fina
   await expect(page.locator('#entry-structure-final')).toHaveText(
     `Final table at ${count <= 6 ? 2 : 3} players`,
   );
-  await expect(page.locator('#stakes-structure')).toContainText('Blinds rise every 10 hands');
+  await expect(page.locator('#stakes-structure')).toContainText('Blinds rise every 8 hands');
 });
 
 test('a new level and the final table are announced at the centre before the cards are dealt', async ({
@@ -61,7 +61,8 @@ test('a new level and the final table are announced at the centre before the car
   });
   // Both stages can briefly coexist while one fades out and the next fades in.
   await expect(blindNotice).toContainText('盲注升至 200 / 400', { timeout: 3000 });
-  await expect(blindNotice).toContainText('每 10 手升一级');
+  // At the final table each level lasts five hands.
+  await expect(blindNotice).toContainText('每 5 手升一级');
   // Nobody acts while the notices play.
   await expect(page.locator('.game-surface')).toHaveAttribute('data-entry-state', 'dealing');
   await expect(notices).toHaveCount(0, { timeout: 4000 });
@@ -76,18 +77,18 @@ test('the capped hand keeps its blinds and notice through retry and in the recor
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.noticeHand({ count: 5, cap: true }));
-  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 1.8K / 3.6K');
+  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 4.2K / 8.4K');
   await expect(page.locator('.table-notice-stage')).toContainText('已到最高级别，不再上涨');
   await expect(page.locator('#blind-progress')).toHaveText('盲注已封顶');
-  expect((await state(page)).hand).toBe(71);
+  expect((await state(page)).hand).toBe(65);
   await expect(page.locator('.table-notice-stage')).toHaveCount(0, { timeout: 4000 });
   await page.evaluate(() => {
     window.qa.stop();
     window.qa.recordsFinish();
   });
   await page.locator('#restart-hand-button').click();
-  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 1.8K / 3.6K');
-  expect(await state(page)).toMatchObject({ hand: 71, replayAttempt: 1 });
+  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 4.2K / 8.4K');
+  expect(await state(page)).toMatchObject({ hand: 65, replayAttempt: 1 });
   await expect(page.locator('.table-notice-stage')).toHaveCount(0, { timeout: 4000 });
   await page.evaluate(() => {
     window.qa.stop();
@@ -97,5 +98,5 @@ test('the capped hand keeps its blinds and notice through retry and in the recor
   await page.locator('#records-menu-item').click();
   await expect(page).toHaveURL(/#records$/);
   const rows = page.locator('.record-session').first().locator('.record-hand-blinds');
-  await expect(rows.first()).toHaveText('盲注 1.8K / 3.6K');
+  await expect(rows.first()).toHaveText('盲注 4.2K / 8.4K');
 });

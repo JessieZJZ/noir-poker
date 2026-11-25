@@ -4,6 +4,7 @@ import {
   nextBlindLevelIndex,
   finalTableSeats,
   HANDS_PER_LEVEL,
+  FINAL_TABLE_HANDS_PER_LEVEL,
 } from '../engine/blind-levels.js';
 // Deterministic particle layouts and timings shared by Web, native and WeChat.
 // Every platform renders the same elements with the same CSS custom
@@ -21,7 +22,8 @@ export const FAREWELL_DURATION_MS = 2800;
 export const TABLE_NOTICE_MS = 1800;
 
 // The blind structure of a game before it starts, for the ready table and
-// settings: levels rise every ten hands up to a cap; the final table size.
+// settings: levels rise every eight hands (five at the final table) up to a
+// cap; the final table size.
 export function blindStructureText(stakes, playerCount, format) {
   const cap = blindCap(stakes, playerCount),
     seats = finalTableSeats(playerCount),
@@ -29,7 +31,7 @@ export function blindStructureText(stakes, playerCount, format) {
   return {
     levels: `每 ${HANDS_PER_LEVEL} 手涨盲，最高 ${top}`,
     final: `剩 ${seats} 人进入决赛圈`,
-    settings: `每 ${HANDS_PER_LEVEL} 手升一级，最高 ${top}，剩 ${seats} 人进入决赛圈。`,
+    settings: `每 ${HANDS_PER_LEVEL} 手升一级，最高 ${top}；剩 ${seats} 人进入决赛圈，之后每 ${FINAL_TABLE_HANDS_PER_LEVEL} 手升一级。`,
   };
 }
 // levelHands includes this hand already. State the remaining count after it,
@@ -57,7 +59,9 @@ export function tableNoticeText(notice, format) {
     kind: notice.kind,
     sound: 'levelup',
     title: `盲注升至 ${format(notice.smallBlind)} / ${format(notice.bigBlind)}`,
-    caption: notice.last ? '已到最高级别，不再上涨' : `每 ${HANDS_PER_LEVEL} 手升一级`,
+    caption: notice.last
+      ? '已到最高级别，不再上涨'
+      : `每 ${notice.hands ?? HANDS_PER_LEVEL} 手升一级`,
   };
 }
 

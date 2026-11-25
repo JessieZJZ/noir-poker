@@ -1275,7 +1275,7 @@ test('WeChat seats show two-character style tags and keep the full name for sett
 test('WeChat announces the final table and a new level before dealing, and replays them on retry', (t) => {
   const { controller, latest, sounds, timers } = setup(t, { playerCount: 7 });
   const game = controller.getGame();
-  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 50 / 100');
+  assert.equal(latest().blindProgress, '再打 7 手后涨盲到 50 / 100');
   game.levelHands = game.levelLength;
   controller.show();
   assert.equal(latest().blindProgress, '下一手涨盲到 50 / 100');
@@ -1305,24 +1305,28 @@ test('WeChat announces the final table and a new level before dealing, and repla
   assert.equal(sounds.at(-1), 'deal');
   assert.equal(latest().rebuysLeft, 0);
   assert.equal(latest().blindText, '50 / 100');
-  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 75 / 150');
+  // The final table plays five-hand levels.
+  assert.equal(latest().blindProgress, '再打 4 手后涨盲到 75 / 150');
   finish(game, 'fold');
   controller.show();
   assert.equal(controller.retry(), true);
   assert.equal(latest().noticeHold, true);
   while (latest().noticeHold) timers.runNext();
   assert.equal(sounds.filter((s) => s === 'levelup').length, 2);
-  assert.equal(latest().blindProgress, '再打 9 手后涨盲到 75 / 150');
+  assert.equal(latest().blindProgress, '再打 4 手后涨盲到 75 / 150');
 });
 
 test('WeChat shows the blind structure on the ready table and in settings', (t) => {
   const { latest } = setup(t, { playerCount: 9 });
   assert.deepEqual(latest().entryStructure, {
-    levels: '每 10 手涨盲，最高 800 / 1.6K',
+    levels: '每 8 手涨盲，最高 1.875K / 3.75K',
     final: '剩 3 人进入决赛圈',
-    settings: '每 10 手升一级，最高 800 / 1.6K，剩 3 人进入决赛圈。',
+    settings: '每 8 手升一级，最高 1.875K / 3.75K；剩 3 人进入决赛圈，之后每 5 手升一级。',
   });
-  assert.equal(latest().stakesStructure, '每 10 手升一级，最高 800 / 1.6K，剩 3 人进入决赛圈。');
+  assert.equal(
+    latest().stakesStructure,
+    '每 8 手升一级，最高 1.875K / 3.75K；剩 3 人进入决赛圈，之后每 5 手升一级。',
+  );
 });
 
 test('WeChat shows the called all-in hands as the runout starts, before the board is dealt', (t) => {

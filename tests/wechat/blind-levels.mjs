@@ -35,13 +35,13 @@ try {
     console.log('PASS', name);
   };
   const ready = await wait((data) => data.tableReady && data.waitingForSeat);
-  const caps = { 5: 18, 6: 21, 7: 25, 8: 29, 9: 32 };
+  const caps = { 5: 42, 6: 50, 7: 58, 8: 67, 9: 75 };
   const count = ready.seats.length + 1; // The hero is rendered separately.
   const stakes = ready.requestedStakes;
   const cap = [stakes.smallBlind, stakes.bigBlind]
     .map((blind) => compactChips(blind * caps[count]))
     .join(' / ');
-  assert.equal(ready.entryStructure.levels, `每 10 手涨盲，最高 ${cap}`);
+  assert.equal(ready.entryStructure.levels, `每 8 手涨盲，最高 ${cap}`);
   assert.match(ready.entryStructure.final, /^剩 [23] 人进入决赛圈$/);
   assert.equal(ready.stakesStructure, ready.entryStructure.settings);
   await (await page.$('.settings-button')).tap();

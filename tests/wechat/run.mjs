@@ -105,7 +105,7 @@ try {
   await wait((data) => !data.dealing && !data.waitingForSeat);
   const countdown = await page.$('.blind-progress');
   assert.ok(countdown, 'The live table must show the next blind level');
-  assert.equal((await countdown.text()).trim(), '再打 9 手后涨盲到 200 / 400');
+  assert.equal((await countdown.text()).trim(), '再打 7 手后涨盲到 200 / 400');
   const countdownBox = await countdown.offset();
   const blindBox = await (await page.$('.blind-info')).offset();
   const countdownSize = await countdown.size();
