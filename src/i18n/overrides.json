@@ -1467,7 +1467,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0} has fewer chips than the opener and moved all-in for {1}.",
     "对方开池已投入大半后手，加注逼全下": "Opener already committed most of the stack: raise to force all-in",
     "跟注后翻牌没有下注空间，弃牌": "Too little room after a call: fold",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "After a call only {0} could still go in, a stack-to-pot ratio (SPR) of about {1}, with effective stacks around {2} big blinds. There is almost no room to maneuver after the flop and calling is nearly the same as going all-in, so {3} chose only between all-in and fold."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "After a call only {0} could still go in, a stack-to-pot ratio (SPR) of about {1}, with effective stacks around {2} big blinds. There is almost no room to maneuver after the flop and calling is nearly the same as going all-in, so {3} chose only between all-in and fold.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} estimated {1} at about {2} equity, only slightly above the pot odds and short of the roughly {4} {3} needs to continue, so it did not continue.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "By its estimate of the betting range, {0} gave {1} about {2} equity, below the {3} this call needs.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} also used {1}'s public play over the last {2} hands: voluntarily entering about {3} of pots.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} also used {1}'s public play over the last {2} hands: voluntarily entering about {3} of pots, and betting or raising in about {4} of postflop actions.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "That is tight preflop and rarely aggressive after the flop, so {0} read this bet as weighted towards strong hands.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "That is tight preflop, so {0} read this bet as weighted towards strong hands.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "The bet came after checks, so the range can hold slow-played strong hands as well as weaker made hands and bluffs; {0} estimated that the part it beats is not enough to pay for this call.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "That is rarely aggressive after the flop, so {0} read this bet as weighted towards strong hands."
   },
   "zh-TW": {
     "设置": "設定",
@@ -2379,7 +2387,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0}的籌碼比開池者少，直接全下 {1}。",
     "对方开池已投入大半后手，加注逼全下": "對方開池已投入大半後手，加注逼全下",
     "跟注后翻牌没有下注空间，弃牌": "跟注後翻牌沒有下注空間，棄牌",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "跟注後雙方還能繼續投入的籌碼只剩 {0}，籌碼底池比（SPR）約 {1}，有效籌碼約 {2} 個大盲。翻牌後已經沒有多少下注空間，跟注基本等於全下，所以{3}只在全下和棄牌之間選擇。"
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "跟注後雙方還能繼續投入的籌碼只剩 {0}，籌碼底池比（SPR）約 {1}，有效籌碼約 {2} 個大盲。翻牌後已經沒有多少下注空間，跟注基本等於全下，所以{3}只在全下和棄牌之間選擇。",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0}估計{1}的勝率約 {2}，只比底池賠率略高，沒達到{3}繼續所需的約 {4}，所以沒有繼續。",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "{0}按當時對下注範圍的估計，{1}的勝率約 {2}，低於這筆跟注需要的 {3}。",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0}還參考了{1}最近 {2} 手的公開打法：主動入池約 {3}。",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0}還參考了{1}最近 {2} 手的公開打法：主動入池約 {3}，翻後行動中主動下注或加注約 {4}。",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "入池偏緊、翻後也很少主動下注，所以{0}把這次下注估計得更偏強牌。",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "入池偏緊，所以{0}把這次下注估計得更偏強牌。",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "此前一路過牌後才下注，範圍裡既可能有慢打的強牌，也可能有較弱成牌和詐唬；{0}估計其中自己能贏的部分不足以支付這次跟注。",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "翻後很少主動下注，所以{0}把這次下注估計得更偏強牌。"
   },
   "ja": {
     "设置": "設定",
@@ -3593,7 +3609,6 @@
     "模拟候选：": "シミュレーション候補：",
     "模拟候选：{0}": "シミュレーション候補：{0}",
     "模拟次数至少为 2。": "シミュレーション回数は 2 以上にしてください。",
-    "此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。": "それまでずっとチェックされており、現在のベットレンジにはスロープレイした強いハンド、弱い完成ハンド、ブラフがすべて含まれている可能性があります。",
     "此前听牌在河牌落空。": "それまでのドローはリバーで外れました。",
     "此前已在": "これまでに ",
     "此前已在 {0}": "これまでに {0}",
@@ -3772,7 +3787,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0}はオープンした相手よりチップが少なく、{1} でそのままオールインしました。",
     "对方开池已投入大半后手，加注逼全下": "相手のオープンでスタックの大半が投入済み：レイズでオールインを迫る",
     "跟注后翻牌没有下注空间，弃牌": "コール後に立ち回る余地が少ない：フォールド",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "コール後に双方がさらに投入できるチップは {0} だけで、SPR（スタックとポットの比率）は約 {1}、有効スタックは約 {2} ビッグブラインドです。フロップ後に立ち回る余地はほとんどなく、コールはほぼオールインと同じなので、{3}はオールインかフォールドかだけで選びました。"
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "コール後に双方がさらに投入できるチップは {0} だけで、SPR（スタックとポットの比率）は約 {1}、有効スタックは約 {2} ビッグブラインドです。フロップ後に立ち回る余地はほとんどなく、コールはほぼオールインと同じなので、{3}はオールインかフォールドかだけで選びました。",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0}は{1}の勝率を約 {2} と見積もりました。ポットオッズをわずかに上回るだけで、{3}が続けるのに必要な約 {4} に届かないため、続けませんでした。",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "ベットレンジの見積もりでは、{0}は{1}の勝率を約 {2} とし、このコールに必要な {3} を下回りました。",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0}は{1}の直近 {2} ハンドの公開されたプレーも参考にしました：自発的な参加は約 {3}。",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0}は{1}の直近 {2} ハンドの公開されたプレーも参考にしました：自発的な参加は約 {3}、フロップ後のアクションのうちベットやレイズは約 {4}。",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "参加がタイトで、フロップ後もめったに自分から打たないため、{0}はこのベットを強いハンド寄りと見積もりました。",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "参加がタイトなため、{0}はこのベットを強いハンド寄りと見積もりました。",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "チェックが続いた後のベットなので、レンジにはスロープレイの強いハンドも、より弱いメイドハンドやブラフも含まれえます。{0}は、そのうち自分が勝てる部分ではこのコールに見合わないと見積もりました。",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "フロップ後にめったに自分から打たないため、{0}はこのベットを強いハンド寄りと見積もりました。"
   },
   "ko": {
     "设置": "설정",
@@ -5197,7 +5220,6 @@
     "模拟候选：{0}": "시뮬레이션 후보: {0}",
     "模拟次数至少为 2。": "시뮬레이션 횟수는 최소 2여야 합니다.",
     "此前{0}翻前{1}、对手{2}。": "앞선 프리플랍에서 {0}의 라인은 {1}, 상대의 라인은 {2}였습니다.",
-    "此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。": "앞서 계속 체크했으므로 현재 베팅 레인지에는 슬로플레이한 강한 핸드, 더 약한 메이드 핸드, 블러프가 함께 있을 수 있습니다.",
     "此前听牌在河牌落空。": "이전 드로는 리버에서 완성되지 않았습니다.",
     "此前已在": "이전에 이미 ",
     "此前已在 {0}": "이전에 이미 {0}",
@@ -5495,7 +5517,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0}은(는) 오픈한 상대보다 칩이 적어 {1}로 바로 올인했습니다.",
     "对方开池已投入大半后手，加注逼全下": "상대가 오픈으로 스택 대부분을 투입: 레이즈로 올인 압박",
     "跟注后翻牌没有下注空间，弃牌": "콜 후 운신의 폭이 없어 폴드",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "콜한 뒤 양쪽이 더 넣을 수 있는 칩은 {0}뿐이고, 스택 대 팟 비율(SPR)은 약 {1}, 유효 스택은 약 {2} 빅 블라인드입니다. 플랍 이후 운신의 폭이 거의 없어 콜이 사실상 올인과 같으므로 {3}은(는) 올인과 폴드 중에서만 선택했습니다."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "콜한 뒤 양쪽이 더 넣을 수 있는 칩은 {0}뿐이고, 스택 대 팟 비율(SPR)은 약 {1}, 유효 스택은 약 {2} 빅 블라인드입니다. 플랍 이후 운신의 폭이 거의 없어 콜이 사실상 올인과 같으므로 {3}은(는) 올인과 폴드 중에서만 선택했습니다.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0}은(는) {1}의 승률을 약 {2}로 추정했습니다. 팟 오즈보다 조금 높을 뿐 {3}이(가) 계속하는 데 필요한 약 {4}에 못 미쳐 계속하지 않았습니다.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "베팅 레인지 추정으로 {0}은(는) {1}의 승률을 약 {2}로 보았고, 이는 이번 콜에 필요한 {3}보다 낮습니다.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0}은(는) {1}의 최근 {2}핸드 공개 플레이도 참고했습니다: 자발적 참여 약 {3}.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0}은(는) {1}의 최근 {2}핸드 공개 플레이도 참고했습니다: 자발적 참여 약 {3}, 플랍 이후 행동 중 베팅이나 레이즈 약 {4}.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "참여가 타이트하고 플랍 이후에도 먼저 베팅하는 일이 드물어, {0}은(는) 이번 베팅을 강한 핸드 쪽으로 추정했습니다.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "참여가 타이트해서 {0}은(는) 이번 베팅을 강한 핸드 쪽으로 추정했습니다.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "체크가 이어진 뒤에 나온 베팅이라 레인지에는 슬로플레이한 강한 핸드도, 더 약한 메이드 핸드와 블러프도 있을 수 있습니다. {0}은(는) 그중 자신이 이기는 부분으로는 이번 콜을 감당하기 부족하다고 추정했습니다.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "플랍 이후 먼저 베팅하는 일이 드물어, {0}은(는) 이번 베팅을 강한 핸드 쪽으로 추정했습니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -6973,7 +7003,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0} tiene menos fichas que el que abrió y fue all-in directamente por {1}.",
     "对方开池已投入大半后手，加注逼全下": "El que abrió ya comprometió casi todo su stack: subir para forzar el all-in",
     "跟注后翻牌没有下注空间，弃牌": "Sin margen tras pagar: retirarse",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Tras pagar solo quedarían {0} por apostar entre ambos, una relación stack-bote (SPR) de alrededor de {1}, con stacks efectivos de unas {2} ciegas grandes. Casi no hay margen de maniobra tras el flop y pagar equivale prácticamente a ir all-in, así que {3} solo eligió entre all-in y retirarse."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Tras pagar solo quedarían {0} por apostar entre ambos, una relación stack-bote (SPR) de alrededor de {1}, con stacks efectivos de unas {2} ciegas grandes. Casi no hay margen de maniobra tras el flop y pagar equivale prácticamente a ir all-in, así que {3} solo eligió entre all-in y retirarse.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} estimó para {1} una equity de alrededor de {2}, apenas por encima de las pot odds y sin llegar al {4} aproximado que {3} necesita para seguir, así que no continuó.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "Según su estimación del rango de apuesta, {0} dio a {1} una equity de alrededor de {2}, por debajo del {3} que necesita este call.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} también tuvo en cuenta el juego público de {1} en las últimas {2} manos: entra voluntariamente en alrededor del {3} de los botes.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} también tuvo en cuenta el juego público de {1} en las últimas {2} manos: entra voluntariamente en alrededor del {3} de los botes y apuesta o sube en alrededor del {4} de sus acciones tras el flop.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Es un juego cerrado antes del flop y poco agresivo después, así que {0} estimó esta apuesta como inclinada hacia manos fuertes.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "Es un juego cerrado antes del flop, así que {0} estimó esta apuesta como inclinada hacia manos fuertes.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "La apuesta llegó tras varios checks, así que el rango puede incluir manos fuertes jugadas lentamente, además de manos hechas más débiles y faroles; {0} estimó que la parte a la que gana no alcanza para pagar este call.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Es poco agresivo tras el flop, así que {0} estimó esta apuesta como inclinada hacia manos fuertes."
   },
   "it": {
     "设置": "Impostazioni",
@@ -8423,7 +8461,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0} ha meno chip di chi ha aperto ed è andato direttamente all-in per {1}.",
     "对方开池已投入大半后手，加注逼全下": "Chi ha aperto ha già impegnato gran parte dello stack: rilancio per forzare l'all-in",
     "跟注后翻牌没有下注空间，弃牌": "Nessun margine dopo il call: fold",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Dopo il call resterebbero solo {0} da mettere in gioco, un rapporto stack/piatto (SPR) di circa {1}, con stack effettivi di circa {2} grandi bui. Dopo il flop non c'è quasi margine di manovra e chiamare equivale quasi ad andare all-in, quindi {3} ha scelto solo tra all-in e fold."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Dopo il call resterebbero solo {0} da mettere in gioco, un rapporto stack/piatto (SPR) di circa {1}, con stack effettivi di circa {2} grandi bui. Dopo il flop non c'è quasi margine di manovra e chiamare equivale quasi ad andare all-in, quindi {3} ha scelto solo tra all-in e fold.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} ha stimato per {1} un'equity di circa {2}, appena sopra le pot odds e sotto il {4} circa che serve a {3} per continuare, quindi non ha continuato.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "Secondo la sua stima del range di puntata, {0} ha dato a {1} un'equity di circa {2}, sotto il {3} che serve per questo call.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} ha considerato anche il gioco pubblico di {1} nelle ultime {2} mani: entra volontariamente in circa il {3} dei piatti.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} ha considerato anche il gioco pubblico di {1} nelle ultime {2} mani: entra volontariamente in circa il {3} dei piatti e punta o rilancia in circa il {4} delle azioni dopo il flop.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "È un gioco stretto preflop e poco aggressivo dopo il flop, quindi {0} ha stimato questa puntata come sbilanciata verso mani forti.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "È un gioco stretto preflop, quindi {0} ha stimato questa puntata come sbilanciata verso mani forti.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "La puntata è arrivata dopo una serie di check, quindi il range può contenere mani forti giocate lentamente, ma anche mani fatte più deboli e bluff; {0} ha stimato che la parte che batte non basta a pagare questo call.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "È poco aggressivo dopo il flop, quindi {0} ha stimato questa puntata come sbilanciata verso mani forti."
   },
   "pt": {
     "设置": "Configurações",
@@ -9939,7 +9985,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0} tem menos fichas que quem abriu e foi all-in direto por {1}.",
     "对方开池已投入大半后手，加注逼全下": "Quem abriu já comprometeu a maior parte do stack: aumentar para forçar o all-in",
     "跟注后翻牌没有下注空间，弃牌": "Sem espaço depois do call: fold",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Depois do call restariam só {0} para apostar entre os dois, uma relação stack/pote (SPR) de cerca de {1}, com stacks efetivos de cerca de {2} big blinds. Quase não há espaço para manobrar depois do flop e pagar é praticamente o mesmo que ir all-in, então {3} escolheu apenas entre all-in e fold."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Depois do call restariam só {0} para apostar entre os dois, uma relação stack/pote (SPR) de cerca de {1}, com stacks efetivos de cerca de {2} big blinds. Quase não há espaço para manobrar depois do flop e pagar é praticamente o mesmo que ir all-in, então {3} escolheu apenas entre all-in e fold.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} estimou para {1} uma equity de cerca de {2}, só um pouco acima das pot odds e abaixo dos cerca de {4} que {3} precisa para continuar, então não continuou.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "Pela estimativa do range de aposta, {0} deu a {1} uma equity de cerca de {2}, abaixo dos {3} que este call exige.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} também considerou o jogo público de {1} nas últimas {2} mãos: entra voluntariamente em cerca de {3} dos potes.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} também considerou o jogo público de {1} nas últimas {2} mãos: entra voluntariamente em cerca de {3} dos potes e aposta ou aumenta em cerca de {4} das ações após o flop.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "É um jogo fechado antes do flop e pouco agressivo depois, então {0} estimou esta aposta como mais inclinada a mãos fortes.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "É um jogo fechado antes do flop, então {0} estimou esta aposta como mais inclinada a mãos fortes.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "A aposta veio depois de checks, então o range pode ter mãos fortes jogadas devagar, além de mãos feitas mais fracas e blefes; {0} estimou que a parte que vence não basta para pagar este call.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "É pouco agressivo depois do flop, então {0} estimou esta aposta como mais inclinada a mãos fortes."
   },
   "de": {
     "设置": "Einstellungen",
@@ -11436,7 +11490,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0} hat weniger Chips als der Opener und ging direkt für {1} All-in.",
     "对方开池已投入大半后手，加注逼全下": "Opener hat schon den Großteil des Stacks investiert: Raise erzwingt das All-in",
     "跟注后翻牌没有下注空间，弃牌": "Nach einem Call kaum Spielraum: Fold",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Nach einem Call könnten nur noch {0} investiert werden, ein Stack-to-Pot-Ratio (SPR) von etwa {1} bei effektiven Stacks von rund {2} Big Blinds. Nach dem Flop bleibt kaum Spielraum, und ein Call ist praktisch ein All-in, also wählte {3} nur zwischen All-in und Fold."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Nach einem Call könnten nur noch {0} investiert werden, ein Stack-to-Pot-Ratio (SPR) von etwa {1} bei effektiven Stacks von rund {2} Big Blinds. Nach dem Flop bleibt kaum Spielraum, und ein Call ist praktisch ein All-in, also wählte {3} nur zwischen All-in und Fold.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} schätzte die Equity von {1} auf etwa {2}, nur knapp über den Pot Odds und unter den rund {4}, die {3} zum Weiterspielen braucht, also spielte er nicht weiter.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "Nach der Schätzung der Setzrange gab {0} {1} etwa {2} Equity, weniger als die {3}, die dieser Call braucht.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} berücksichtigte auch das öffentliche Spiel von {1} in den letzten {2} Händen: freiwillig im Pot in etwa {3} der Hände.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} berücksichtigte auch das öffentliche Spiel von {1} in den letzten {2} Händen: freiwillig im Pot in etwa {3} der Hände, Bet oder Raise in etwa {4} der Aktionen nach dem Flop.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Das ist tight vor dem Flop und danach selten aggressiv, also schätzte {0} diese Bet als eher starke Hände ein.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "Das ist tight vor dem Flop, also schätzte {0} diese Bet als eher starke Hände ein.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "Die Bet kam nach Checks, daher kann die Range langsam gespielte starke Hände ebenso enthalten wie schwächere fertige Hände und Bluffs; {0} schätzte, dass der Teil, den er schlägt, diesen Call nicht trägt.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Das ist nach dem Flop selten aggressiv, also schätzte {0} diese Bet als eher starke Hände ein."
   },
   "fr": {
     "设置": "Réglages",
@@ -13119,7 +13181,15 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "{0} a moins de jetons que l'ouvreur et a fait tapis directement pour {1}.",
     "对方开池已投入大半后手，加注逼全下": "L'ouvreur a déjà engagé l'essentiel de son tapis : relance pour forcer le tapis",
     "跟注后翻牌没有下注空间，弃牌": "Plus de marge après un call : se coucher",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Après un call, il ne resterait que {0} à miser entre les deux, un ratio tapis/pot (SPR) d'environ {1}, avec des tapis effectifs d'environ {2} grosses blindes. Il n'y a presque plus de marge de manœuvre après le flop et suivre revient presque à faire tapis, donc {3} n'a choisi qu'entre tapis et passer."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Après un call, il ne resterait que {0} à miser entre les deux, un ratio tapis/pot (SPR) d'environ {1}, avec des tapis effectifs d'environ {2} grosses blindes. Il n'y a presque plus de marge de manœuvre après le flop et suivre revient presque à faire tapis, donc {3} n'a choisi qu'entre tapis et passer.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} a estimé l'équité de {1} à environ {2}, à peine au-dessus de la cote du pot et sous les quelque {4} dont {3} a besoin pour continuer, donc il n'a pas continué.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "D'après son estimation de la range de mise, {0} a donné à {1} environ {2} d'équité, sous les {3} qu'exige ce call.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} a aussi tenu compte du jeu public de {1} sur les {2} dernières mains : entrée volontaire dans environ {3} des pots.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} a aussi tenu compte du jeu public de {1} sur les {2} dernières mains : entrée volontaire dans environ {3} des pots, mise ou relance dans environ {4} des actions après le flop.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "C'est un jeu serré avant le flop et rarement agressif ensuite, donc {0} a estimé cette mise plutôt orientée vers des mains fortes.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "C'est un jeu serré avant le flop, donc {0} a estimé cette mise plutôt orientée vers des mains fortes.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "La mise est venue après des checks, donc la range peut contenir des mains fortes jouées lentement, mais aussi des mains faites plus faibles et des bluffs ; {0} a estimé que la part qu'il bat ne suffit pas à payer ce call.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "C'est rarement agressif après le flop, donc {0} a estimé cette mise plutôt orientée vers des mains fortes."
   },
   "ru": {
     "设置": "Настройки",
@@ -14765,6 +14835,14 @@
     "{0}的筹码比开池者少，直接全下 {1}。": "У {0} меньше фишек, чем у открывшего, поэтому сразу олл-ин на {1}.",
     "对方开池已投入大半后手，加注逼全下": "Открывший уже вложил бо́льшую часть стека: рейз, чтобы вынудить олл-ин",
     "跟注后翻牌没有下注空间，弃牌": "После колла нет пространства: фолд",
-    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "После колла в игру можно было бы добавить лишь {0}, соотношение стека к банку (SPR) около {1}, эффективные стеки около {2} больших блайндов. После флопа почти нет пространства для манёвра, а колл почти равен олл-ину, поэтому {3} выбирал только между олл-ином и фолдом."
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "После колла в игру можно было бы добавить лишь {0}, соотношение стека к банку (SPR) около {1}, эффективные стеки около {2} больших блайндов. После флопа почти нет пространства для манёвра, а колл почти равен олл-ину, поэтому {3} выбирал только между олл-ином и фолдом.",
+    "{0}估计{1}的胜率约 {2}，只比底池赔率略高，没达到{3}继续所需的约 {4}，所以没有继续。": "{0} оценил эквити {1} примерно в {2}: чуть выше шансов банка, но ниже примерно {4}, нужных {3} для продолжения, поэтому продолжать не стал.",
+    "{0}按当时对下注范围的估计，{1}的胜率约 {2}，低于这笔跟注需要的 {3}。": "По оценке диапазона ставки {0} дал {1} примерно {2} эквити, это ниже {3}, нужных для этого колла.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}。": "{0} также учёл публичную игру {1} за последние {2} рук: добровольный вход примерно в {3} банков.",
+    "{0}还参考了{1}最近 {2} 手的公开打法：主动入池约 {3}，翻后行动中主动下注或加注约 {4}。": "{0} также учёл публичную игру {1} за последние {2} рук: добровольный вход примерно в {3} банков, ставки или рейзы примерно в {4} действий после флопа.",
+    "入池偏紧、翻后也很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Это тайтовая игра до флопа и редкая агрессия после него, поэтому {0} счёл эту ставку смещённой в сторону сильных рук.",
+    "入池偏紧，所以{0}把这次下注估计得更偏强牌。": "Это тайтовая игра до флопа, поэтому {0} счёл эту ставку смещённой в сторону сильных рук.",
+    "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "Ставка прозвучала после чеков, поэтому в диапазоне могут быть и медленно разыгранные сильные руки, и более слабые готовые руки, и блефы; {0} оценил, что части, которую он обыгрывает, не хватает, чтобы оплатить этот колл.",
+    "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Это редкая агрессия после флопа, поэтому {0} счёл эту ставку смещённой в сторону сильных рук."
   }
 }

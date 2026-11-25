@@ -2595,7 +2595,6 @@
   "当前{0}仍有摊牌或改善机会。": "The current {0} still has showdown or improvement chances. ",
   "当前{0}保留摊牌机会，河牌已无改善机会。": "The current {0} retains a showdown chance, with no further improvement available on the river.",
   "当前主要依靠{0}改善。": "The hand currently relies mainly on improving its {0}. ",
-  "此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。": "The earlier streets checked through. The current betting range can still contain slow-played strong hands, weaker made hands and bluffs.",
   "过牌保留改善机会，也没有主动扩大底池。": "Checking retains improvement chances without actively building the pot.",
   "这手起手牌被跟注后的成牌质量有限，进攻主要依赖对手弃牌。": "This starting hand makes limited hands when called, so its aggression relies mainly on folds.",
   "这是{0}平跟：只补 {1}，没有再加注。平跟保留了对手的较弱牌和诈唬，也控制了这次投入。": "This is a flat call with {0}: {1} is added without re-raising. Flatting keeps weaker hands and bluffs in the opponent's range and limits this investment.",

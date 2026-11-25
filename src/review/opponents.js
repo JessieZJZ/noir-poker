@@ -264,6 +264,43 @@ function shortStackReason(t, subject, hand) {
   return parts;
 }
 
+// A postflop price fold states the policy's own estimate against the price,
+// and names the bettor's public record when it is what narrowed the range.
+// The estimate is the recorded one; no hidden cards or results enter.
+function foldEstimateClauses(t, v, subject, hand, nameOf) {
+  if (!v.street || !v.publicEquity || !Number.isFinite(t.equity)) return [];
+  const cost = v.callPrice?.cost ?? v.legal.callAmount,
+    potOdds = cost / Math.max(1, v.callPrice?.contestable ?? v.contestable),
+    bar = t.requiredEquity - (t.callTolerance || 0);
+  const parts = [
+    t.equity < potOdds
+      ? `${subject}按当时对下注范围的估计，${hand}的胜率约 ${pct(t.equity)}，低于这笔跟注需要的 ${pct(potOdds)}。`
+      : `${subject}估计${hand}的胜率约 ${pct(t.equity)}，只比底池赔率略高，没达到${subject}继续所需的约 ${pct(bar)}，所以没有继续。`,
+  ];
+  const bettor = v.history.findLast((a) => a.street === v.street && a.action === 'raise');
+  const read = v.opponents?.find((p) => p.id === bettor?.id)?.publicRead;
+  if (read?.hands >= 8) {
+    const entry = read.voluntaryHands / read.hands,
+      aggression = read.postActions ? read.postRaises / read.postActions : null,
+      tight = entry <= 0.3,
+      passive = read.postActions >= 6 && aggression <= 0.25;
+    if (tight || passive) {
+      const who = nameOf(bettor.id);
+      parts.push(
+        aggression === null
+          ? `${subject}还参考了${who}最近 ${read.hands} 手的公开打法：主动入池约 ${pct(entry)}。`
+          : `${subject}还参考了${who}最近 ${read.hands} 手的公开打法：主动入池约 ${pct(entry)}，翻后行动中主动下注或加注约 ${pct(aggression)}。`,
+        tight && passive
+          ? `入池偏紧、翻后也很少主动下注，所以${subject}把这次下注估计得更偏强牌。`
+          : tight
+            ? `入池偏紧，所以${subject}把这次下注估计得更偏强牌。`
+            : `翻后很少主动下注，所以${subject}把这次下注估计得更偏强牌。`,
+      );
+    }
+  }
+  return parts;
+}
+
 // A committed open: the call itself would leave almost no postflop play, so
 // the plan compared the whole matched stack with the public-range estimate.
 function committedOpenReason(t, subject, hand) {
@@ -502,6 +539,13 @@ export function explainOpponent(record, identities = []) {
       }
       if (!draw.outs && (v.street === 0 ? c.tier >= 2 : c.handClass !== 'high')) {
         logicParts = defenseReason(snapshot, c, matchups);
+        logicParts.splice(
+          1,
+          0,
+          ...foldEstimateClauses(t, v, subject, hand, (id) =>
+            actorName(snapshot, relativeIds.get(id)),
+          ),
+        );
         logic = logicParts.join('');
         break;
       }

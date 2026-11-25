@@ -2580,7 +2580,6 @@
   "当前{0}仍有摊牌或改善机会。": "La main actuelle, {0}, garde des chances à l’abattage ou d’amélioration.",
   "当前{0}保留摊牌机会，河牌已无改善机会。": "La main actuelle, {0}, garde une chance à l’abattage, mais ne peut plus s’améliorer à la river.",
   "当前主要依靠{0}改善。": "Pour l’instant, la main compte surtout sur {0} pour s’améliorer.",
-  "此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。": "Les streets précédentes ont été checkées : la range de mise actuelle peut encore contenir des mains fortes jouées en slowplay, des mains faites plus faibles et des bluffs.",
   "过牌保留改善机会，也没有主动扩大底池。": "Checker garde les possibilités d’amélioration sans grossir le pot vous-même.",
   "这手起手牌被跟注后的成牌质量有限，进攻主要依赖对手弃牌。": "Cette main de départ a une qualité limitée lorsqu’elle est payée, son agression dépend donc surtout des folds adverses.",
   "这是{0}平跟：只补 {1}，没有再加注。平跟保留了对手的较弱牌和诈唬，也控制了这次投入。": "C’est un simple call avec {0} : il paie seulement {1}, sans surrelancer. Ce call garde les mains faibles et les bluffs adverses tout en limitant l’investissement.",

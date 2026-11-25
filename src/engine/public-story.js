@@ -55,6 +55,13 @@ export function publicPostflopLine(view, id, throughStreet = view.street) {
       a.action === 'check' &&
       a.street < view.street &&
       !entries.some((b) => b.street === a.street && b.action === 'raise');
+    // A first bet after everyone before it on this street checked is a stab
+    // into shown weakness, not a lead into a possible raise.
+    const checkedTo =
+      a.action === 'raise' &&
+      a.facing === 0 &&
+      previous.length > 0 &&
+      previous.every((b) => b.action === 'check');
     const potBefore = openingPot + a.contributed;
     return [
       {
@@ -75,6 +82,7 @@ export function publicPostflopLine(view, id, throughStreet = view.street) {
             : a.amount / Math.max(1, potBefore),
         closedCheck,
         checkedThrough,
+        checkedTo,
         board: view.board.slice(0, a.street + 2).map((c) => ({ ...c })),
       },
     ];
@@ -97,6 +105,9 @@ export function publicStoryWeight(hole, line, handData, publicRead = null) {
     const pair = topPair || f.overpair;
     const large = event.ratio >= 0.75;
     const raising = event.action === 'raise' || event.action === 'check-raise';
+    // Flop/turn stabs after checks commonly include overcards and weak pairs;
+    // a big stab is still weighted towards value, only less steeply.
+    const stab = event.action === 'bet' && event.checkedTo && event.street < 3;
     let factor;
     if (event.action === 'check') {
       const texture = boardTexture(event.board);
@@ -152,9 +163,9 @@ export function publicStoryWeight(hole, line, handData, publicRead = null) {
     } else if (f.draw) {
       factor = (f.drawOuts || 0) >= 8 ? 0.65 : 0.3;
     } else if (f.ownMade) {
-      factor = raising ? 0.06 : large ? 0.12 : 0.4;
+      factor = raising ? 0.06 : stab ? (large ? 0.2 : 0.45) : large ? 0.12 : 0.4;
     } else {
-      factor = raising ? 0.015 : large ? 0.025 : 0.1;
+      factor = raising ? 0.015 : stab ? (large ? 0.1 : 0.25) : large ? 0.025 : 0.1;
     }
     if (['bet', 'raise', 'check-raise'].includes(event.action)) aggressiveActions++;
     else passiveWeight *= factor;
