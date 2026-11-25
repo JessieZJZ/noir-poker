@@ -32,7 +32,7 @@ test('the ready table and settings describe this game’s rising blinds and fina
     el.dispatchEvent(new Event('change'));
   });
   await expect(page.locator('#entry-structure-final')).toHaveText(
-    `Final table: ${count <= 6 ? 2 : 3} left`,
+    `Final table at ${count <= 6 ? 2 : 3} players`,
   );
   await expect(page.locator('#stakes-structure')).toContainText('Blinds rise every 10 hands');
 });
