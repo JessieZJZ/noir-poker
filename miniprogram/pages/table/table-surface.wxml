@@ -556,7 +556,7 @@
       ><text class="session-caption">当前筹码</text
       ><text class="session-stack">{{heroStack}}<text class="session-unit">CHIPS</text></text
       ><text class="session-change"
-        >{{stats.profit === '0' ? '+0' : stats.profit}} 筹码 · 本次练习净变化</text
+        >{{stats.profit === '0' ? '+0' : stats.profit}} 筹码 · 本局净变化</text
       ></view
     ><view class="session-stats"
       ><view><text>{{stats.hands}}</text><text>已完成</text></view

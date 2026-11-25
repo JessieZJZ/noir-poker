@@ -141,6 +141,36 @@ export async function loadLocale(value) {
   literals.sort((a, b) => b.length - a.length);
   phrases = literals.length ? new RegExp(literals.map(loose).join('|'), 'gu') : null;
 }
+// A pronoun filled into a template keeps one catalog spelling ("You", "they"),
+// wherever the template puts it. Mark it while translating, then set its case
+// from its final position: capitalized at a sentence start, lowercase inside a
+// sentence. Russian keeps its capitalized polite «Вы»; scripts without case
+// are untouched.
+const PRONOUN_OPEN = '\uE300',
+  PRONOUN_CLOSE = '\uE301';
+const CASED_LOCALES = new Set(['en', 'de', 'fr', 'es', 'pt', 'it', 'ru']);
+const casedPronoun = (source) =>
+  CASED_LOCALES.has(locale) &&
+  (source === '他' || source === '她' || (source === '你' && locale !== 'ru'));
+function slotValue(source, depth) {
+  const value = translate(source, depth + 1);
+  return casedPronoun(source) && value ? PRONOUN_OPEN + value + PRONOUN_CLOSE : value;
+}
+function pronounCase(text) {
+  if (!text.includes(PRONOUN_OPEN)) return text;
+  return text.replace(/\uE300([^\uE300\uE301]*)\uE301/gu, (match, word, offset, whole) => {
+    const before = whole
+      .slice(0, offset)
+      .replace(/[\uE300\uE301]/gu, '')
+      .replace(/[\s"'“”‘’«»(（「『]+$/u, '');
+    if (/[:：]$/.test(before)) return word;
+    const start = !before || /[.!?。！？]$/.test(before);
+    const first = word.slice(0, 1);
+    return (
+      (start ? first.toLocaleUpperCase(locale) : first.toLocaleLowerCase(locale)) + word.slice(1)
+    );
+  });
+}
 function translateCore(text, depth = 0) {
   const source = normalized(text);
   if (Object.hasOwn(messages, source)) return messages[source];
@@ -155,7 +185,7 @@ function translateCore(text, depth = 0) {
       const match = entry.pattern.exec(source);
       if (!match) continue;
       const values = new Map(
-        entry.slots.map((slot, i) => [slot, translate(match[i + 1].trim(), depth + 1)]),
+        entry.slots.map((slot, i) => [slot, slotValue(match[i + 1].trim(), depth)]),
       );
       return interpolate(entry.translation, values);
     }
@@ -165,7 +195,7 @@ function translateCore(text, depth = 0) {
       if (!entry.fragment) continue;
       output = output.replace(entry.fragment, (...args) => {
         const values = new Map(
-          entry.slots.map((slot, i) => [slot, translate(args[i + 1].trim(), depth + 1)]),
+          entry.slots.map((slot, i) => [slot, slotValue(args[i + 1].trim(), depth)]),
         );
         return fragmentSpacing(
           interpolate(entry.translation, values),
@@ -186,8 +216,8 @@ function fragmentSpacing(value, offset, source, length) {
   if (locale.startsWith('zh') || locale === 'ja') return value;
   // Only add spacing at translated fragment boundaries. Do not rewrite dots
   // inside decimal amounts, proper names or source URLs.
-  const before = /[.!?]$/.test(source.slice(0, offset)) && /^[\p{L}\p{N}]/u.test(value);
-  const after = /[.!?]$/.test(value) && /^[\p{L}\p{N}]/u.test(source.slice(offset + length));
+  const before = /[.!?]$/.test(source.slice(0, offset)) && /^\uE300?[\p{L}\p{N}]/u.test(value);
+  const after = /[.!?]$/.test(value) && /^\uE300?[\p{L}\p{N}]/u.test(source.slice(offset + length));
   return (before ? ' ' : '') + value + (after ? ' ' : '');
 }
 function interpolate(template, values) {
@@ -198,7 +228,7 @@ function interpolate(template, values) {
       (!locale.startsWith('zh') &&
       locale !== 'ja' &&
       /[.!?]$/.test(text) &&
-      /^[\p{L}\p{N}]/u.test(part)
+      /^\uE300?[\p{L}\p{N}]/u.test(part)
         ? ' '
         : '') +
       part,
@@ -227,7 +257,11 @@ export function localizeText(value) {
   const text = String(value ?? '');
   if (locale === 'zh-CN' || !text.trim()) return text;
   if (cache.has(text)) return cache.get(text);
-  const result = translate(text);
+  // Fragments joined from separately translated parts can meet with two
+  // spaces; Latin and Cyrillic prose keeps one.
+  const cased = pronounCase(translate(text));
+  const result =
+    locale.startsWith('zh') || locale === 'ja' ? cased : cased.replace(/(?<=\S) {2,}(?=\S)/g, ' ');
   // Preserve whitespace separating adjacent inline nodes and dynamic values.
   const output = (text.match(/^\s*/)?.[0] ?? '') + result.trim() + (text.match(/\s*$/)?.[0] ?? '');
   if (cache.size >= 2048) cache.clear();

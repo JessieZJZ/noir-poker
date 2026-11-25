@@ -17,7 +17,6 @@
   "A 阻断部分强 Ax，后位允许更宽地争夺盲注。": "A blocking a strong Ax, the backset allows for a wider battle for blind notes.",
   "Card Player · Dwan 原采访": "Card Player · Dwan",
   "Card Player · 对手调整访谈": "Card Player · Adjusting the opponent interview",
-  "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解本局电脑的实际行动原因。": "EV is the expected chip return from repeating a strategy over the long term. Winning one hand does not prove long-term profitability. Reviews use simulations based on information available before your action and assumed opponent ranges. They do not grade decisions using hidden opponent cards or later cards, and do not guarantee optimal play or a win. Switch to Opponent reasoning to see why the computers took their actual actions in this session.",
   "FLOP · 三张公共牌": "FLOP · Three board cards",
   "NOIR Poker · 德州扑克单机练习": "NOIR Poker · Offline Hold'em Practice",
   "NOIR Poker 隐私政策": "NOIR Poker Privacy Policy",
@@ -72,7 +71,6 @@
   "{0}{1} · 获得": "{0}{1} · Get",
   "{0}{1} · 获得 {2}": "{0}{1} · Get {2}",
   "{0}{1} · 获得 {2} 筹码": "{0} {1} · won {2} chips",
-  "{0}{1} 筹码 · 本次练习净变化": "{0}{1} chips · Session net change",
   "{0}策略": "{0} Strategy",
   "{0}面对小额、宽范围 3-bet 才考虑有位置防守；大尺度或 4-bet 优先收紧。翻后顶对弱踢脚以控池为主，未中牌时结合牌面与对手范围决定是否持续下注。": "{0} facing small, wide range 3-bet only consider position defense; large scale or 4-bet priority for strengthening. backward top to weak kicker is mainly controlled by the pool, when not mid-card combined with the opponent range to decide whether it is continuous bet.",
   "{1} / 门槛 {2} · {3}": "{1} / threshold {2} · {3}",
@@ -2048,7 +2046,6 @@
   "当时底池 {0}，你还剩 {1}，这手强牌可比较价值全下，让{2}为剩余筹码付费。": "The pot was {0} and you had {1} left. With this strong hand, compare a value shove that asks {2} to pay for your remaining chips.",
   "翻前牌组对比：{0}比 {1} 的点数或踢脚更好，但面对 {2} 会处于下风，之后仍要看公共牌。": "Preflop comparison: {0} has better ranks or a better kicker than {1}, but is behind {2}. The board still determines what happens next.",
   "翻前牌组对比：{0}领先例如 {1}，这手强起手牌可以向较弱对子或高牌取值。": "Preflop comparison: {0} is ahead of hands such as {1}. This strong starting hand can get value from weaker pairs or high-card hands.",
-  "这张 {0} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "On {0}, this is a multiway pot, where one pair is more likely to run into two pair or a set. You can bet for value, but need not put all {1} in at once.",
   "这张 {0} 较干燥，对手已经主动下注，平跟 {1} 是埋牌路线，留住这条下注线中的弱牌和诈唬，双方仍有筹码继续下一街。": "The board {0} is fairly dry and the opponent has already bet. Flat-calling {1} is a slow-play line that keeps weaker hands and bluffs in this betting line; both players still have chips for the next street.",
   "这手 {0} 可以藏在平跟里，对手已有主动加注，你有位置，平跟 {1} 保留其弱牌和诈唬。": "You can disguise {0} with a flat-call. The opponent has already raised and you have position; calling {1} keeps weaker hands and bluffs in.",
   "这手 {0} 可用普通加注建立底池，给较弱对子和高牌留下继续的机会，当前 {1} 的筹码不必一次全部推出。": "Build the pot with a regular raise holding {0}, allowing weaker pairs and high-card hands to continue. You need not shove all {1} chips at once.",
@@ -2664,7 +2661,6 @@
   "此前{0}{1}，仍需回应最新加注。": "Earlier, {0}{1}, and the latest raise still needs a response.",
   "比较": "Compare",
   "比较{0}": "Compare {0}",
-  "翻前牌组对比：{0}已经成对，{1}仍未成对，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Preflop comparison: {0} is already paired, while {1} is unpaired, but it is at a disadvantage against a higher pocket pair such as {2}. The board can still change the ranking.",
   "翻前牌组对比：{0}按当前牌型与点数高于 {1}，但低于 {2}，公共牌仍可能改变强弱。": "Preflop comparison: by current hand category and ranks, {0} is above {1} but below {2}. The board can still change the ranking.",
   "翻牌前加注 {0} 次，本轮还有 {1} 位对手等待回应": "There have been {0} preflop raises, and {1} opponents are still to respond this round",
   "若跟注 {0} 主要依赖{1}获利，还需估计成牌后哪些较弱牌愿意付费；本次跟注只支付当前所需金额，之后若再遇下注或加注，仍需重新判断投入。": "If calling {0} relies mainly on {1} to make a profit, estimate which weaker hands would pay after the hand improves. This call pays only the current amount due; a later bet or raise requires a fresh assessment of the investment.",
@@ -3013,5 +3009,8 @@
   "这笔大注需要还在场的对手有足够共同弃牌空间，若他们只用强牌跟注，单靠这些补牌较难弥补投入。": "This big bet needs the opponents still in to fold often enough between them; if they only call with strong hands, these outs alone are unlikely to make up the investment.",
   "重打 {0} 这手，{1}，比较{2}与较小投入，核对{3}是否愿意支付这个尺度，若它们退出而更强牌继续，就不能仅凭强起手牌把加注当作取值。": "Replay {0}: {1}. Compare {2} with a smaller investment and check whether {3} would pay this size. If those hands fold while stronger hands continue, a strong starting hand alone does not make the raise a value raise.",
   "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "You have position in {0}. This check adds no chips, leaving {1}. If the river doesn't complete your {2}, the opponent checks and the board lets you represent a stronger made hand, consider turning it into a bluff. If the opponent bets again, use the new price to decide whether to fold.",
-  "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "You have position in {0}. After this investment, you have {1}. If the river doesn't complete your {2}, the opponent checks and the board lets you represent a stronger made hand, consider turning it into a bluff. If the opponent bets again, use the new price to decide whether to fold."
+  "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "You have position in {0}. After this investment, you have {1}. If the river doesn't complete your {2}, the opponent checks and the board lets you represent a stronger made hand, consider turning it into a bluff. If the opponent bets again, use the new price to decide whether to fold.",
+  "{0}{1} 筹码 · 本局净变化": "{0}{1} chips · Net change this game",
+  "翻前牌组对比：{0}已经成对，领先仍未成对的 {1}，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Preflop comparison: {0} is already paired and ahead of unpaired hands such as {1}, but behind a higher pocket pair such as {2}. The board can still change the ranking.",
+  "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "On {0}, this is a multiway pot, where one pair is more likely to run into two pair or a set. You can bet for value, but need not put all {1} in at once."
 }

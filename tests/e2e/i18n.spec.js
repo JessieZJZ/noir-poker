@@ -2,16 +2,16 @@ import { test, expect } from '@playwright/test';
 const locales = ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'];
 const practiceTitles = {
   'zh-CN': '本局练习',
-  en: 'Session practice',
+  en: 'Current game',
   'zh-TW': '本局練習',
   ja: 'このゲームの練習',
   ko: '이번 게임 연습',
-  es: 'Práctica de esta sesión',
-  it: 'Pratica della sessione',
+  es: 'Partida en curso',
+  it: 'Partita in corso',
   pt: 'Treino desta partida',
-  de: 'Übung dieser Sitzung',
+  de: 'Aktuelles Spiel',
   fr: 'Partie en cours',
-  ru: 'Практика в этой сессии',
+  ru: 'Текущая игра',
 };
 test('localized HTML preserves URLs, identifiers and serialized rule data', async ({ page }) => {
   await page.goto('/');

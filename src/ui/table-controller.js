@@ -664,7 +664,7 @@ function render({ presentationOnly = false } = {}) {
   setLocalizedText(
     $('#session-change'),
     game.stats.hands
-      ? `${diff >= 0 ? '+' : ''}${format(diff)} 筹码 · 本次练习净变化`
+      ? `${diff >= 0 ? '+' : ''}${format(diff)} 筹码 · 本局净变化`
       : '从这一手开始积累经验',
   );
   $('#session-change').classList.toggle('negative', diff < 0);
