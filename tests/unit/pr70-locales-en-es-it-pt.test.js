@@ -35,12 +35,12 @@ test('PR70 guide lists all nine engine categories in order, using the same terms
 test('PR70 sizing describes a calculation, denomination and stack limits without requiring a prior Call', async () => {
   const meaning = {
     en: [
-      /calculation first includes the call amount/,
-      /do not need to press Call first/,
+      /call is added first/,
+      /don't need to press Call first/,
       /current denomination/,
       /minimum raise/,
       /remaining stack/,
-      /may exceed the pot/,
+      /bigger than the pot/,
     ],
     es: [
       /cálculo incluye primero/,

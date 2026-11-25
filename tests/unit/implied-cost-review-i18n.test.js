@@ -197,7 +197,7 @@ const pairAccuracySources = [
 const pairAccuracyTruth = {
   en: [
     'A {0} could give one of your hole cards a higher pair, but not all of these cards can be counted as sure winning outs.',
-    'Calling requires enough weaker hands or bluffs in the opponent’s range; fold against a tighter range.',
+    "Calling requires enough weaker hands or bluffs in the opponent's range; fold against a tighter range.",
   ],
   'zh-TW': [
     '當 {0} 發出時，底牌有機會組成更高的一對，但這些牌也不能全部算成必勝補牌。',
