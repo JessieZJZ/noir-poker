@@ -113,7 +113,7 @@ html.native-ios .game-surface {
 .main .game-surface > .surface-top {
   --hand-row: 28px;
   --hint-row: 22px;
-  grid-template-rows: max(var(--hand-row), var(--entry-hand-row, 0px)) var(--hint-row);
+  grid-template-rows: var(--hand-row) var(--hint-row);
 }
 @media (min-width: 1101px), (min-width: 901px) and (orientation: landscape) {
   .main .game-surface > .surface-top {

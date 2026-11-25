@@ -78,6 +78,7 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     return false;
   }
 
+  let entryHeaderLayout = '';
   function fitHandHeader(waiting) {
     handLabel.style.removeProperty('--fitted-hand-font');
     blindInfo.style.removeProperty('--fitted-blind-font');
@@ -148,12 +149,27 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
         : budget,
     );
     fitHandHeader(waiting);
-    // A translated or long session label may wrap in the waiting header.
-    // Retain its footprint when the shorter live label replaces it, so joining
-    // cannot move the felt. Re-measure while waiting after width/font changes.
+    // A translated label or blind structure may wrap in the waiting header.
+    // Retain its height when the shorter live header replaces it, so joining
+    // cannot move the felt. Re-measure while waiting after width/font changes;
+    // in play, a new width or header breakpoint drops the retained height, as
+    // the waiting header would no longer have had it.
+    const header = surface.querySelector('.surface-top'),
+      headerStyle = getComputedStyle(header),
+      headerLayout = [
+        screen.width,
+        headerStyle.getPropertyValue('--hand-row'),
+        headerStyle.getPropertyValue('--hint-row'),
+        headerStyle.paddingTop,
+        headerStyle.paddingBottom,
+        headerStyle.rowGap,
+      ].join();
     if (waiting) {
-      const labelHeight = surface.querySelector('.hand-label').getBoundingClientRect().height;
-      surface.style.setProperty('--entry-hand-row', `${Math.ceil(labelHeight)}px`);
+      entryHeaderLayout = headerLayout;
+      surface.style.setProperty('--entry-top-height', `${header.getBoundingClientRect().height}px`);
+    } else if (headerLayout !== entryHeaderLayout) {
+      entryHeaderLayout = '';
+      surface.style.removeProperty('--entry-top-height');
     }
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.

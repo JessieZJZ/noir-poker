@@ -79,26 +79,16 @@
 .entry-structure {
   display: none;
 }
-/* It hangs below the label in the hint row, which is empty before the seat is
-   taken, so the header row and the table keep their exact size. It may use
-   the whole header width; the blind column beside the label is empty then. */
-.game-surface .surface-top {
-  container-type: inline-size;
-}
-.game-surface[data-entry-state='waiting'] .surface-top .hand-label {
-  position: relative;
-}
+/* It follows the label and wraps rather than truncating a translated
+   structure. The label spans both header rows then (the hint row is empty
+   before the seat is taken), so one line of structure keeps the usual header
+   height; a longer one grows the header, which play keeps (see below). */
 .game-surface[data-entry-state='waiting'] .hand-label > #entry-structure {
   display: block;
-  position: absolute;
-  top: calc(100% + 2px);
-  left: 0;
-  width: max-content;
-  max-width: calc(100vw - 48px);
-  max-width: 100cqw;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin-top: 2px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-wrap: pretty;
   color: #c9b98f;
   font-size: 11px;
   line-height: 1.4;
@@ -106,10 +96,13 @@
 .game-surface .surface-top .hand-label {
   line-height: 1.2;
 }
-/* The waiting message sits where the hand label sits in play, centred in
-   the same first row; a wrapped message grows the row instead of clipping. */
+/* The waiting message starts where the hand label sits in play, in the same
+   first row, and may use the whole header width: the blinds beside it are
+   hidden until the seat is taken. A wrapped message grows the header instead
+   of clipping. */
 .game-surface[data-entry-state='waiting'] .surface-top .hand-label {
-  grid-column: 1;
+  grid-column: 1 / -1;
+  grid-row: 1 / -1;
   white-space: normal;
   line-height: 1.2;
 }
@@ -131,7 +124,14 @@
   padding-top: max(0px, calc((var(--hand-row) - 1.4em) / 2));
 }
 .main .game-surface[data-entry-state='waiting'] > .surface-top {
-  grid-template-rows: minmax(max(var(--hand-row), var(--entry-hand-row, 0px)), auto) var(--hint-row);
+  grid-template-rows: minmax(var(--hand-row), auto) var(--hint-row);
+}
+/* Play keeps the waiting header's height so joining cannot move the felt.
+   Any extra height sits below the hint row, never between the hand label and
+   the hint. */
+.main .game-surface:not([data-entry-state='waiting']) > .surface-top {
+  min-height: var(--entry-top-height, 0px);
+  align-content: start;
 }
 .game-surface[data-entry-state='waiting'] .surface-top .blind-info {
   grid-row: 1;
