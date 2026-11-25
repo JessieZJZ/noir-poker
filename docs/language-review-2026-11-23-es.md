@@ -98,3 +98,7 @@
 - 锁定字符串调整：`tests/unit/implied-cost-review-i18n.test.js` 的西语 `improvements` 由 `ligar un trío con la pareja de mano` 改为 `ligar set`，测试意图（组合后保留范围与付费意愿条件）不变。没有修改其他测试。
 
 以上均为 Web/单元层面的检查，不代表原生 App 或微信小程序的装机验证。
+
+## 合并后的调整
+
+- 风格标签「控池」保留原译「Control de bote」，不改为「Control del bote」：后者在 360px 宽、九人桌的手机牌桌上需要缩到 7.9px，低于 8px 的可读下限（CI `style-labels.spec.js`）。「control de bote」本身也是西语扑克常用说法。
