@@ -49,7 +49,7 @@ const truth = {
       'Las ganancias adicionales después de {0} dependen de que las manos más débiles estén dispuestas a pagar.',
       'Ahora hay {0}, con {1} cartas candidatas que completan directamente la mano. Tras pagar, se ven turn y river; la probabilidad de que salga al menos una de estas candidatas actuales es de aproximadamente {2}, lo que no equivale a la probabilidad final de ganar.',
     ],
-    improvements: ['completar el proyecto', 'ligar un trío con la pareja de mano'],
+    improvements: ['completar el proyecto', 'ligar set'],
   },
   it: {
     templates: [
