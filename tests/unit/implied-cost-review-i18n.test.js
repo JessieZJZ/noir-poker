@@ -54,8 +54,8 @@ const truth = {
   it: {
     templates: [
       'In base alla stima attuale del range, questo call richiede ancora di ottenere fiches da mani più deboli dopo {0}.',
-      'I guadagni aggiuntivi dopo {0} dipendono dalla disponibilità delle mani più deboli a pagare.',
-      'Attualmente c’è {0}, con {1} carte candidate che completano direttamente la mano. Dopo il call si vedono turn e river: la probabilità che esca almeno una delle candidate attuali è circa {2}, non la probabilità finale di vittoria.',
+      'Il guadagno extra dopo {0} dipende dalla disponibilità delle mani più deboli a pagare.',
+      'Al momento: {0}, con {1} carte che completano direttamente la mano. Dopo il call vedi turn e river: la probabilità che esca almeno una di queste carte è circa {2}, che non è la probabilità finale di vincere.',
     ],
     improvements: ['aver completato il progetto', 'aver centrato un set'],
   },
@@ -216,7 +216,7 @@ const pairAccuracyTruth = {
     'Para pagar, el rango rival debe incluir suficientes manos más débiles o faroles; frente a un rango más cerrado, se debe abandonar la mano.',
   ],
   it: [
-    'Se esce {0}, le carte in mano possono formare una coppia più alta, ma queste carte non sono tutte out che garantiscono la vittoria.',
+    'Se esce {0}, le tue carte possono formare una coppia più alta, ma non tutte queste carte sono outs sicuramente vincenti.',
     'Il call richiede che il range avversario contenga abbastanza mani più deboli o bluff; contro un range più stretto bisogna foldare.',
   ],
   pt: [
@@ -304,7 +304,7 @@ const drawRouteTruth = {
   ja: '主な改善手段はドローですが、ホールカードがペアになったり、未完成のブラフに勝ったりする可能性もあります。',
   ko: '드로가 주된 개선 경로이지만, 홀 카드가 페어가 되거나 아무것도 없는 블러프를 이겨서 이길 수도 있습니다.',
   es: 'El proyecto es la principal vía de mejora, pero también se puede ganar formando una pareja con una carta propia o superando faroles sin mano hecha.',
-  it: 'Il progetto è la via principale per migliorare, ma si può vincere anche formando una coppia con una carta privata o battendo bluff senza una mano formata.',
+  it: 'Il progetto è la via principale per migliorare, ma puoi vincere anche facendo coppia con una delle tue carte o battendo bluff senza mano fatta.',
   pt: 'O draw é o principal caminho de melhora, mas também é possível vencer formando par com uma carta da mão ou superando blefes sem mão feita.',
   de: 'Der Draw ist der wichtigste Weg zur Verbesserung. Die Hand kann aber auch durch ein Paar mit einer Hole Card oder gegen einen Bluff ohne fertige Hand gewinnen.',
   fr: 'Le tirage est la principale voie d’amélioration, mais former une paire avec une carte privative ou battre un bluff sans main faite peut aussi permettre de gagner.',

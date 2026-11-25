@@ -38,7 +38,7 @@ test('PR70 seven repaired player-count keys stay synchronized in the override la
     ['pt', '6 人无限注', '6 jogadores sem limite'],
     ['pt', '{0} 人无限注', '{0} jogadores sem limite'],
     ['es', '{0} 人无限注', '{0} jugadores sin límite'],
-    ['it', '{0} 人无限注', '{0} giocatori senza limite'],
+    ['it', '{0} 人无限注', '{0} giocatori · No Limit'],
     ['fr', '{0} 人无限注', '{0} joueurs sans limite'],
     ['ru', '{0} 人无限注', '{0} игроков без ограничений'],
   ];
