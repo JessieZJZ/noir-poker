@@ -10,6 +10,15 @@ export const POSITION_ROLES = {
   8: ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'LJ', 'HJ', 'CO'],
   9: ['BTN', 'SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO'],
 };
+// Postflop acting order. Heads-up the button is the small blind but still
+// acts last after the flop, which this order already gives (BB before BTN).
+const POSTFLOP_ORDER = ['SB', 'BB', 'UTG', 'UTG+1', 'MP', 'LJ', 'HJ', 'CO', 'BTN'];
+// True when `position` acts before `other` on every postflop street.
+export function actsBeforePostflop(position, other) {
+  const a = POSTFLOP_ORDER.indexOf(position),
+    b = POSTFLOP_ORDER.indexOf(other);
+  return a >= 0 && b >= 0 && a < b;
+}
 // Seats still to act behind a first-in preflop decision at this position.
 // Preflop starts after the big blind (the button acts first heads-up).
 export function preflopSeatsBehind(position, seated) {

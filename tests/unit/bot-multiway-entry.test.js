@@ -38,7 +38,13 @@ test('a priced late overcall uses a bounded entry range instead of requiring all
 });
 
 test('large single opens and all-ins do not inherit the cheap entry exemption', () => {
-  for (const size of [8.5, 16.5, 40]) {
+  // 8.5BB over three limpers is the size bots isolate with themselves
+  // (4BB plus 1.5BB per limper), so it is priced as an ordinary 4BB open.
+  const ordinary = botDecision(buttonIsolation('As Qc', 8.5), allInRandom(17)).trace;
+  assert.equal(ordinary.affordableOpen, true);
+  assert.equal(ordinary.entryContext.limperAllowanceBB, 4.5);
+  assert.equal(ordinary.entryContext.isolatedPriceBB, 4);
+  for (const size of [12.5, 16.5, 40]) {
     const d = botDecision(buttonIsolation('As Qc', size), allInRandom(17));
     assert.equal(d.trace.affordableOpen, false);
     assert.equal(d.trace.affordableRangePassed, false);

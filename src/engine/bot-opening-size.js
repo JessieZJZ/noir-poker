@@ -12,6 +12,11 @@ function depthOf(view) {
   return opposingDepth > 0 ? Math.min(ownDepth, opposingDepth) : ownDepth;
 }
 
+// The extra big blinds an isolating raise adds for each limper still in the
+// pot. Attack and defence share it: a caller facing an isolation does not
+// read the limpers' allowance as an oversized open.
+export const isolationLimperBB = (depthBB, limpers) => limpers * (depthBB >= 60 ? 1.5 : 1);
+
 export function botOpeningSize(view, style, limpers = 0, mix = 0.5) {
   const bigBlind = bigBlindOf(view);
   const depthBB = depthOf(view);
@@ -29,7 +34,7 @@ export function botOpeningSize(view, style, limpers = 0, mix = 0.5) {
   // not uniquely reveal AA/KK. Retain the small-sizing style's narrower band.
   const mixBB = depthBB < 60 ? 0 : mix < 0.25 ? -0.5 : mix < 0.75 ? 0 : compact ? 0.5 : 1;
   const isolatedBase = limpers > 0 && depthBB >= 40 ? Math.max(4, baseBB) : baseBB;
-  const limperBB = limpers * (depthBB >= 60 ? 1.5 : 1);
+  const limperBB = isolationLimperBB(depthBB, limpers);
   return {
     depthBB,
     baseBB: isolatedBase,

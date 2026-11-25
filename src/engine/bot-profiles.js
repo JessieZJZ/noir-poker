@@ -25,7 +25,8 @@ import { observedRangeModel } from './public-observations.js';
 import { committedOpenPlan, preflopJamPlan, shortStackPlan } from './bot-preflop-commitment.js';
 import { survivalPremium } from './push-fold.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
-import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
+import { botOpeningSize, botReraiseSize, isolationLimperBB } from './bot-opening-size.js';
+import { actsBeforePostflop } from './positions.js';
 import { publicStrategyPlan } from './bot-strategy-plan.js';
 import { evActionPlan } from './bot-ev.js';
 
@@ -527,41 +528,78 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   // Above 5BB the playable range narrows with the size until, at 8BB, only
   // the stronger group is exempt from treating every unfurled seat as already
   // committed to a showdown. A larger open never becomes easier to call.
-  // The same open costs relatively less when both stacks are deeper than
-  // 100BB: there is more to win behind it. Scale the limits gently by the
-  // depth matched with the opener; at 100BB or less they are unchanged.
+  // Public stacks and actions, never cards, adjust those limits:
+  // - Depth: the same open costs relatively less when both stacks are deeper
+  //   than 100BB, since there is more to win behind it.
+  // - Cover: a seat covering the opener stakes only part of its own stack on
+  //   this opener. Covering twice the opener reads the open as up to a quarter
+  //   smaller. Chips beyond the opener add no implied odds, so the depth
+  //   requirement below still measures the effective stack.
+  // - Isolation: the per-limper allowance bots add when they isolate moves
+  //   both limits up rather than counting as an oversized open. The price
+  //   itself is not discounted, so blinds do not defend it as a min-raise.
+  const ownTotal = view.stack + view.bet,
+    openerTotal = lastRaiser ? lastRaiser.stack + (lastRaiser.bet || 0) : 0;
   const openDepthScale = lastRaiser
-    ? Math.min(
-        1.5,
-        Math.max(
-          1,
-          Math.sqrt(
-            Math.min(view.stack + view.bet, lastRaiser.stack + (lastRaiser.bet || 0)) /
-              (100 * bigBlind),
-          ),
-        ),
-      )
+    ? Math.min(1.5, Math.max(1, Math.sqrt(Math.min(ownTotal, openerTotal) / (100 * bigBlind))))
     : 1;
-  const openPriceBB = view.currentBet / bigBlind / openDepthScale;
-  const largeOpen = openPriceBB > 5;
-  const openTightening = Math.min(1, Math.max(0, (openPriceBB - 5) / 3));
+  const openCoverScale = lastRaiser
+    ? 1 + 0.25 * Math.min(1, Math.max(0, (1 - openerTotal / Math.max(1, ownTotal)) / 0.5))
+    : 1;
+  const openSizeScale = openDepthScale * openCoverScale;
+  // Every live limper the isolation was sized over, our own limp included.
+  const isolationLimpers =
+    firstOpen < 0
+      ? 0
+      : new Set(
+          preflopHistory
+            .slice(0, firstOpen)
+            .filter(
+              (a) =>
+                a.action === 'call' &&
+                a.amount > 0 &&
+                (a.id === view.id || view.opponents?.some((p) => p.id === a.id)),
+            )
+            .map((a) => a.id),
+        ).size;
+  const limperAllowanceBB = lastRaiser
+    ? isolationLimperBB(Math.min(ownTotal, openerTotal) / bigBlind, isolationLimpers)
+    : 0;
+  const openPriceBB = view.currentBet / bigBlind / openSizeScale;
+  const isolatedPriceBB =
+    Math.max(0, view.currentBet / bigBlind - limperAllowanceBB) / openSizeScale;
+  const largeOpen = isolatedPriceBB > 5;
+  const openTightening = Math.min(1, Math.max(0, (isolatedPriceBB - 5) / 3));
   const strongOpenDefense =
     (pair && high >= 9) || (high === 14 && low >= 12) || (suited && high === 13 && low === 12);
-  const openStackNeed = strongOpenDefense
-    ? legal.callAmount * 10
-    : Math.max(Math.min(legal.callAmount * 15, 75 * bigBlind), legal.callAmount * 10);
+  // Implied odds need chips behind against the opener. Below ten calls (and
+  // 20BB) behind, the widened defence is off. Above that it grows linearly
+  // until fifteen calls (at most 75BB), so a few chips never flip a range.
+  const openFloorNeed = Math.max(20 * bigBlind, legal.callAmount * 10);
+  const openFullNeed = strongOpenDefense
+    ? openFloorNeed
+    : Math.max(Math.min(legal.callAmount * 15, 75 * bigBlind), openFloorNeed);
+  const openDepthWeight =
+    effectiveBehind < openFloorNeed
+      ? 0
+      : openFullNeed > openFloorNeed
+        ? Math.min(1, (effectiveBehind - openFloorNeed) / (openFullNeed - openFloorNeed))
+        : 1;
   const affordableOpen =
     view.street === 0 &&
     Boolean(lastRaiser) &&
     raises.length === 1 &&
     raises[0].id !== view.id &&
     legal.toCall > 0 &&
-    openPriceBB <= 8 &&
-    legal.callAmount <= 8 * bigBlind * openDepthScale &&
+    isolatedPriceBB <= 8 &&
+    legal.callAmount <= (8 * openSizeScale + limperAllowanceBB) * bigBlind &&
     (openTightening < 1 || strongOpenDefense) &&
     lowCommitment &&
     !allInPressure &&
-    effectiveBehind >= Math.max(20 * bigBlind, openStackNeed);
+    openDepthWeight > 0;
+  // Acting before the opener on every later street.
+  const outOfPositionToOpener =
+    Boolean(lastRaiser) && actsBeforePostflop(view.position, lastRaiser.position);
   // Normal/hard opponents distinguish a cheap 3-bet from a large re-raise.
   // A random showdown against every unfurled seat undervalues a priced call:
   // players still to act have not all committed to this pot. This range gate
@@ -613,14 +651,21 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
     const blindDiscount = view.position === 'BB' ? 0.08 : 0;
     const dominatedAce = !suited && high === 14 && low <= 8 ? 0.08 : 0;
-    range =
-      (baseRange * priceScale +
+    // Out of position against the opener the widening is a little smaller.
+    // The big blind keeps its own price and closing-action allowance.
+    const positionDiscount = outOfPositionToOpener ? 0.85 : 1;
+    const widened =
+      ((baseRange * priceScale +
         (0.12 + width * 0.18) * entryScale +
         playability +
-        callerBonus +
-        blindDiscount -
+        callerBonus -
         dominatedAce) *
+        positionDiscount +
+        blindDiscount) *
       (strongOpenDefense ? 1 : 1 - openTightening);
+    // Short of full depth, only the widening above the ordinary facing-raise
+    // range is scaled, so the range grows steadily with the chips behind.
+    range = widened > range ? range + openDepthWeight * (widened - range) : widened;
   }
   if (affordableThreeBet) {
     const priceScale = Math.max(0.55, 1.15 - view.currentBet / (20 * bigBlind));
@@ -977,6 +1022,13 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         openCallers,
         effectiveBehind,
         openDepthScale,
+        openCoverScale,
+        openSizeScale,
+        isolationLimpers,
+        limperAllowanceBB,
+        isolatedPriceBB,
+        openDepthWeight,
+        outOfPositionToOpener,
         speculative,
         suitedHigh,
         suitedLimpCandidate,

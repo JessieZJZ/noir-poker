@@ -32,7 +32,8 @@ for (const seed of [policySeed, deckSeed])
 const random = seeded(policySeed),
   deckRandom = seeded(deckSeed),
   previousRandom = Math.random;
-const g = newGame(count);
+// Fixed blinds: every hand restarts at 100BB, so the level must not rise.
+const g = newGame(count, undefined, { risingBlinds: false });
 if (
   !['easy', 'normal', 'hard'].includes(difficulty) ||
   !['off', 'subtle', 'lively'].includes(emotionMode)
@@ -66,7 +67,11 @@ applyBotSettings(g, {
 try {
   Math.random = deckRandom;
   for (let h = 0; h < hands; h++) {
-    g.players.forEach((p) => (p.stack = g.bigBlind * 100));
+    // Every hand is a fresh 100BB table: undo the previous hand's busts.
+    g.over = null;
+    g.players.forEach((p) =>
+      Object.assign(p, { stack: g.bigBlind * 100, out: false, place: null }),
+    );
     startHand(g);
     let actions = 0;
     while (g.phase !== 'done') {
