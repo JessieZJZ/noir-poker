@@ -9,6 +9,10 @@ export const HANDS_PER_LEVEL = 8;
 export const FINAL_TABLE_HANDS_PER_LEVEL = 5;
 // Size the last level for the two players who decide the tournament.
 const HEADS_UP_AVERAGE_BB = 6;
+// The cap's multiple of the starting blinds rounds up to a multiple of this,
+// so it reads as a round figure: 9K, 10K, 12K, 14K and 15K big blinds at the
+// default 100/200.
+const CAP_STEP = 5;
 // The last regular step sits at least this far below the cap; a wider gap
 // is split at its rounded geometric mean.
 const LAST_STEP_MIN_RATIO = 1.4;
@@ -22,9 +26,8 @@ export const levelLengthFor = (seated, playerCount) =>
 // The level ladder for a game's starting stakes and seat count, ending at its cap.
 // The cap uses the chips dealt at the start; refills never move it.
 export function blindLevels(stakes, playerCount) {
-  const cap = Math.round(
-    (stakes.startingStack * playerCount) / (2 * HEADS_UP_AVERAGE_BB * stakes.bigBlind),
-  );
+  const target = (stakes.startingStack * playerCount) / (2 * HEADS_UP_AVERAGE_BB * stakes.bigBlind);
+  const cap = Math.ceil(target / CAP_STEP - 1e-9) * CAP_STEP;
   const steps = LEVEL_MULTIPLIERS.filter((multiplier) => multiplier * LAST_STEP_MIN_RATIO <= cap);
   if (cap / steps.at(-1) > LAST_STEP_MAX_RATIO)
     steps.push(Math.round(Math.sqrt(steps.at(-1) * cap)));

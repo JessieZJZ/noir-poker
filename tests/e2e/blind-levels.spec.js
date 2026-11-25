@@ -10,10 +10,10 @@ test('the ready table and settings describe this game’s rising blinds and fina
   await expect(page.locator('#entry-structure')).toBeVisible();
   const count = (await state(page)).playerCount;
   const cap = {
-    5: '4.2K / 8.4K',
+    5: '4.5K / 9K',
     6: '5K / 10K',
-    7: '5.8K / 11.6K',
-    8: '6.7K / 13.4K',
+    7: '6K / 12K',
+    8: '7K / 14K',
     9: '7.5K / 15K',
   };
   await expect(page.locator('#entry-structure-levels')).toHaveText(
@@ -77,7 +77,7 @@ test('the capped hand keeps its blinds and notice through retry and in the recor
   await page.goto('/');
   await page.waitForFunction(() => !!window.qa);
   await page.evaluate(() => window.qa.noticeHand({ count: 5, cap: true }));
-  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 4.2K / 8.4K');
+  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 4.5K / 9K');
   await expect(page.locator('.table-notice-stage')).toContainText('已到最高级别，不再上涨');
   await expect(page.locator('#blind-progress')).toHaveText('盲注已封顶');
   expect((await state(page)).hand).toBe(65);
@@ -87,7 +87,7 @@ test('the capped hand keeps its blinds and notice through retry and in the recor
     window.qa.recordsFinish();
   });
   await page.locator('#restart-hand-button').click();
-  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 4.2K / 8.4K');
+  await expect(page.locator('.table-notice-stage')).toContainText('盲注升至 4.5K / 9K');
   expect(await state(page)).toMatchObject({ hand: 65, replayAttempt: 1 });
   await expect(page.locator('.table-notice-stage')).toHaveCount(0, { timeout: 4000 });
   await page.evaluate(() => {
@@ -98,5 +98,5 @@ test('the capped hand keeps its blinds and notice through retry and in the recor
   await page.locator('#records-menu-item').click();
   await expect(page).toHaveURL(/#records$/);
   const rows = page.locator('.record-session').first().locator('.record-hand-blinds');
-  await expect(rows.first()).toHaveText('盲注 4.2K / 8.4K');
+  await expect(rows.first()).toHaveText('盲注 4.5K / 9K');
 });

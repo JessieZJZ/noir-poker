@@ -32,7 +32,7 @@ const foldOut = (g) => {
 };
 const stakes = (smallBlind) => stakesFromSmallBlind(smallBlind);
 
-test('every level is a whole multiple of the starting small blind, rises about 1.5x and the cap leaves heads-up stacks averaging about 6 BB', () => {
+test('every level is a whole multiple of the starting small blind, rises about 1.5x and the round cap leaves heads-up stacks averaging 5.5–6 BB', () => {
   for (const smallBlind of [25, 75, 100, 125, 50000])
     for (const seats of [5, 6, 7, 8, 9]) {
       const s = stakes(smallBlind),
@@ -49,7 +49,8 @@ test('every level is a whole multiple of the starting small blind, rises about 1
         [1, 2, 3, 5, 8, 12, 18, 27],
       );
       assert.equal(levels.length, { 5: 9, 6: 10, 7: 10, 8: 10, 9: 11 }[seats]);
-      assert.ok(Math.abs(average / cap.bigBlind - 6) < 0.1);
+      assert.ok(average / cap.bigBlind > 5.5 && average / cap.bigBlind <= 6);
+      assert.equal(cap.bigBlind % (5 * s.bigBlind), 0, 'The cap rounds up to five starting blinds');
       for (let i = 1; i < levels.length; i++) {
         const rise = levels[i].bigBlind / levels[i - 1].bigBlind;
         assert.ok(rise >= 1.35 && rise <= 2, `${seats} seats level ${i}: ${rise}`);
@@ -57,7 +58,7 @@ test('every level is a whole multiple of the starting small blind, rises about 1
     }
   // The cap scales with the starting blind and depends only on the seat count.
   const caps = [5, 6, 7, 8, 9].map((seats) => blindCap(DEFAULT_STAKES, seats).smallBlind);
-  assert.deepEqual(caps, [4200, 5000, 5800, 6700, 7500]);
+  assert.deepEqual(caps, [4500, 5000, 6000, 7000, 7500]);
   assert.deepEqual([5, 6, 7, 8, 9].map(finalTableSeats), [2, 2, 3, 3, 3]);
 });
 

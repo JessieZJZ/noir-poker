@@ -35,7 +35,7 @@ try {
     console.log('PASS', name);
   };
   const ready = await wait((data) => data.tableReady && data.waitingForSeat);
-  const caps = { 5: 42, 6: 50, 7: 58, 8: 67, 9: 75 };
+  const caps = { 5: 45, 6: 50, 7: 60, 8: 70, 9: 75 };
   const count = ready.seats.length + 1; // The hero is rendered separately.
   const stakes = ready.requestedStakes;
   const cap = [stakes.smallBlind, stakes.bigBlind]

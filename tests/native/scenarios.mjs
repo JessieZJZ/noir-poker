@@ -677,10 +677,10 @@ export async function nativeScenarios(app) {
       assert.equal(layout.waiting, 'waiting');
       assert.equal(layout.blinds, '10K / 20K');
       const cap = {
-        5: '420K / 840K',
+        5: '450K / 900K',
         6: '500K / 1M',
-        7: '580K / 1.16M',
-        8: '670K / 1.34M',
+        7: '600K / 1.2M',
+        8: '700K / 1.4M',
         9: '750K / 1.5M',
       };
       assert.ok(layout.blindStructure.includes(cap[playerCount]), layout.blindStructure);

@@ -1474,8 +1474,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "The bet came after checks, so the range can hold slow-played strong hands as well as weaker made hands and bluffs; {0} estimated that the part it beats is not enough to pay for this call.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "That is rarely aggressive after the flop, so {0} read this bet as weighted towards strong hands.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Blinds rise every {0} hands up to {1}; the final table starts at {2} players, and from then on they rise every {3} hands.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Blinds rise every 8 hands, up to 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Blinds rise every 8 hands up to 5.8K / 11.6K; the final table starts at 3 players, and from then on they rise every 5 hands."
+    "每 8 手涨盲，最高 6K / 12K": "Blinds rise every 8 hands, up to 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Blinds rise every 8 hands up to 6K / 12K; the final table starts at 3 players, and from then on they rise every 5 hands."
   },
   "zh-TW": {
     "设置": "設定",
@@ -2394,8 +2394,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "此前一路過牌後才下注，範圍裡既可能有慢打的強牌，也可能有較弱成牌和詐唬；{0}估計其中自己能贏的部分不足以支付這次跟注。",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "翻後很少主動下注，所以{0}把這次下注估計得更偏強牌。",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "每 {0} 手升一級，最高 {1}；剩 {2} 人進入決賽圈，之後每 {3} 手升一級。",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "每 8 手漲盲，最高 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "每 8 手升一級，最高 5.8K / 11.6K；剩 3 人進入決賽圈，之後每 5 手升一級。"
+    "每 8 手涨盲，最高 6K / 12K": "每 8 手漲盲，最高 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "每 8 手升一級，最高 6K / 12K；剩 3 人進入決賽圈，之後每 5 手升一級。"
   },
   "ja": {
     "设置": "設定",
@@ -3794,8 +3794,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "チェックが続いた後のベットなので、レンジにはスロープレイの強いハンドも、より弱いメイドハンドやブラフも含まれえます。{0}は、そのうち自分が勝てる部分ではこのコールに見合わないと見積もりました。",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "フロップ後にめったに自分から打たないため、{0}はこのベットを強いハンド寄りと見積もりました。",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "{0} ハンドごとにブラインドが上がり、最高 {1} です。残り {2} 人でファイナルテーブルとなり、以降は {3} ハンドごとに上がります。",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "8 ハンドごとにブラインド上昇・最高 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8 ハンドごとにブラインドが上がり、最高 5.8K / 11.6K です。残り 3 人でファイナルテーブルとなり、以降は 5 ハンドごとに上がります。"
+    "每 8 手涨盲，最高 6K / 12K": "8 ハンドごとにブラインド上昇・最高 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8 ハンドごとにブラインドが上がり、最高 6K / 12K です。残り 3 人でファイナルテーブルとなり、以降は 5 ハンドごとに上がります。"
   },
   "ko": {
     "设置": "설정",
@@ -5524,8 +5524,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "체크가 이어진 뒤에 나온 베팅이라 레인지에는 슬로플레이한 강한 핸드도, 더 약한 메이드 핸드와 블러프도 있을 수 있습니다. {0}은(는) 그중 자신이 이기는 부분으로는 이번 콜을 감당하기 부족하다고 추정했습니다.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "플랍 이후 먼저 베팅하는 일이 드물어, {0}은(는) 이번 베팅을 강한 핸드 쪽으로 추정했습니다.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "{0}핸드마다 블라인드가 올라 최고 {1}까지 오르며, {2}명이 남으면 파이널 테이블이 되고 이후에는 {3}핸드마다 오릅니다.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "8핸드마다 블라인드 상승, 최고 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8핸드마다 블라인드가 올라 최고 5.8K / 11.6K까지 오르며, 3명이 남으면 파이널 테이블이 되고 이후에는 5핸드마다 오릅니다."
+    "每 8 手涨盲，最高 6K / 12K": "8핸드마다 블라인드 상승, 최고 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8핸드마다 블라인드가 올라 최고 6K / 12K까지 오르며, 3명이 남으면 파이널 테이블이 되고 이후에는 5핸드마다 오릅니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -7010,8 +7010,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "La apuesta llegó tras varios checks, así que el rango puede incluir manos fuertes jugadas lentamente, además de manos hechas más débiles y faroles; {0} estimó que la parte a la que gana no alcanza para pagar este call.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Es poco agresivo tras el flop, así que {0} estimó esta apuesta como inclinada hacia manos fuertes.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Las ciegas suben cada {0} manos hasta {1}; la mesa final empieza con {2} jugadores y desde entonces suben cada {3} manos.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Ciegas cada 8 manos, hasta 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Las ciegas suben cada 8 manos hasta 5.8K / 11.6K; la mesa final empieza con 3 jugadores y desde entonces suben cada 5 manos."
+    "每 8 手涨盲，最高 6K / 12K": "Ciegas cada 8 manos, hasta 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Las ciegas suben cada 8 manos hasta 6K / 12K; la mesa final empieza con 3 jugadores y desde entonces suben cada 5 manos."
   },
   "it": {
     "设置": "Impostazioni",
@@ -8468,8 +8468,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "La puntata è arrivata dopo una serie di check, quindi il range può contenere mani forti giocate lentamente, ma anche mani fatte più deboli e bluff; {0} ha stimato che la parte che batte non basta a pagare questo call.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "È poco aggressivo dopo il flop, quindi {0} ha stimato questa puntata come sbilanciata verso mani forti.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "I bui salgono ogni {0} mani fino a {1}; il tavolo finale inizia a {2} giocatori e da lì salgono ogni {3} mani.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Bui in salita ogni 8 mani, max 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "I bui salgono ogni 8 mani fino a 5.8K / 11.6K; il tavolo finale inizia a 3 giocatori e da lì salgono ogni 5 mani."
+    "每 8 手涨盲，最高 6K / 12K": "Bui in salita ogni 8 mani, max 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "I bui salgono ogni 8 mani fino a 6K / 12K; il tavolo finale inizia a 3 giocatori e da lì salgono ogni 5 mani."
   },
   "pt": {
     "设置": "Configurações",
@@ -9992,8 +9992,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "A aposta veio depois de checks, então o range pode ter mãos fortes jogadas devagar, além de mãos feitas mais fracas e blefes; {0} estimou que a parte que vence não basta para pagar este call.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "É pouco agressivo depois do flop, então {0} estimou esta aposta como mais inclinada a mãos fortes.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Os blinds sobem a cada {0} mãos até {1}; a mesa final começa com {2} jogadores e, a partir daí, sobem a cada {3} mãos.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Blinds a cada 8 mãos, até 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Os blinds sobem a cada 8 mãos até 5.8K / 11.6K; a mesa final começa com 3 jogadores e, a partir daí, sobem a cada 5 mãos."
+    "每 8 手涨盲，最高 6K / 12K": "Blinds a cada 8 mãos, até 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Os blinds sobem a cada 8 mãos até 6K / 12K; a mesa final começa com 3 jogadores e, a partir daí, sobem a cada 5 mãos."
   },
   "de": {
     "设置": "Einstellungen",
@@ -11497,8 +11497,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "Die Bet kam nach Checks, daher kann die Range langsam gespielte starke Hände ebenso enthalten wie schwächere fertige Hände und Bluffs; {0} schätzte, dass der Teil, den er schlägt, diesen Call nicht trägt.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Das ist nach dem Flop selten aggressiv, also schätzte {0} diese Bet als eher starke Hände ein.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Die Blinds steigen alle {0} Hände bis {1}; bei {2} verbleibenden Spielern beginnt der Finaltisch, danach steigen sie alle {3} Hände.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Blinds alle 8 Hände, bis 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Die Blinds steigen alle 8 Hände bis 5.8K / 11.6K; bei 3 verbleibenden Spielern beginnt der Finaltisch, danach steigen sie alle 5 Hände."
+    "每 8 手涨盲，最高 6K / 12K": "Blinds alle 8 Hände, bis 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Die Blinds steigen alle 8 Hände bis 6K / 12K; bei 3 verbleibenden Spielern beginnt der Finaltisch, danach steigen sie alle 5 Hände."
   },
   "fr": {
     "设置": "Réglages",
@@ -13188,8 +13188,8 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "La mise est venue après des checks, donc la range peut contenir des mains fortes jouées lentement, mais aussi des mains faites plus faibles et des bluffs ; {0} a estimé que la part qu'il bat ne suffit pas à payer ce call.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "C'est rarement agressif après le flop, donc {0} a estimé cette mise plutôt orientée vers des mains fortes.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Les blindes montent toutes les {0} mains jusqu’à {1} ; la table finale commence à {2} joueurs, puis elles montent toutes les {3} mains.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Blindes toutes les 8 mains, jusqu’à 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Les blindes montent toutes les 8 mains jusqu’à 5.8K / 11.6K ; la table finale commence à 3 joueurs, puis elles montent toutes les 5 mains."
+    "每 8 手涨盲，最高 6K / 12K": "Blindes toutes les 8 mains, jusqu’à 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Les blindes montent toutes les 8 mains jusqu’à 6K / 12K ; la table finale commence à 3 joueurs, puis elles montent toutes les 5 mains."
   },
   "ru": {
     "设置": "Настройки",
@@ -14842,7 +14842,7 @@
     "此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；{0}估计其中自己能赢的部分不足以支付这次跟注。": "Ставка прозвучала после чеков, поэтому в диапазоне могут быть и медленно разыгранные сильные руки, и более слабые готовые руки, и блефы; {0} оценил, что части, которую он обыгрывает, не хватает, чтобы оплатить этот колл.",
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "Это редкая агрессия после флопа, поэтому {0} счёл эту ставку смещённой в сторону сильных рук.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Блайнды растут каждые {0} раздач до {1}; финальный стол начинается при {2} игроках, после этого блайнды растут каждые {3} раздач.",
-    "每 8 手涨盲，最高 5.8K / 11.6K": "Блайнды каждые 8 раздач, до 5.8K / 11.6K",
-    "每 8 手升一级，最高 5.8K / 11.6K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Блайнды растут каждые 8 раздач до 5.8K / 11.6K; финальный стол начинается при 3 игроках, после этого блайнды растут каждые 5 раздач."
+    "每 8 手涨盲，最高 6K / 12K": "Блайнды каждые 8 раздач, до 6K / 12K",
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Блайнды растут каждые 8 раздач до 6K / 12K; финальный стол начинается при 3 игроках, после этого блайнды растут каждые 5 раздач."
   }
 }
