@@ -10,7 +10,7 @@ const practiceTitles = {
   it: 'Pratica della sessione',
   pt: 'Prática desta sessão',
   de: 'Übung dieser Sitzung',
-  fr: 'Pratique de cette session',
+  fr: 'Partie en cours',
   ru: 'Практика в этой сессии',
 };
 test('localized HTML preserves URLs, identifiers and serialized rule data', async ({ page }) => {

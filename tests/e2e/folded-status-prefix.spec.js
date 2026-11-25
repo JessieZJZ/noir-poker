@@ -10,7 +10,7 @@ const labels = {
   it: 'Ha fatto fold · Doppia coppia',
   pt: 'Desistiu · Dois pares',
   de: 'Gepasst · Zwei Paare',
-  fr: 'Couché · Deux paires',
+  fr: 'Couché · Double paire',
   ru: 'Фолд · Две пары',
 };
 const sizes = [

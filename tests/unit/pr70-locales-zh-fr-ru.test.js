@@ -61,7 +61,7 @@ test('action and sizing guides distinguish free checks from calls and theoretica
       assert.match(value, /目前籌碼面額的整數倍/);
     } else if (locale === 'fr') {
       assert.match(value, /call théorique/);
-      assert.match(value, /ne faut pas cliquer sur « Suivre » d’abord/);
+      assert.match(value, /ne faut pas cliquer sur «\sSuivre\s» d’abord/);
       assert.match(localizeText('无需补筹码时过牌，否则补齐当前下注。'), /aucun jeton à ajouter/);
       assert.equal(localizeText('过牌 / 跟注'), 'Checker / Suivre');
     } else {
@@ -215,7 +215,7 @@ test('refill limits and new table hints remain localized with the correct visibl
       assert.match(refill, /三次.*一半.*決賽圈不可補碼/);
       assert.match(hint, /牌桌左上方/);
     } else if (locale === 'fr') {
-      assert.match(refill, /trois fois.*moitié.*Aucune recharge.*table finale/s);
+      assert.match(refill, /trois fois.*moitié.*Aucune recave.*table finale/s);
       assert.match(hint, /haut à gauche/);
       assert.match(countdown, /après celle-ci/);
     } else {

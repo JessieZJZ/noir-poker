@@ -116,7 +116,7 @@ test('the practice heading describes the current session in every supported loca
     it: 'Pratica della sessione',
     pt: 'Prática desta sessão',
     de: 'Übung dieser Sitzung',
-    fr: 'Pratique de cette session',
+    fr: 'Partie en cours',
     ru: 'Практика в этой сессии',
   })) {
     await loadLocale(locale);

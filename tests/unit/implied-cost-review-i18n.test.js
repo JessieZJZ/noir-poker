@@ -79,9 +79,9 @@ const truth = {
     templates: [
       'Selon l’estimation actuelle du range, ce call doit encore rapporter des jetons de mains plus faibles après {0}.',
       'Les gains supplémentaires après {0} dépendent de la volonté des mains plus faibles de payer.',
-      'Actuellement, {0} offre {1} cartes candidates qui complètent directement la main. Après le call, on voit le turn et la river ; la probabilité de voir au moins une de ces candidates actuelles est d’environ {2}, ce qui n’est pas la probabilité finale de gagner.',
+      'Vous avez {0}, soit {1} outs directs. Après le call, vous verrez le turn et la river ; la probabilité de voir tomber au moins un de ces outs est d’environ {2}, ce qui n’est pas la probabilité finale de gagner.',
     ],
-    improvements: ['avoir complété le tirage', 'avoir touché un brelan avec une paire en main'],
+    improvements: ['avoir complété le tirage', 'avoir touché un set'],
   },
   ru: {
     templates: [
@@ -228,8 +228,8 @@ const pairAccuracyTruth = {
     'Ein Call setzt genügend schwächere Hände oder Bluffs in der gegnerischen Range voraus; gegen eine engere Range solltest du folden.',
   ],
   fr: [
-    'Si {0} tombe, les cartes privatives peuvent former une paire plus haute, mais ces cartes ne sont pas toutes des outs garantissant la victoire.',
-    'Pour suivre, la range adverse doit contenir assez de mains plus faibles ou de bluffs ; face à une range plus serrée, il faut se coucher.',
+    'Si un {0} tombe, vos cartes privatives peuvent former une paire plus haute, mais ces cartes ne sont pas toutes des outs gagnants garantis.',
+    'Pour suivre, la range adverse doit contenir assez de mains plus faibles ou de bluffs ; face à une range plus serrée, il faut se coucher.',
   ],
   ru: [
     'Если выйдет {0}, карманные карты могут образовать более высокую пару, но не все эти карты можно считать гарантированно победными аутами.',
