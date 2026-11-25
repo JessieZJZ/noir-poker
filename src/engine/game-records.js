@@ -6,7 +6,7 @@ import {
 } from './poker.js';
 import { migrateCharacterState } from './character-state.js';
 import { sameStakes, validateStakes } from './stakes.js';
-import { blindLevels, finalTableSeats } from './blind-levels.js';
+import { blindLevels, finalTableSeats, previousBlindLevels } from './blind-levels.js';
 
 export const GAME_RECORDS_KEY = 'noir-game-records-v1';
 // Settled hands keep their full table snapshot in a separate store, so the
@@ -104,6 +104,7 @@ function matchesRecordedBlinds(stakes, playerCount, blinds, index) {
     row.smallBlind === blinds.smallBlind &&
     row.bigBlind === blinds.bigBlind;
   if (blindLevels(stakes, playerCount).some(matches)) return true;
+  if (previousBlindLevels(stakes, playerCount).some(matches)) return true;
   const oldCap = (stakes.startingStack * playerCount) / (finalTableSeats(playerCount) * 20);
   return [1, 2, 3, 4, 6, 8, 10, 12, 15].some((multiple, i) => {
     const bigBlind = stakes.bigBlind * multiple;

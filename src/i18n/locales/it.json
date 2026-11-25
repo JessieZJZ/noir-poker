@@ -2574,7 +2574,6 @@
   "当前{0}仍有摊牌或改善机会。": "La mano attuale ({0}) ha ancora chance allo showdown o di migliorare.",
   "当前{0}保留摊牌机会，河牌已无改善机会。": "La mano attuale ({0}) ha ancora chance allo showdown; al river non può più migliorare.",
   "当前主要依靠{0}改善。": "Al momento conti soprattutto su questo per migliorare: {0}.",
-  "此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。": "Prima tutti hanno fatto check. Il range di puntata attuale può ancora contenere mani forti in slowplay, mani fatte più deboli e bluff.",
   "过牌保留改善机会，也没有主动扩大底池。": "Il check conserva le possibilità di miglioramento senza ingrandire attivamente il piatto.",
   "这手起手牌被跟注后的成牌质量有限，进攻主要依赖对手弃牌。": "Questa mano iniziale ha qualità limitata quando viene chiamata, quindi l’aggressione dipende soprattutto dai fold avversari.",
   "这是{0}平跟：只补 {1}，没有再加注。平跟保留了对手的较弱牌和诈唬，也控制了这次投入。": "È un flat call con {0}: aggiunge solo {1}, senza controrilanciare. Il call mantiene le mani deboli e i bluff avversari e limita questo investimento.",

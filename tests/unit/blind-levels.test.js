@@ -19,6 +19,7 @@ import {
   finalTableSeats,
   tournamentStage,
   HANDS_PER_LEVEL,
+  FINAL_TABLE_HANDS_PER_LEVEL,
 } from '../../src/engine/blind-levels.js';
 import { stakesFromSmallBlind, DEFAULT_STAKES } from '../../src/engine/stakes.js';
 import { createGameRecords, createMemorySnapshots } from '../../src/engine/game-records.js';
@@ -31,7 +32,7 @@ const foldOut = (g) => {
 };
 const stakes = (smallBlind) => stakesFromSmallBlind(smallBlind);
 
-test('every level is a whole multiple of the starting small blind and the cap leaves heads-up stacks averaging about 14 BB', () => {
+test('every level is a whole multiple of the starting small blind, rises about 1.5x and the round cap leaves heads-up stacks averaging 5.5–6 BB', () => {
   for (const smallBlind of [25, 75, 100, 125, 50000])
     for (const seats of [5, 6, 7, 8, 9]) {
       const s = stakes(smallBlind),
@@ -44,21 +45,24 @@ test('every level is a whole multiple of the starting small blind and the cap le
         assert.equal(level.bigBlind, level.smallBlind * 2);
       }
       assert.deepEqual(
-        levels.slice(0, 6).map((l) => l.smallBlind / smallBlind),
-        [1, 2, 3, 4, 6, 10],
+        levels.slice(0, 8).map((l) => l.smallBlind / smallBlind),
+        [1, 2, 3, 5, 8, 12, 18, 27],
       );
-      assert.equal(levels.length, 8);
-      assert.ok(Math.abs(average / cap.bigBlind - 14) < 0.5);
-      for (let i = 5; i < levels.length; i++)
-        assert.ok(levels[i].bigBlind >= 1.3 * levels[i - 1].bigBlind);
+      assert.equal(levels.length, { 5: 9, 6: 10, 7: 10, 8: 10, 9: 11 }[seats]);
+      assert.ok(average / cap.bigBlind > 5.5 && average / cap.bigBlind <= 6);
+      assert.equal(cap.bigBlind % (5 * s.bigBlind), 0, 'The cap rounds up to five starting blinds');
+      for (let i = 1; i < levels.length; i++) {
+        const rise = levels[i].bigBlind / levels[i - 1].bigBlind;
+        assert.ok(rise >= 1.35 && rise <= 2, `${seats} seats level ${i}: ${rise}`);
+      }
     }
   // The cap scales with the starting blind and depends only on the seat count.
   const caps = [5, 6, 7, 8, 9].map((seats) => blindCap(DEFAULT_STAKES, seats).smallBlind);
-  assert.deepEqual(caps, [1800, 2100, 2500, 2900, 3200]);
+  assert.deepEqual(caps, [4500, 5000, 6000, 7000, 7500]);
   assert.deepEqual([5, 6, 7, 8, 9].map(finalTableSeats), [2, 2, 3, 3, 3]);
 });
 
-test('blinds rise every 10 hands, announce once and stop at the cap', () => {
+test('blinds rise every 8 hands, announce once and stop at the cap', () => {
   const g = newGame(5);
   const seen = [];
   for (let hand = 1; hand <= 200; hand++) {
@@ -69,17 +73,19 @@ test('blinds rise every 10 hands, announce once and stop at the cap', () => {
     assert.equal(posted, g.smallBlind + g.bigBlind);
     foldOut(g);
   }
-  // Every level is 10 hands.
+  // Every level is 8 hands while no one is out.
   assert.deepEqual(seen.slice(0, 3), [
-    [11, 200],
-    [21, 300],
-    [31, 400],
+    [9, 200],
+    [17, 300],
+    [25, 500],
   ]);
   assert.equal(g.smallBlind, blindCap(g.stakes, 5).smallBlind);
   assert.equal(seen.length, blindLevels(g.stakes, 5).length - 1);
 });
 
-test('a level lasts 10 hands whatever the seats left', () => {
+test('a level lasts 8 hands until the final table, then 5', () => {
+  assert.equal(HANDS_PER_LEVEL, 8);
+  assert.equal(FINAL_TABLE_HANDS_PER_LEVEL, 5);
   assert.equal(newGame(9).levelLength, HANDS_PER_LEVEL);
   assert.equal(newGame(5).levelLength, HANDS_PER_LEVEL);
   const g = newGame(9);
@@ -87,10 +93,39 @@ test('a level lasts 10 hands whatever the seats left', () => {
   g.levelHands = g.levelLength;
   startHand(g);
   assert.deepEqual(g.notices, [
-    { kind: 'blind-level', level: 1, smallBlind: 200, bigBlind: 400, last: false },
+    { kind: 'blind-level', level: 1, smallBlind: 200, bigBlind: 400, hands: 8, last: false },
   ]);
   assert.equal(g.levelLength, HANDS_PER_LEVEL);
   assert.equal(g.levelHands, 1);
+  // Reaching the final table mid-level shortens the level in progress.
+  foldOut(g);
+  for (const p of g.players.slice(3)) Object.assign(p, { out: true, stack: 0, place: 4 });
+  startHand(g);
+  assert.deepEqual(g.notices, [{ kind: 'final-table', seats: 3 }]);
+  assert.equal(g.levelLength, FINAL_TABLE_HANDS_PER_LEVEL);
+  assert.equal(g.levelHands, 2);
+  for (let hand = 3; hand <= FINAL_TABLE_HANDS_PER_LEVEL; hand++) {
+    foldOut(g);
+    startHand(g);
+    assert.deepEqual(g.notices, []);
+  }
+  foldOut(g);
+  startHand(g);
+  assert.deepEqual(g.notices, [
+    { kind: 'blind-level', level: 2, smallBlind: 300, bigBlind: 600, hands: 5, last: false },
+  ]);
+  // A level that already ran five hands rises as the final table starts.
+  const late = newGame(5);
+  late.levelHands = 6;
+  for (const p of late.players.slice(2)) Object.assign(p, { out: true, stack: 0, place: 3 });
+  startHand(late);
+  assert.deepEqual(
+    late.notices.map((n) => [n.kind, n.hands]),
+    [
+      ['final-table', undefined],
+      ['blind-level', 5],
+    ],
+  );
 });
 
 test('the final table is announced before a level change on the same hand and refills close', () => {
@@ -217,17 +252,17 @@ test('records accept hands at every level, carry the level through recovery and 
   const store = createGameRecords({ storage, snapshots: createMemorySnapshots() });
   const g = newGame(5);
   g.levelIndex = 3;
-  g.smallBlind = 400;
-  g.bigBlind = 800;
+  g.smallBlind = 500;
+  g.bigBlind = 1000;
   g.levelHands = g.levelLength;
   startHand(g);
   store.begin(g);
   foldOut(g);
   const saved = store.capture(g);
   assert.ok(saved.snapshot);
-  assert.equal(saved.snapshot.smallBlind, 600);
+  assert.equal(saved.snapshot.smallBlind, 800);
   const resumed = store.resume();
-  assert.equal(resumed.smallBlind, 600);
+  assert.equal(resumed.smallBlind, 800);
   assert.equal(resumed.levelIndex, 4);
   assert.equal(resumed.levelHands, 1);
   // A hand whose blinds are not on the ladder is not a valid record.
@@ -241,10 +276,15 @@ test('records accept hands at every level, carry the level through recovery and 
 
 test('archived hands, settled checkpoints and interrupted hands keep old blinds until the next rise', () => {
   for (const [seats, oldIndex, multiple, nextMultiple] of [
-    [5, 5, 8, 10],
-    [7, 6, 10, 16],
-    [5, 7, 12, 13],
+    // The earliest ladder.
+    [5, 5, 8, 12],
+    [7, 6, 10, 12],
+    [5, 7, 12, 18],
     [9, 8, 15, 18],
+    // The 10-hand ladder capped for a 14 BB heads-up.
+    [5, 3, 4, 5],
+    [5, 6, 13, 18],
+    [9, 7, 32, 40],
   ]) {
     const data = new Map(),
       snapshots = createMemorySnapshots();
@@ -259,7 +299,7 @@ test('archived hands, settled checkpoints and interrupted hands keep old blinds 
       levelIndex: oldIndex,
       smallBlind: 100 * multiple,
       bigBlind: 200 * multiple,
-      levelHands: 8,
+      levelHands: HANDS_PER_LEVEL - 2,
     });
     startHand(g);
     store.begin(g);
@@ -269,7 +309,7 @@ test('archived hands, settled checkpoints and interrupted hands keep old blinds 
     assert.equal(reloaded.getAttempt(id).snapshot.smallBlind, 100 * multiple);
     const restored = reloaded.resume();
     startHand(restored);
-    assert.equal(restored.levelHands, 10);
+    assert.equal(restored.levelHands, HANDS_PER_LEVEL);
     assert.equal(restored.smallBlind, 100 * multiple);
     reloaded.begin(restored);
     const interrupted = open().resume();
@@ -284,13 +324,14 @@ test('archived hands, settled checkpoints and interrupted hands keep old blinds 
         ),
         smallBlind: 100 * nextMultiple,
         bigBlind: 200 * nextMultiple,
+        hands: HANDS_PER_LEVEL,
         last: false,
       },
     ]);
   }
 });
 
-test('hand 71 posts the capped blinds, refunds the unmatched chips and conserves the heads-up bankroll', () => {
+test('the capped level posts its blinds, refunds the unmatched chips and conserves the heads-up bankroll', () => {
   for (const seats of [5, 6, 7, 8, 9]) {
     const g = newGame(seats, stakes(125)),
       levels = blindLevels(g.stakes, seats);

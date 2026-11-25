@@ -2577,7 +2577,6 @@
   "当前{0}仍有摊牌或改善机会。": "La mano actual, {0}, aún tiene opciones de showdown o de mejora. ",
   "当前{0}保留摊牌机会，河牌已无改善机会。": "La mano actual, {0}, conserva opciones de showdown, sin más mejora posible en el river.",
   "当前主要依靠{0}改善。": "Actualmente la mano depende sobre todo de mejorar {0}. ",
-  "此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。": "Antes todos pasaron. El rango de apuesta actual aún puede incluir manos fuertes en slowplay, manos hechas más débiles y faroles.",
   "过牌保留改善机会，也没有主动扩大底池。": "Pasar conserva las opciones de mejora sin aumentar activamente el bote.",
   "这手起手牌被跟注后的成牌质量有限，进攻主要依赖对手弃牌。": "Esta mano inicial tiene calidad limitada cuando recibe un call, por lo que su agresión depende sobre todo de que el rival se retire.",
   "这是{0}平跟：只补 {1}，没有再加注。平跟保留了对手的较弱牌和诈唬，也控制了这次投入。": "Es un call plano con {0}: añade {1} sin resubir. El call mantiene las manos débiles y los faroles del rival y limita esta inversión.",

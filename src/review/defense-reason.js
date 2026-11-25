@@ -79,7 +79,9 @@ export function defenseReason(snapshot, context, matchups) {
     postflop.findLastIndex((a) => a.action === 'raise'),
   );
   if (previous.length && previous.every((a) => a.action === 'check'))
-    clauses.push('此前一路过牌，当前下注范围仍可能同时包含慢打强牌、较弱成牌和诈唬。');
+    clauses.push(
+      `此前一路过牌后才下注，范围里既可能有慢打的强牌，也可能有较弱成牌和诈唬；${subject}估计其中自己能赢的部分不足以支付这次跟注。`,
+    );
   if (
     callers &&
     snapshot.street < 3 &&

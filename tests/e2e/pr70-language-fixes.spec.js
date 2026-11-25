@@ -89,9 +89,9 @@ test('switching Russian to Chinese redraws current amounts without changing the 
   });
   const before = await page.evaluate(() => window.noir.getState());
   await switchLocale(page, 'ru');
-  await expect(page.locator('#stakes-structure')).toContainText('3.2K / 6.4K');
+  await expect(page.locator('#stakes-structure')).toContainText('7.5K / 15K');
   await switchLocale(page, 'zh-CN');
-  await expect(page.locator('#stakes-structure')).toContainText('3.2K / 6.4K');
+  await expect(page.locator('#stakes-structure')).toContainText('7.5K / 15K');
   await expect(page.locator('#hero-stack')).not.toContainText(',');
   await expect(page.locator('#pot-value')).not.toContainText(',');
   const after = await page.evaluate(() => window.noir.getState());
@@ -121,7 +121,7 @@ test('blind progress names the next level while the original replay badge persis
   await page.evaluate(() => window.qa.stop());
   await expect(page.locator('#blind-progress')).toBeVisible();
   await expect(page.locator('#replay-label')).toBeVisible();
-  await expect(page.locator('#blind-progress')).toHaveText('再打 9 手后涨盲到 50 / 100');
+  await expect(page.locator('#blind-progress')).toHaveText('再打 7 手后涨盲到 50 / 100');
   await expect(page.locator('#dismiss-replay')).toHaveCount(0);
   const geometry = await page.evaluate(() => {
     const rect = (s) => document.querySelector(s).getBoundingClientRect();
@@ -142,7 +142,7 @@ test('blind progress names the next level while the original replay badge persis
   await switchLocale(page, 'en');
   await expect(page.locator('#replay-label')).toBeVisible();
   await expect(page.locator('#replay-label')).toHaveText('Replay 1');
-  await expect(page.locator('#blind-progress')).toHaveText('Hands until blinds rise: 9 · 50 / 100');
+  await expect(page.locator('#blind-progress')).toHaveText('Hands until blinds rise: 7 · 50 / 100');
   const after = await page.evaluate(() => window.noir.getState());
   expect(after.hand).toBe(before.hand);
   expect(after.replayAttempt).toBe(before.replayAttempt);
@@ -244,7 +244,7 @@ test('a visible blind-level notice changes language without restarting the deal'
   const before = await page.evaluate(() => window.noir.getState());
   await switchLocale(page, 'zh-CN');
   await expect(title).toHaveText('盲注升至 200 / 400');
-  await expect(stage.locator('.table-notice-caption')).toHaveText('每 10 手升一级');
+  await expect(stage.locator('.table-notice-caption')).toHaveText('每 8 手升一级');
   expect(
     await initial.evaluate((node) => node === document.querySelector('.table-notice-stage')),
   ).toBe(true);

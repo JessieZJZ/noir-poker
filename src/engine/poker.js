@@ -268,7 +268,7 @@ export function newGame(
     risingBlinds,
     levelIndex: 0,
     levelHands: 0,
-    levelLength: levelLengthFor(playerCount),
+    levelLength: levelLengthFor(playerCount, playerCount),
     finalTable: false,
     notices: [],
     playerObservationRevision: 0,
@@ -1073,6 +1073,35 @@ export function estimateEquity(hole, board, rivals = 1, trials = 35, random = Ma
   }
   return wins / trials;
 }
+// A call priced close to the first public-range estimate needs a steadier
+// estimate: with a few dozen samples the spread alone can flip a clear call
+// (an overpair against a pot-size bet) into a fold. Such calls are topped up
+// to CLOSE_CALL_SAMPLES; the extra samples use the same public ranges only.
+export const CLOSE_CALL_SAMPLES = 400;
+const SAMPLE_MEANS = [
+  'equity',
+  'potEquity',
+  'priceEquity',
+  'winProbability',
+  'tieProbability',
+  'lossProbability',
+];
+function refineCloseCall(first, price, legal, estimate) {
+  const samples = first.samples;
+  if (!(legal.callAmount > 0) || !Number.isInteger(samples) || samples < 1) return first;
+  if (samples >= CLOSE_CALL_SAMPLES) return first;
+  // 2.5 standard errors of a share in [0, 1] at the first sample size.
+  const band = (2.5 * 0.5) / Math.sqrt(samples);
+  if (Math.abs((first.priceEquity ?? first.equity) - price) > band) return first;
+  const extra = estimate(CLOSE_CALL_SAMPLES - samples);
+  const pooled = { ...first, samples: CLOSE_CALL_SAMPLES, closeCallRefined: samples };
+  for (const key of SAMPLE_MEANS)
+    if (Number.isFinite(first[key]) && Number.isFinite(extra[key]))
+      pooled[key] = (first[key] * samples + extra[key] * extra.samples) / CLOSE_CALL_SAMPLES;
+  for (const key of ['proposals', 'cdfFallbacks'])
+    if (Number.isFinite(first[key])) pooled[key] = first[key] + (extra[key] || 0);
+  return pooled;
+}
 export function botDecision(g, random = Math.random, { trials, allInCache } = {}) {
   const p = g.players[g.actor],
     legal = legalActions(g),
@@ -1209,15 +1238,23 @@ export function botDecision(g, random = Math.random, { trials, allInCache } = {}
     view.equityPots = currentPots(equityLedger)
       .pots.filter((pot) => pot.eligible.includes(p.id))
       .map(({ amount, eligible }) => ({ amount, eligible: [...eligible] }));
-    view.publicEquity = estimatePublicEquity(view, preparePublicRanges(view), {
-      deck: deckOfCards(),
-      evaluate,
-      compare,
-      features: botBoardFeatures,
-      trials: equityTrials,
-      random,
-      cache: allInCache,
-    });
+    const ranges = preparePublicRanges(view);
+    const estimate = (count) =>
+      estimatePublicEquity(view, ranges, {
+        deck: deckOfCards(),
+        evaluate,
+        compare,
+        features: botBoardFeatures,
+        trials: count,
+        random,
+        cache: allInCache,
+      });
+    view.publicEquity = refineCloseCall(
+      estimate(equityTrials),
+      view.callPrice.odds,
+      legal,
+      estimate,
+    );
     view.equity = view.publicEquity.priceEquity ?? view.publicEquity.equity;
   }
   if (

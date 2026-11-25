@@ -56,7 +56,7 @@ test('calculator numbers keep decimal points and ungrouped counts through all la
     await expect(page.locator('#win-rate-status')).not.toContainText(/1[,.\s]712[,.\s]304/);
     await expect(page.locator('[data-win-rate-player="0"] .win-rate-hole')).toContainText('A♠');
     await expect(page.locator('[data-win-rate-player="1"] .win-rate-hole')).toContainText('Q♥');
-    await expect(page.locator('#stakes-structure')).toContainText('3.2K / 6.4K');
+    await expect(page.locator('#stakes-structure')).toContainText('7.5K / 15K');
   }
   const after = await page.evaluate(() => window.noir.getState());
   for (const key of ['hand', 'replayAttempt', 'wealth', 'actor', 'phase', 'players', 'legal'])
