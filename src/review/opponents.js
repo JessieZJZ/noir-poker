@@ -30,7 +30,14 @@ const n = compactChips;
 // Legacy or inconsistent traces cannot turn an executed fold into an account
 // of checking. A matching action is required even without a versioned basis.
 const reasonActions = {
-  fold: ['outside-range', 'insufficient-equity', 'stack-pressure', 'short-fold', 'survival-fold'],
+  fold: [
+    'outside-range',
+    'insufficient-equity',
+    'stack-pressure',
+    'short-fold',
+    'committed-fold',
+    'survival-fold',
+  ],
   call: [
     'implied-continue',
     'story-continue',
@@ -57,6 +64,7 @@ const reasonActions = {
     'seven-two-bluff',
     'short-push',
     'short-reshove',
+    'committed-reshove',
     'probe-bet',
     'check-raise',
   ],
@@ -91,6 +99,8 @@ export const BOT_REASON_NAMES = {
   'short-reshove': '短码再全下',
   'short-fold': '短码等待更好的全下机会',
   'short-check': '短码在大盲免费看牌',
+  'committed-reshove': '对方开池已投入大半后手，加注逼全下',
+  'committed-fold': '跟注后翻牌没有下注空间，弃牌',
   'survival-fold': '接近决赛圈，谨慎弃牌',
   'probe-bet': '先行动小注试探',
   'check-raise': '过牌后再加注',
@@ -251,6 +261,33 @@ function shortStackReason(t, subject, hand) {
     if (pressure && leader)
       parts.push(`${subject}筹码最多，对手跟注输了会出局，所以可以更多地施压抢盲。`);
   }
+  return parts;
+}
+
+// A committed open: the call itself would leave almost no postflop play, so
+// the plan compared the whole matched stack with the public-range estimate.
+function committedOpenReason(t, subject, hand) {
+  const plan = t.committedOpen || {},
+    depth = Math.max(1, Math.round(plan.depthBB ?? 0)),
+    spr = (plan.spr ?? 0).toFixed(1),
+    amount = n(plan.amount ?? 0);
+  const parts = [
+    `跟注后双方还能继续投入的筹码只剩 ${n(plan.behindAfterCall ?? 0)}，筹码底池比（SPR）约 ${spr}，有效筹码约 ${depth} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以${subject}只在全下和弃牌之间选择。`,
+  ];
+  if (t.reason === 'committed-reshove') {
+    const edge = `${subject}估计${hand}对开池者公开范围的胜率约 ${pct(plan.equity ?? 0)}，达到全下大约需要的 ${pct(plan.required ?? 0)}（含身后玩家可能入池的余量）。`;
+    parts.push(
+      plan.valueTier ? `${hand}属于最强的一档起手牌。` : edge,
+      plan.openerAllIn
+        ? `${subject}加注到 ${amount}，对方要继续就得全下。`
+        : `${subject}的筹码比开池者少，直接全下 ${amount}。`,
+    );
+  } else
+    parts.push(
+      (plan.equity ?? 0) >= (plan.required ?? 1)
+        ? `${hand}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以${subject}弃牌。`
+        : `${subject}估计${hand}对开池者公开范围的胜率约 ${pct(plan.equity ?? 0)}，不到全下大约需要的 ${pct(plan.required ?? 0)}；剩下的后手也不够让投机牌兑现隐含赔率，所以${subject}弃牌。`,
+    );
   return parts;
 }
 
@@ -493,6 +530,11 @@ export function explainOpponent(record, identities = []) {
     case 'short-fold':
     case 'short-check':
       logicParts = shortStackReason(t, subject, hand);
+      logic = logicParts.join('');
+      break;
+    case 'committed-reshove':
+    case 'committed-fold':
+      logicParts = committedOpenReason(t, subject, hand);
       logic = logicParts.join('');
       break;
     case 'survival-fold':

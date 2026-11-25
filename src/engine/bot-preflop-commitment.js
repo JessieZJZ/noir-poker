@@ -50,6 +50,89 @@ export function shortStackPlan(view, profile) {
   return { ...plan, action: 'fold', reason: 'short-fold' };
 }
 
+// A single open that already commits most of the opener's stack leaves a
+// caller almost nothing to play for after the flop. At or below this
+// stack-to-pot ratio after the call, the response is all-in or fold.
+export const COMMITTED_SPR = 1.5;
+// Deeper matched stacks keep the normal open/3-bet logic.
+export const COMMITTED_DEPTH_BB = 40;
+// Starting-hand share that may ever move in over a committed open, so a noisy
+// equity estimate cannot turn a dominated hand into a reshove; the top tier
+// (88+, AK) moves in without depending on that estimate.
+const COMMITTED_RESHOVE_FLOOR = 0.25;
+const COMMITTED_VALUE_TIER = 0.04;
+
+// Over a committed open the price is the whole matched stack, not the open:
+// a flat call leaves SPR below COMMITTED_SPR, so speculative hands lose their
+// implied odds and a hand worth playing gives up fold equity by flatting.
+// The plan compares our public-range equity with the all-in price. Only public
+// stacks, sizing and position, our own cards and that estimate enter it.
+export function committedOpenPlan(view, profile, equity) {
+  const legal = view.legal;
+  if (view.street !== 0 || view.allIn || view.difficulty === 'easy') return null;
+  if (!legal.canRaise || legal.toCall <= 0 || legal.callAmount >= view.stack) return null;
+  if (view.opponents?.some((p) => p.allin)) return null;
+  const raises = view.history.filter((a) => a.street === 0 && a.action === 'raise');
+  if (raises.length !== 1 || raises[0].id === view.id) return null;
+  const opener = view.opponents?.find((p) => p.id === raises[0].id);
+  if (!opener || opener.stack <= 0) return null;
+  const bigBlind = bigBlindOf(view);
+  const ownPaid = view.total ?? view.bet ?? 0,
+    openerPaid = opener.total ?? opener.bet ?? 0;
+  const own = view.stack + ownPaid,
+    openerChips = opener.stack + openerPaid;
+  const matched = Math.min(own, openerChips);
+  const depthBB = matched / bigBlind;
+  if (depthBB > COMMITTED_DEPTH_BB) return null;
+  const behindAfterCall = Math.min(view.stack - legal.callAmount, opener.stack);
+  const spr = behindAfterCall / Math.max(1, view.contestable);
+  if (spr > COMMITTED_SPR) return null;
+  const callers = new Set(
+    view.history
+      .filter(
+        (a) =>
+          a.street === 0 &&
+          a.action === 'call' &&
+          a.amount > 0 &&
+          a.id !== view.id &&
+          a.id !== opener.id,
+      )
+      .map((a) => a.id),
+  ).size;
+  const behind = seatsBehind(view);
+  // Assume the committed opener calls: the jam wins only at showdown here.
+  const dead = Math.max(0, (view.pot ?? 0) - ownPaid - openerPaid);
+  const risk = matched - ownPaid;
+  const potOdds = risk / Math.max(1, dead + matched * 2);
+  // Unacted seats and earlier callers can still wake up behind the jam.
+  const aggression = profile.axes[1] / 100;
+  const margin = Math.max(0, 0.02 + behind * 0.008 + callers * 0.03 - (aggression - 0.5) * 0.04);
+  const required = Math.min(0.95, potOdds + margin);
+  const percentile = startingPercentile(view.hole);
+  const plan = {
+    depthBB,
+    spr,
+    behindAfterCall,
+    openerChips,
+    matched,
+    potOdds,
+    margin,
+    required,
+    equity,
+    percentile,
+    behind,
+    callers,
+    openerAllIn: matched === openerChips,
+  };
+  const valueTier = percentile <= COMMITTED_VALUE_TIER;
+  plan.valueTier = valueTier;
+  if (valueTier || (equity >= required && percentile <= COMMITTED_RESHOVE_FLOOR)) {
+    const amount = Math.max(legal.minRaiseTo, Math.min(legal.maxRaiseTo, openerChips));
+    return { ...plan, action: 'raise', amount, reason: 'committed-reshove' };
+  }
+  return { ...plan, action: 'fold', reason: 'committed-fold' };
+}
+
 // Deliberate value commitments for the training opponents. This is a bounded
 // policy mix, not a solver chart. Only the actor's cards and public ledgers enter.
 export function preflopJamPlan(view, profile) {

@@ -1458,7 +1458,16 @@
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "This bet tries to make better hands fold; if called, reassess the opponent's remaining range on the next card rather than automatically betting again.",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "This call depends on enough weaker hands or bluffs in the opponent's range. If the range is mainly stronger made hands, fold even when the price is low.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Replay {0}. First compare {1} with {2}. If you call instead, you'd put in all your remaining {3} and make no more betting or folding decisions; other players' later raises won't require more chips from you.",
-    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Replay {0}. First compare {1}, then check the {3} equity needed to add {2}. A call lets you see both the turn and the river; the {4} outs refer only to the next card, so the next-card chance cannot replace the final chance of winning. "
+    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Replay {0}. First compare {1}, then check the {3} equity needed to add {2}. A call lets you see both the turn and the river; the {4} outs refer only to the next card, so the next-card chance cannot replace the final chance of winning. ",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} estimated {1} at about {2} equity against the opener's public range, short of the roughly {3} an all-in needs; the stacks left behind are also too small for speculative hands to collect implied odds, so {4} folded.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} estimated {1} at about {2} equity against the opener's public range, reaching the roughly {3} an all-in needs (including a margin for players still to act).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} raised to {1}, so the opener has to go all-in to continue.",
+    "{0}属于最强的一档起手牌。": "{0} is in the strongest tier of starting hands.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "{0}'s estimated equity is close to what an all-in needs, but by the starting-hand rule of thumb it is outside the reshove range at this depth and is often dominated by stronger similar hands in the opening range, so {1} folded.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0} has fewer chips than the opener and moved all-in for {1}.",
+    "对方开池已投入大半后手，加注逼全下": "Opener already committed most of the stack: raise to force all-in",
+    "跟注后翻牌没有下注空间，弃牌": "Too little room after a call: fold",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "After a call only {0} could still go in, a stack-to-pot ratio (SPR) of about {1}, with effective stacks around {2} big blinds. There is almost no room to maneuver after the flop and calling is nearly the same as going all-in, so {3} chose only between all-in and fold."
   },
   "zh-TW": {
     "设置": "設定",
@@ -2361,7 +2370,16 @@
     "当前 {0} 带{1}，但公共牌已有四张同花色，对手底牌只需有一张该花色就已成同花，即使补成顺子，也仍会输给同花，不能把 {2} 张顺子改善候选都当作获胜补牌。": "目前 {0} 帶{1}，但公共牌已有四張同花色，對手底牌只需有一張該花色就已成同花，即使補成順子，也仍會輸給同花，不能把這 {2} 張能補成順子的牌都當作穩贏的補牌。",
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "這次下注嘗試讓更好的牌棄掉，若被跟注，下一張必須重新判斷對手留下的範圍，不自動繼續下注。",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "這次跟注依賴對手範圍裡有足夠較弱牌或詐唬，若主要是更強成牌，即使價格不高也應棄牌。",
-    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "重打 {0} 這手，先比較{1}與{2}，若改為跟注，會投入全部剩餘 {3}，之後不再參與下注或棄牌決策，其他玩家的後續加注不需要你再補籌碼。"
+    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "重打 {0} 這手，先比較{1}與{2}，若改為跟注，會投入全部剩餘 {3}，之後不再參與下注或棄牌決策，其他玩家的後續加注不需要你再補籌碼。",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0}估計{1}對開池者公開範圍的勝率約 {2}，不到全下大約需要的 {3}；剩下的後手也不夠讓投機牌兌現隱含賠率，所以{4}棄牌。",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0}估計{1}對開池者公開範圍的勝率約 {2}，達到全下大約需要的 {3}（含身後玩家可能入池的餘量）。",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0}加注到 {1}，對方要繼續就得全下。",
+    "{0}属于最强的一档起手牌。": "{0}屬於最強的一檔起手牌。",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "{0}的估計勝率接近全下所需，但按起手牌強度的經驗規則，它不在這個深度的再全下範圍內，容易被開池範圍裡更強的同類牌壓制，所以{1}棄牌。",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0}的籌碼比開池者少，直接全下 {1}。",
+    "对方开池已投入大半后手，加注逼全下": "對方開池已投入大半後手，加注逼全下",
+    "跟注后翻牌没有下注空间，弃牌": "跟注後翻牌沒有下注空間，棄牌",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "跟注後雙方還能繼續投入的籌碼只剩 {0}，籌碼底池比（SPR）約 {1}，有效籌碼約 {2} 個大盲。翻牌後已經沒有多少下注空間，跟注基本等於全下，所以{3}只在全下和棄牌之間選擇。"
   },
   "ja": {
     "设置": "設定",
@@ -3745,7 +3763,16 @@
     "当前 {0} 带{1}，但公共牌已有四张同花色，对手底牌只需有一张该花色就已成同花，即使补成顺子，也仍会输给同花，不能把 {2} 张顺子改善候选都当作获胜补牌。": "現在は {0}、{1} もありますが、ボードには同じスートが4枚あります。相手はそのスートのホールカードが1枚あればフラッシュです。ストレートになってもフラッシュには負けます。ストレートへの改善候補 {2} 枚をすべて勝てるアウツとは数えられません。",
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "このベットは強いハンドを降ろす狙いです。コールされたら、次のカードで相手に残ったレンジを見直し、自動的には打ち続けません。",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "このコールには、相手のレンジに弱いハンドやブラフが十分にあることが必要です。主に強い完成ハンドなら、安くてもフォールドします。",
-    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "{0} のハンドをやり直すなら、まず{1}と{2}を比較します。コールに変えると残りの {3} をすべて投入し、その後のベットやフォールドの判断はありません。ほかのプレイヤーがその後レイズしても、追加でチップを払う必要はありません。"
+    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "{0} のハンドをやり直すなら、まず{1}と{2}を比較します。コールに変えると残りの {3} をすべて投入し、その後のベットやフォールドの判断はありません。ほかのプレイヤーがその後レイズしても、追加でチップを払う必要はありません。",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0}は、オープンした相手の公開レンジに対する{1}の勝率を約 {2} と見積もりました。オールインに必要な約 {3} に届かず、残りのスタックでは投機的なハンドがインプライドオッズを回収することもできないため、{4}はフォールドしました。",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0}は、オープンした相手の公開レンジに対する{1}の勝率を約 {2} と見積もり、オールインに必要な約 {3}（後ろのプレイヤーが参加する余地を含む）に達しました。",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0}は {1} までレイズし、相手は続けるならオールインするしかありません。",
+    "{0}属于最强的一档起手牌。": "{0}は最も強いランクのスターティングハンドです。",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "{0}の推定勝率はオールインに必要なラインに近いものの、スターティングハンドの経験則ではこの深さのリショーブレンジに入らず、オープンレンジ内のより強い同系統のハンドに支配されやすいため、{1}はフォールドしました。",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0}はオープンした相手よりチップが少なく、{1} でそのままオールインしました。",
+    "对方开池已投入大半后手，加注逼全下": "相手のオープンでスタックの大半が投入済み：レイズでオールインを迫る",
+    "跟注后翻牌没有下注空间，弃牌": "コール後に立ち回る余地が少ない：フォールド",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "コール後に双方がさらに投入できるチップは {0} だけで、SPR（スタックとポットの比率）は約 {1}、有効スタックは約 {2} ビッグブラインドです。フロップ後に立ち回る余地はほとんどなく、コールはほぼオールインと同じなので、{3}はオールインかフォールドかだけで選びました。"
   },
   "ko": {
     "设置": "설정",
@@ -5459,7 +5486,16 @@
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "{0}을(를) 다시 플레이하며 먼저 {1}와(과) {2}을(를) 비교합니다. 콜로 바꾸면 남은 {3}을(를) 모두 투입합니다. 이후 베팅이나 폴드 결정은 없으며, 다른 플레이어의 후속 레이즈에도 칩을 더 낼 필요가 없습니다.",
     "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "{0}을(를) 다시 플레이합니다. 먼저 {1}을(를) 비교하고 {2}을(를) 더 내는 데 필요한 승률 {3}을(를) 확인합니다. 콜하면 턴과 리버를 모두 볼 수 있습니다. {4}장은 다음 카드의 개선 후보이며 그 확률이 최종 승리 확률을 대신하지는 않습니다.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "{0}에서 포지션이 있습니다. 이번 체크에는 칩이 들지 않으며 남는 칩은 {1}입니다. 리버에서 {2}을(를) 완성하지 못했는데 상대가 체크하고, 보드상 더 강한 메이드 핸드를 대변할 수 있다면 블러프로 전환하는 것을 고려할 수 있습니다. 상대가 계속 베팅하면 새 금액을 보고 폴드할지 정합니다.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "{0}에서 포지션이 있습니다. 이번 투입 후 남는 칩은 {1}입니다. 리버에서 {2}을(를) 완성하지 못했는데 상대가 체크하고, 보드상 더 강한 메이드 핸드를 대변할 수 있다면 블러프로 전환하는 것을 고려할 수 있습니다. 상대가 계속 베팅하면 새 금액을 보고 폴드할지 정합니다."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "{0}에서 포지션이 있습니다. 이번 투입 후 남는 칩은 {1}입니다. 리버에서 {2}을(를) 완성하지 못했는데 상대가 체크하고, 보드상 더 강한 메이드 핸드를 대변할 수 있다면 블러프로 전환하는 것을 고려할 수 있습니다. 상대가 계속 베팅하면 새 금액을 보고 폴드할지 정합니다.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0}은(는) 오픈한 상대의 공개 레인지에 대한 {1}의 승률을 약 {2}로 추정했습니다. 올인에 필요한 약 {3}에 못 미치고, 남은 스택으로는 투기적인 핸드가 임플라이드 오즈를 회수하기도 어려워 {4}은(는) 폴드했습니다.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0}은(는) 오픈한 상대의 공개 레인지에 대한 {1}의 승률을 약 {2}로 추정했으며, 올인에 필요한 약 {3}(뒤에 남은 플레이어가 참여할 여지 포함)에 도달했습니다.",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0}은(는) {1}까지 레이즈해, 상대가 계속하려면 올인해야 합니다.",
+    "{0}属于最强的一档起手牌。": "{0}은(는) 가장 강한 등급의 스타팅 핸드입니다.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "{0}의 추정 승률은 올인에 필요한 수준에 가깝지만, 스타팅 핸드 경험칙으로는 이 깊이의 리셔브 레인지에 들지 않고 오픈 레인지의 더 강한 비슷한 핸드에 지배당하기 쉬워 {1}은(는) 폴드했습니다.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0}은(는) 오픈한 상대보다 칩이 적어 {1}로 바로 올인했습니다.",
+    "对方开池已投入大半后手，加注逼全下": "상대가 오픈으로 스택 대부분을 투입: 레이즈로 올인 압박",
+    "跟注后翻牌没有下注空间，弃牌": "콜 후 운신의 폭이 없어 폴드",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "콜한 뒤 양쪽이 더 넣을 수 있는 칩은 {0}뿐이고, 스택 대 팟 비율(SPR)은 약 {1}, 유효 스택은 약 {2} 빅 블라인드입니다. 플랍 이후 운신의 폭이 거의 없어 콜이 사실상 올인과 같으므로 {3}은(는) 올인과 폴드 중에서만 선택했습니다."
   },
   "es": {
     "设置": "Ajustes",
@@ -6928,7 +6964,16 @@
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "Esta apuesta intenta que se retiren manos mejores; si pagan, reevalúa con la siguiente carta el rango que le queda al rival, sin volver a apostar automáticamente.",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Este call depende de que el rango rival contenga suficientes manos más débiles o faroles. Si predominan manos hechas más fuertes, hay que retirarse aunque el precio sea bajo.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Repite {0}. Compara primero {1} con {2}. Elegir el call invertiría los {3} restantes. Después no tendrás más decisiones de apuesta ni de retirarte, y las subidas posteriores de otros no te exigen añadir fichas.",
-    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Repite {0}. Primero compara {1} y revisa la probabilidad de ganar de {3} necesaria para añadir {2}. Si pagas verás turn y river. Las {4} cartas solo se refieren a la siguiente carta; esa probabilidad no sustituye la posibilidad final de ganar. "
+    "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Repite {0}. Primero compara {1} y revisa la probabilidad de ganar de {3} necesaria para añadir {2}. Si pagas verás turn y river. Las {4} cartas solo se refieren a la siguiente carta; esa probabilidad no sustituye la posibilidad final de ganar. ",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} estimó para {1} una equity de alrededor de {2} contra el rango público del que abrió, por debajo del {3} aproximado que necesita un all-in; además, las fichas que quedan detrás no alcanzan para que las manos especulativas cobren pot odds implícitas, así que {4} se retiró.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} estimó para {1} una equity de alrededor de {2} contra el rango público del que abrió, y alcanza el {3} aproximado que necesita un all-in (incluido un margen por los jugadores que aún deben actuar).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} subió a {1}, así que el que abrió tiene que ir all-in para seguir.",
+    "{0}属于最强的一档起手牌。": "{0} está en el grupo más fuerte de manos iniciales.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "La equity estimada de {0} se acerca a la que necesita un all-in, pero según la regla práctica de manos iniciales queda fuera del rango de resubida all-in a esta profundidad y suele estar dominada por manos parecidas más fuertes del rango de apertura, así que {1} se retiró.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0} tiene menos fichas que el que abrió y fue all-in directamente por {1}.",
+    "对方开池已投入大半后手，加注逼全下": "El que abrió ya comprometió casi todo su stack: subir para forzar el all-in",
+    "跟注后翻牌没有下注空间，弃牌": "Sin margen tras pagar: retirarse",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Tras pagar solo quedarían {0} por apostar entre ambos, una relación stack-bote (SPR) de alrededor de {1}, con stacks efectivos de unas {2} ciegas grandes. Casi no hay margen de maniobra tras el flop y pagar equivale prácticamente a ir all-in, así que {3} solo eligió entre all-in y retirarse."
   },
   "it": {
     "设置": "Impostazioni",
@@ -8369,7 +8414,16 @@
     "本轮还有 {0} 位对手等待回应，若出现加注或者再加注，你需要重新决定是否继续。": "Avversari che devono ancora rispondere in questo giro: {0}. Se arriva un rilancio o un controrilancio, devi decidere di nuovo se continuare.",
     "这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。": "Questa puntata cerca di far foldare mani migliori; se ricevi call, alla carta successiva devi rivalutare il range rimasto all’avversario, senza continuare a puntare in automatico.",
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Questo call richiede abbastanza mani più deboli o bluff nel range avversario: se prevalgono mani fatte più forti, bisogna foldare anche quando il prezzo è basso.",
-    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Rigiocando {0}, confronta prima {1} con {2}. Con il call metteresti tutti i {3} rimasti e poi non avresti più decisioni di puntata o di fold: gli eventuali rilanci successivi degli altri non ti chiederebbero altre fiches."
+    "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Rigiocando {0}, confronta prima {1} con {2}. Con il call metteresti tutti i {3} rimasti e poi non avresti più decisioni di puntata o di fold: gli eventuali rilanci successivi degli altri non ti chiederebbero altre fiches.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} ha stimato per {1} un'equity di circa {2} contro il range pubblico di chi ha aperto, sotto il {3} circa che serve per un all-in; inoltre lo stack rimasto è troppo corto perché le mani speculative incassino implied odds, quindi {4} ha foldato.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} ha stimato per {1} un'equity di circa {2} contro il range pubblico di chi ha aperto, raggiungendo il {3} circa che serve per un all-in (compreso un margine per i giocatori che devono ancora agire).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} ha rilanciato a {1}: per continuare, chi ha aperto deve andare all-in.",
+    "{0}属于最强的一档起手牌。": "{0} è nella fascia più forte delle mani di partenza.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "L'equity stimata di {0} è vicina a quella che serve per un all-in, ma secondo la regola pratica sulle mani di partenza resta fuori dal range di re-shove a questa profondità ed è spesso dominata da mani simili più forti nel range di apertura, quindi {1} ha foldato.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0} ha meno chip di chi ha aperto ed è andato direttamente all-in per {1}.",
+    "对方开池已投入大半后手，加注逼全下": "Chi ha aperto ha già impegnato gran parte dello stack: rilancio per forzare l'all-in",
+    "跟注后翻牌没有下注空间，弃牌": "Nessun margine dopo il call: fold",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Dopo il call resterebbero solo {0} da mettere in gioco, un rapporto stack/piatto (SPR) di circa {1}, con stack effettivi di circa {2} grandi bui. Dopo il flop non c'è quasi margine di manovra e chiamare equivale quasi ad andare all-in, quindi {3} ha scelto solo tra all-in e fold."
   },
   "pt": {
     "设置": "Configurações",
@@ -9876,7 +9930,16 @@
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Ao rejogar {0}, compare primeiro {1} com {2}. Pagar investiria todos os {3} restantes; depois você não terá mais decisões de aposta ou desistência, e aumentos posteriores dos outros não exigem fichas extras suas.",
     "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Ao rejogar {0}, compare primeiro {1} e confira a chance de vitória de {3} necessária para acrescentar {2}. Se pagar, você verá o turn e o river; as {4} cartas valem só para a próxima carta, e essa probabilidade não substitui a chance final de ganhar.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Você tem posição no {0}. Este check não acrescenta fichas e deixa {1}. Se não completar seu {2} no river, o adversário der check e o board permitir representar uma mão feita mais forte, considere transformar a mão em blefe. Se ele apostar de novo, decida pelo novo valor se deve desistir.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Você tem posição no {0}. Após este investimento restam {1}. Se não completar seu {2} no river, o adversário der check e o board permitir representar uma mão feita mais forte, considere transformar a mão em blefe. Se ele apostar de novo, decida pelo novo valor se deve desistir."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Você tem posição no {0}. Após este investimento restam {1}. Se não completar seu {2} no river, o adversário der check e o board permitir representar uma mão feita mais forte, considere transformar a mão em blefe. Se ele apostar de novo, decida pelo novo valor se deve desistir.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} estimou para {1} uma equity de cerca de {2} contra o range público de quem abriu, abaixo dos cerca de {3} que um all-in exige; além disso, as fichas restantes não bastam para mãos especulativas aproveitarem odds implícitas, então {4} foldou.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} estimou para {1} uma equity de cerca de {2} contra o range público de quem abriu, atingindo os cerca de {3} que um all-in exige (incluindo uma margem para os jogadores que ainda vão agir).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} aumentou para {1}, então quem abriu precisa ir all-in para continuar.",
+    "{0}属于最强的一档起手牌。": "{0} está no grupo mais forte de mãos iniciais.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "A equity estimada de {0} está perto do que um all-in exige, mas pela regra prática de mãos iniciais ela fica fora do range de re-shove nesta profundidade e costuma ser dominada por mãos parecidas mais fortes no range de abertura, então {1} foldou.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0} tem menos fichas que quem abriu e foi all-in direto por {1}.",
+    "对方开池已投入大半后手，加注逼全下": "Quem abriu já comprometeu a maior parte do stack: aumentar para forçar o all-in",
+    "跟注后翻牌没有下注空间，弃牌": "Sem espaço depois do call: fold",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Depois do call restariam só {0} para apostar entre os dois, uma relação stack/pote (SPR) de cerca de {1}, com stacks efetivos de cerca de {2} big blinds. Quase não há espaço para manobrar depois do flop e pagar é praticamente o mesmo que ir all-in, então {3} escolheu apenas entre all-in e fold."
   },
   "de": {
     "设置": "Einstellungen",
@@ -11364,7 +11427,16 @@
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Dieser Call setzt genügend schwächere Hände oder Bluffs in der gegnerischen Range voraus. Besteht sie hauptsächlich aus stärkeren fertigen Händen, solltest du auch bei günstigem Preis folden.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Spiele die Hand mit {0} erneut und vergleiche zuerst {1} mit {2}. Ein Call würde deine gesamten restlichen {3} einsetzen; danach triffst du keine Setz- oder Foldentscheidungen mehr, und spätere Raises anderer Spieler kosten dich keine weiteren Chips.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Du hast auf {0} Position. Dieser Check kostet keine Chips; es bleiben {1}. Kommt dein {2} am River nicht an, checkt der Gegner und lässt das Board dich eine stärkere fertige Hand repräsentieren, kannst du einen Bluff erwägen. Setzt der Gegner weiter, entscheide anhand des neuen Betrags, ob du foldest.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Du hast auf {0} Position. Nach diesem Einsatz bleiben {1}. Kommt dein {2} am River nicht an, checkt der Gegner und lässt das Board dich eine stärkere fertige Hand repräsentieren, kannst du einen Bluff erwägen. Setzt der Gegner weiter, entscheide anhand des neuen Betrags, ob du foldest."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Du hast auf {0} Position. Nach diesem Einsatz bleiben {1}. Kommt dein {2} am River nicht an, checkt der Gegner und lässt das Board dich eine stärkere fertige Hand repräsentieren, kannst du einen Bluff erwägen. Setzt der Gegner weiter, entscheide anhand des neuen Betrags, ob du foldest.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} schätzte die Equity von {1} gegen die öffentliche Range des Openers auf etwa {2}, unter den rund {3}, die ein All-in braucht; außerdem reichen die verbleibenden Stacks nicht, damit spekulative Hände Implied Odds kassieren, also foldete {4}.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} schätzte die Equity von {1} gegen die öffentliche Range des Openers auf etwa {2} und erreicht damit die rund {3}, die ein All-in braucht (inklusive Puffer für Spieler, die noch handeln).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} erhöhte auf {1}, sodass der Opener All-in gehen muss, um weiterzuspielen.",
+    "{0}属于最强的一档起手牌。": "{0} gehört zur stärksten Gruppe der Starthände.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "Die geschätzte Equity von {0} liegt nahe an dem, was ein All-in braucht, doch nach der Faustregel für Starthände liegt die Hand bei dieser Tiefe außerhalb der Reshove-Range und wird oft von stärkeren ähnlichen Händen in der Opening-Range dominiert, also foldete {1}.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0} hat weniger Chips als der Opener und ging direkt für {1} All-in.",
+    "对方开池已投入大半后手，加注逼全下": "Opener hat schon den Großteil des Stacks investiert: Raise erzwingt das All-in",
+    "跟注后翻牌没有下注空间，弃牌": "Nach einem Call kaum Spielraum: Fold",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Nach einem Call könnten nur noch {0} investiert werden, ein Stack-to-Pot-Ratio (SPR) von etwa {1} bei effektiven Stacks von rund {2} Big Blinds. Nach dem Flop bleibt kaum Spielraum, und ein Call ist praktisch ein All-in, also wählte {3} nur zwischen All-in und Fold."
   },
   "fr": {
     "设置": "Réglages",
@@ -13038,7 +13110,16 @@
     "这次跟注依赖对手范围里有足够较弱牌或诈唬，若主要是更强成牌，即使价格不高也应弃牌。": "Ce call suppose assez de mains plus faibles ou de bluffs dans la range adverse. Si les mains faites plus fortes dominent, il faut se coucher même à un prix faible.",
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "En rejouant {0}, comparez d’abord {1} et {2}. Suivre engagerait les {3} restants : vous n’auriez ensuite plus de décision de mise ou de fold, et les relances ultérieures des autres ne vous demanderaient aucun jeton supplémentaire.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Vous avez la position en {0}. Ce check n’ajoute aucun jeton et laisse{1}. Si vous ne complétez pas votre {2} à la river, que l’adversaire checke et que le board vous permet de représenter une main faite plus forte, vous pouvez envisager de transformer votre main en bluff. S’il mise à nouveau, décidez de vous coucher ou non selon le nouveau montant.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Vous avez la position en {0}. Après cet investissement, il vous reste{1}. Si vous ne complétez pas votre {2} à la river, que l’adversaire checke et que le board vous permet de représenter une main faite plus forte, vous pouvez envisager de transformer votre main en bluff. S’il mise à nouveau, décidez de vous coucher ou non selon le nouveau montant."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "Vous avez la position en {0}. Après cet investissement, il vous reste{1}. Si vous ne complétez pas votre {2} à la river, que l’adversaire checke et que le board vous permet de représenter une main faite plus forte, vous pouvez envisager de transformer votre main en bluff. S’il mise à nouveau, décidez de vous coucher ou non selon le nouveau montant.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} a estimé l'équité de {1} à environ {2} contre la range publique de l'ouvreur, sous les quelque {3} qu'exige un tapis ; en plus, le tapis restant est trop court pour que les mains spéculatives profitent de cotes implicites, donc {4} s'est couché.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} a estimé l'équité de {1} à environ {2} contre la range publique de l'ouvreur, ce qui atteint les quelque {3} qu'exige un tapis (marge comprise pour les joueurs qui doivent encore parler).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} a relancé à {1} : pour continuer, l'ouvreur doit faire tapis.",
+    "{0}属于最强的一档起手牌。": "{0} fait partie du groupe le plus fort des mains de départ.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "L'équité estimée de {0} est proche de ce qu'exige un tapis, mais selon la règle empirique des mains de départ, elle reste hors de la range de re-shove à cette profondeur et se fait souvent dominer par des mains similaires plus fortes de la range d'ouverture, donc {1} s'est couché.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "{0} a moins de jetons que l'ouvreur et a fait tapis directement pour {1}.",
+    "对方开池已投入大半后手，加注逼全下": "L'ouvreur a déjà engagé l'essentiel de son tapis : relance pour forcer le tapis",
+    "跟注后翻牌没有下注空间，弃牌": "Plus de marge après un call : se coucher",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "Après un call, il ne resterait que {0} à miser entre les deux, un ratio tapis/pot (SPR) d'environ {1}, avec des tapis effectifs d'environ {2} grosses blindes. Il n'y a presque plus de marge de manœuvre après le flop et suivre revient presque à faire tapis, donc {3} n'a choisi qu'entre tapis et passer."
   },
   "ru": {
     "设置": "Настройки",
@@ -14675,6 +14756,15 @@
     "重打 {0} 这手，先比较{1}与{2}，若改为跟注，会投入全部剩余 {3}，之后不再参与下注或弃牌决策，其他玩家的后续加注不需要你再补筹码。": "Переиграйте раздачу с {0}. Сначала сравните {1} и {2}. Колл вложит все оставшиеся {3}; после этого решений о ставках или фолде больше нет, а последующие рейзы других не потребуют от вас доплаты.",
     "重打 {0} 这手，先比较{1}，再核对补 {2} 所需的 {3} 胜率，若跟注，就能看完转牌和河牌，{4} 张只是下一张的改善候选，不能拿下一张概率直接代替最终获胜机会。": "Переиграйте {0}. Сначала сравните {1} и проверьте эквити {3}, необходимое для доплаты {2}. Колл откроет тёрн и ривер; карты-кандидаты ({4}) относятся лишь к следующей карте, и её вероятность не заменяет итоговый шанс победы.",
     "你在 {0} 有位置，这次过牌没有增加投入，仍留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "На {0} у вас есть позиция. Этот чек не добавляет фишек; остаётся {1}. Если на ривере вы не соберёте {2}, соперник сделает чек, а борд позволит изобразить более сильную готовую руку, можно рассмотреть переход в блеф. Если он поставит снова, решайте о фолде по новой цене.",
-    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "На {0} у вас есть позиция. После этого вложения остаётся {1}. Если на ривере вы не соберёте {2}, соперник сделает чек, а борд позволит изобразить более сильную готовую руку, можно рассмотреть переход в блеф. Если он поставит снова, решайте о фолде по новой цене."
+    "你在 {0} 有位置，本次投入后还留 {1}，若河牌未补成{2}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。": "На {0} у вас есть позиция. После этого вложения остаётся {1}. Если на ривере вы не соберёте {2}, соперник сделает чек, а борд позволит изобразить более сильную готовую руку, можно рассмотреть переход в блеф. Если он поставит снова, решайте о фолде по новой цене.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，不到全下大约需要的 {3}；剩下的后手也不够让投机牌兑现隐含赔率，所以{4}弃牌。": "{0} оценил эквити {1} против публичного диапазона открывшего примерно в {2}, что ниже примерно {3}, нужных для олл-ина; к тому же оставшихся стеков не хватает, чтобы спекулятивные руки окупились за счёт подразумеваемых шансов, поэтому {4} сбросил карты.",
+    "{0}估计{1}对开池者公开范围的胜率约 {2}，达到全下大约需要的 {3}（含身后玩家可能入池的余量）。": "{0} оценил эквити {1} против публичного диапазона открывшего примерно в {2}, что достигает примерно {3}, нужных для олл-ина (с запасом на игроков, которым ещё предстоит действовать).",
+    "{0}加注到 {1}，对方要继续就得全下。": "{0} рейзнул до {1}: чтобы продолжить, открывшему придётся идти олл-ин.",
+    "{0}属于最强的一档起手牌。": "{0} входит в самую сильную группу стартовых рук.",
+    "{0}的估计胜率接近全下所需，但按起手牌强度的经验规则，它不在这个深度的再全下范围内，容易被开池范围里更强的同类牌压制，所以{1}弃牌。": "Оценка эквити {0} близка к той, что нужна для олл-ина, но по эмпирическому правилу для стартовых рук эта рука на такой глубине не входит в диапазон ответного олл-ина и часто доминируется более сильными похожими руками из диапазона открытия, поэтому {1} сбросил карты.",
+    "{0}的筹码比开池者少，直接全下 {1}。": "У {0} меньше фишек, чем у открывшего, поэтому сразу олл-ин на {1}.",
+    "对方开池已投入大半后手，加注逼全下": "Открывший уже вложил бо́льшую часть стека: рейз, чтобы вынудить олл-ин",
+    "跟注后翻牌没有下注空间，弃牌": "После колла нет пространства: фолд",
+    "跟注后双方还能继续投入的筹码只剩 {0}，筹码底池比（SPR）约 {1}，有效筹码约 {2} 个大盲。翻牌后已经没有多少下注空间，跟注基本等于全下，所以{3}只在全下和弃牌之间选择。": "После колла в игру можно было бы добавить лишь {0}, соотношение стека к банку (SPR) около {1}, эффективные стеки около {2} больших блайндов. После флопа почти нет пространства для манёвра, а колл почти равен олл-ину, поэтому {3} выбирал только между олл-ином и фолдом."
   }
 }

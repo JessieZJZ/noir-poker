@@ -22,7 +22,7 @@ import { chipUnitOf, fractionRaiseTo, legalRaiseTo } from './bet-sizing.js';
 import { deceptiveAction, isDonkLead } from './bot-deception.js';
 import { publicResponseRisk } from './public-action-context.js';
 import { observedRangeModel } from './public-observations.js';
-import { preflopJamPlan, shortStackPlan } from './bot-preflop-commitment.js';
+import { committedOpenPlan, preflopJamPlan, shortStackPlan } from './bot-preflop-commitment.js';
 import { survivalPremium } from './push-fold.js';
 import { postflopStyleLine, balancedPriceDefense, limpedPairValueLine } from './bot-style-lines.js';
 import { botOpeningSize, botReraiseSize } from './bot-opening-size.js';
@@ -527,7 +527,22 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   // Above 5BB the playable range narrows with the size until, at 8BB, only
   // the stronger group is exempt from treating every unfurled seat as already
   // committed to a showdown. A larger open never becomes easier to call.
-  const openPriceBB = view.currentBet / bigBlind;
+  // The same open costs relatively less when both stacks are deeper than
+  // 100BB: there is more to win behind it. Scale the limits gently by the
+  // depth matched with the opener; at 100BB or less they are unchanged.
+  const openDepthScale = lastRaiser
+    ? Math.min(
+        1.5,
+        Math.max(
+          1,
+          Math.sqrt(
+            Math.min(view.stack + view.bet, lastRaiser.stack + (lastRaiser.bet || 0)) /
+              (100 * bigBlind),
+          ),
+        ),
+      )
+    : 1;
+  const openPriceBB = view.currentBet / bigBlind / openDepthScale;
   const largeOpen = openPriceBB > 5;
   const openTightening = Math.min(1, Math.max(0, (openPriceBB - 5) / 3));
   const strongOpenDefense =
@@ -541,8 +556,8 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     raises.length === 1 &&
     raises[0].id !== view.id &&
     legal.toCall > 0 &&
-    view.currentBet <= 8 * bigBlind &&
-    legal.callAmount <= 8 * bigBlind &&
+    openPriceBB <= 8 &&
+    legal.callAmount <= 8 * bigBlind * openDepthScale &&
     (openTightening < 1 || strongOpenDefense) &&
     lowCommitment &&
     !allInPressure &&
@@ -593,7 +608,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
   )
     range = openingRange * style.unopenedRange;
   if (affordableOpen) {
-    const priceScale = Math.max(0.65, 1.1 - (view.currentBet / bigBlind) * 0.08);
+    const priceScale = Math.max(0.65, 1.1 - openPriceBB * 0.08);
     const playability = speculative ? 0.14 : suitedHigh ? 0.07 : 0;
     const callerBonus = speculative || suitedHigh ? Math.min(2, openCallers) * 0.04 : 0;
     const blindDiscount = view.position === 'BB' ? 0.08 : 0;
@@ -716,6 +731,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
     positionProbe = false,
     linePlan = null,
     pushFold = null,
+    committedOpen = null,
     survival = 0;
   const floatContinue = context.floatCandidate && roll('float', style.float) < style.float;
   const headsUp = assumedOpponents === 1,
@@ -960,6 +976,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
         limpers,
         openCallers,
         effectiveBehind,
+        openDepthScale,
         speculative,
         suitedHigh,
         suitedLimpCandidate,
@@ -970,6 +987,7 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       admitted,
       callTolerance,
       pushFold,
+      committedOpen,
       survivalPremium: survival,
       checks,
       exceptions,
@@ -1015,6 +1033,25 @@ export function chooseBotAction(view, profile, mood, mode, random = Math.random)
       };
     }
     return finish(short.action, short.reason, short.amount);
+  }
+  // A call over an open that already holds most of the opener's stack would
+  // leave too little behind to play after the flop: all-in or fold instead.
+  const committed = committedOpenPlan(view, profile, equity);
+  if (committed) {
+    committedOpen = committed;
+    if (committed.action === 'raise') {
+      value = true;
+      sizing = {
+        desired: committed.amount,
+        actual: committed.amount,
+        minimum: legal.minRaiseTo,
+        maximum: legal.maxRaiseTo,
+        opening: false,
+        executed: true,
+        commitment: committed,
+      };
+    }
+    return finish(committed.action, committed.reason, committed.amount);
   }
   const jamPlan = preflopJamPlan(view, profile);
   const valueJam = () => {
