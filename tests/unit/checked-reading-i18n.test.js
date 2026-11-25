@@ -92,7 +92,7 @@ test('checked value, draw pressure and prior check-through rationale localize in
           assert.doesNotMatch(value, /对手本轮均已过牌|按这些行动估计|并收取看下一张的成本/);
         if (locale === 'en') {
           assert.doesNotMatch(value, /valuewhile|valueand|should|must|reassess/i);
-          assert.match(value, /estimates|possible|possib/i);
+          assert.match(value, /estimat|possib/i);
         }
       }
     }

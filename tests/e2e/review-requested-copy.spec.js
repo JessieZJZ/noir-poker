@@ -13,6 +13,10 @@ test('reported opponent summaries explain the weak kicker, required win probabil
       observerRecord({ action: 'check', reason: 'free-check', hole: 'Ad 6h', board: 'Ah 3h Ts' }),
     ],
     [
+      'paired-board-kicker',
+      observerRecord({ action: 'check', reason: 'free-check', hole: '5d Ad', board: 'Jc As Js' }),
+    ],
+    [
       'call-price',
       observerRecord({
         action: 'call',
@@ -55,9 +59,14 @@ test('reported opponent summaries explain the weak kicker, required win probabil
     if (name === 'weak-kicker') {
       await expect(summary).toContainText(/6 踢脚偏弱.*踢脚更好.*落后.*过牌.*控制底池/);
       await expect(summary).not.toContainText(/把较强牌保留在过牌范围|等后位先下注/);
+    } else if (name === 'paired-board-kicker') {
+      await expect(summary).toContainText(
+        /公共牌的一对 J 是所有玩家共用的.*底牌这对 A 和 5 踢脚.*一张 J 就是三条.*大于 5 也会领先.*过牌先控制底池/,
+      );
+      await expect(summary).not.toContainText(/把较强牌保留在过牌范围|仍可向较弱/);
     } else if (name === 'call-price') {
       await expect(summary).toContainText(
-        '继续要补 700，可争夺跟注后的 4.3K 底池，需要至少16.3%的胜率。',
+        '继续要补 700，可争夺跟注后的 4.3K 底池，需要至少 16.3% 的胜率。',
       );
       await expect(summary).not.toContainText('当前保本门槛');
     } else {

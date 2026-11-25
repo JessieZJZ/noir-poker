@@ -1,6 +1,6 @@
 # 启动画面素材与首屏
 
-`public/launch-icon.png` 是现有 `public/app-icon.png` 的透明背景提取版，用于 Web、iOS、Android 和微信自身的启动过渡。原桌面 App 图标保持原样。512px PNG 的四角 alpha 为零，图标中的玻璃圆角底板与黑桃保留；不把黑色矩形贴到启动背景上。
+`public/launch-icon.png` 是现有 `public/app-icon.png` 的透明背景提取版，用于 Web、iOS、Android 和微信自身的启动过渡。原桌面 App 图标保持原样。图标下方显示 “NOIR POKER” 字标（18px 粗体、6px 字距、#e9f2ef）：Web/App 的启动遮罩用 `body::before`，iOS 系统启动屏与原生遮罩各加一个标签，Android 12+ 系统启动屏用 `values-v31` 的 `windowSplashScreenBrandingImage`（`launch_brand.xml`，由 Manrope 700 轮廓生成的矢量图，显示在屏幕下方），微信首屏用 `launch-wordmark`。512px PNG 的四角 alpha 为零，图标中的玻璃圆角底板与黑桃保留；不把黑色矩形贴到启动背景上。
 
 使用内置 imagegen 工具的 background-extraction 编辑模式，输入为项目自己的图标。最终提示：
 

@@ -1,19 +1,24 @@
 import { test, expect } from '@playwright/test';
 
-for (const [timezoneId, expected] of [
-  ['Asia/Shanghai', 'zh-CN'],
-  ['Asia/Taipei', 'zh-TW'],
-  ['Asia/Tokyo', 'ja'],
-  ['Asia/Seoul', 'ko'],
-  ['Europe/Paris', 'fr'],
-  ['America/New_York', 'en'],
-  ['UTC', 'de'],
+// The device language decides first; an unsupported one (Arabic) falls back
+// to the time zone's regional default, then English.
+for (const [locale, timezoneId, expected] of [
+  ['de-DE', 'Asia/Shanghai', 'de'],
+  ['zh-CN', 'America/New_York', 'zh-CN'],
+  ['zh-TW', 'Europe/Paris', 'zh-TW'],
+  ['ja-JP', 'UTC', 'ja'],
+  ['ar-SA', 'Asia/Shanghai', 'zh-CN'],
+  ['ar-SA', 'Asia/Taipei', 'zh-TW'],
+  ['ar-SA', 'Asia/Tokyo', 'ja'],
+  ['ar-SA', 'Asia/Seoul', 'ko'],
+  ['ar-SA', 'Europe/Paris', 'fr'],
+  ['ar-SA', 'UTC', 'en'],
 ]) {
-  test(`fresh ${timezoneId} visit selects ${expected} and five seats; explicit preferences survive reload`, async ({
+  test(`fresh ${locale} visit in ${timezoneId} selects ${expected} and five seats; explicit preferences survive reload`, async ({
     browser,
     baseURL,
   }) => {
-    const context = await browser.newContext({ locale: 'de-DE', timezoneId });
+    const context = await browser.newContext({ locale, timezoneId });
     try {
       const page = await context.newPage();
       await page.goto(baseURL);

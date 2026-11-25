@@ -61,9 +61,8 @@ try {
   page = await mini.reLaunch('/pages/table/table');
   await page.waitFor(800);
   const before = await mini.evaluate(() => getApp().noirController.getGame().hand);
-  await check('resource-menu-opens-calculator-subpackage', async () => {
-    await tap('#resource-menu-button');
-    await tap('#resource-win-rate');
+  await check('practice-home-opens-calculator-subpackage', async () => {
+    await tap('#home-win-rate-button');
     page = await wait(
       'Calculator route',
       () => mini.currentPage(),

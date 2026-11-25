@@ -59,7 +59,7 @@ test('Q8 turn call describes open-ended draw, delayed bet, new connectivity and 
   assert.equal(r.draw.outs, 8);
   assert.match(r.coaching.explanation, /两头顺听牌/);
   assert.match(r.coaching.explanation, /125/);
-  assert.match(r.coaching.explanation, /River在 BB 位此前在翻牌过牌/);
+  assert.match(r.coaching.explanation, /River 在 BB 位此前在翻牌过牌/);
   assert.equal(r.context.texture.connected, 3);
   assert.match(r.coaching.explanation, /6\s*\/\s*J/);
   assert.match(r.coaching.explanation, /河牌/);
@@ -307,7 +307,7 @@ test('69o BTN three-bet and Mia AQo four-bet explain the actual limper, opener a
   assert.match(hero, /200/);
   assert.match(hero, /River|跛入|跟注 50/);
   assert.doesNotMatch(hero, /EV|模型|模拟器|随机范围|有效剩余|尚(?:可)?行动 0|0 人尚/);
-  assert.match(result.coaching.followUp, /你实际3-bet 加注至 350/);
+  assert.match(result.coaching.followUp, /你实际 3-bet 加注至 350/);
   assert.match(result.coaching.followUp, /底池为 325/);
   assert.doesNotMatch(result.coaching.followUp, /建议[^。]*投入 350/);
   assert.doesNotMatch(hero, /ctx\.|matchedExtra|matchedBetRatio/);

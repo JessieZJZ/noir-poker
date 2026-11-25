@@ -113,7 +113,7 @@ test('real Chinese, English and Korean privacy titles must match their visible h
   for (const [locale, expected] of Object.entries({
     'zh-CN': 'NOIR Poker 隐私政策',
     en: 'NOIR Poker Privacy Policy',
-    ko: '노어 포커 개인 정보 보호 정책',
+    ko: 'NOIR Poker 개인정보 처리방침',
   })) {
     const page = fixture(locale);
     assert.equal(page.heading.textContent, expected);

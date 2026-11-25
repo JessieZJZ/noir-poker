@@ -17,23 +17,21 @@ const {
   watchWindow,
   stopWindowWatch,
 } = require('../../device-orientation.js');
-const {
-  entryWelcomeCorridor,
-  entryWelcomeScale,
-} = require('../../shared/ui/entry-welcome-scale.js');
 const { heroPlaceStyle, heroTrophy, seatTrophy } = require('../../shared/ui/trophy-placement.js');
-// The waiting message's natural size, measured in DevTools: its button (150px
-// plus padding) and four stacked lines.
-const ENTRY_WELCOME_SIZE = { width: 184, height: 132 };
 const {
   WECHAT_RECORDS_BUDGET,
   createSnapshotFiles,
   ceremonySoundFiles,
+  tableSoundFiles,
   PREMIUM_SPARKS,
   CONFETTI_PIECES,
 } = require('./game-effects.js');
 // The tutorial's panel sits above the dock; landscape tablets have width to
 // spare instead, so the panel moves beside the table as on Web.
+// The header label rolls through every resource choice in menu order.
+// A second Back within this window leaves the mini program.
+const EXIT_CONFIRM_MS = 2000;
+const RESOURCE_LABELS = ['对局记录', '新手引导', '玩法指南', '胜率计算器'];
 const TUTORIAL_SIDE_WIDTH = 312;
 // Scripted hands lock the slider, so short phones give its row to the table.
 const TUTORIAL_SLIDER_HEIGHT = 27;
@@ -88,8 +86,8 @@ module.exports = {
     compactNav: false,
     ...viewportChrome(390, 800),
     resourceMenuOpen: false,
-    resourceLabel: '玩法指南',
-    resourcePreviousLabel: '对局记录',
+    resourceLabel: RESOURCE_LABELS[0],
+    resourcePreviousLabel: RESOURCE_LABELS.at(-1),
     resourceRolling: false,
     resourceReducedMotion: false,
     historyReadOnly: false,
@@ -155,6 +153,11 @@ module.exports = {
     flyingChips: [],
     tutorial: null,
     tutorialPlaying: false,
+    tutorialActive: false,
+    // The live table's page-container takes Back: one press asks for a
+    // second (再按一次退出), which then leaves the mini program.
+    exitGuard: false,
+    containedScroll: false,
     tutorialCoachHeight: 0,
     tutorialSide: false,
     tutorialShortDock: false,
@@ -165,11 +168,28 @@ module.exports = {
   },
   onLoad() {
     this.updateWindow();
+    this.armExitGuard();
+    this._workerReady = typeof wx.preDownloadSubpackage !== 'function';
+    if (!this._workerReady)
+      try {
+        wx.preDownloadSubpackage({
+          packageType: 'workers',
+          success: () => (this._workerReady = true),
+          fail: () => {},
+        });
+      } catch {}
     this._audio = [];
     if (!this._readOnlyAttempt) this.preloadSounds();
     this._controller = createWechatController({
+      // The worker is its own subpackage. Until it has downloaded, a review
+      // runs the same analysis on the page thread.
       createReviewWorker:
-        typeof wx.createWorker === 'function' ? () => wx.createWorker('workers/review.js') : null,
+        typeof wx.createWorker === 'function'
+          ? () => {
+              if (!this._workerReady) throw Error('Review worker not downloaded yet');
+              return wx.createWorker('workers/review.js');
+            }
+          : null,
       loadTutorial: () => require.async('../../tutorial/lessons.js'),
       publish: (view) => {
         if (
@@ -186,9 +206,11 @@ module.exports = {
         const game = this._controller?.getGame();
         const board = view.board;
         const showdown = game ? showdownPresentation(game, view.profiles) : [];
+        // A table notice holds the deal; its end deals the cards afresh.
         const dealKey =
           `${view.sessionNumber}:${view.hand}:${view.replay}` +
-          (view.tutorialPlaying ? `:${view.tutorialDeal}` : '');
+          (view.tutorialPlaying ? `:${view.tutorialDeal}` : '') +
+          (view.noticeHold ? ':notice' : '');
         const changedDeal = dealKey !== this._dealKey;
         if (changedDeal) {
           this._motionEpoch = (this._motionEpoch || 0) + 1;
@@ -362,11 +384,12 @@ module.exports = {
     }
   },
   joinTable() {
-    this.call('join');
+    if (this.call('join')) wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
   },
   onShow() {
     const returningFromRecords = Boolean(this._browsingRecords);
     this._hidden = false;
+    this.armExitGuard();
     this._browsingRecords = false;
     const resized = this.updateWindow();
     watchWindow(this);
@@ -396,6 +419,7 @@ module.exports = {
   onHide() {
     stopWindowWatch(this);
     this._hidden = true;
+    clearTimeout(this._exitTimer);
     this.cancelRaise();
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -424,6 +448,7 @@ module.exports = {
   onUnload() {
     stopWindowWatch(this);
     this._destroyed = true;
+    clearTimeout(this._exitTimer);
     this._raiseGesture = null;
     clearTimeout(this._resourceTimer);
     clearTimeout(this._resourceMotionTimer);
@@ -599,31 +624,6 @@ module.exports = {
       // The positioned rows are rendered as phoneSeats. Do not send a third,
       // unused copy of every profile and card over the service/view bridge.
       const { positioned, ...geometry } = fitted;
-      // As on Web, the waiting message keeps its size unless the players beside
-      // it would crowd it; it sits centred at 44% of the arena height.
-      const entrySize = chrome.navHeight > 48 ? { width: 230, height: 168 } : ENTRY_WELCOME_SIZE;
-      const halfHeight = entrySize.height / fitted.arenaScale / 2;
-      const corridor = entryWelcomeCorridor(
-        positioned.map((seat) => {
-          const profile = seat.parts?.[1] ?? {
-            left: 0,
-            top: 0,
-            width: seat.width,
-            height: seat.height,
-          };
-          return {
-            left: seat.left + profile.left,
-            top: seat.top + profile.top,
-            width: profile.width,
-            height: profile.height,
-          };
-        }),
-        {
-          centerX: fitted.arenaWidth / 2,
-          top: fitted.arenaHeight * 0.44 - halfHeight,
-          bottom: fitted.arenaHeight * 0.44 + halfHeight,
-        },
-      );
       // The champion's trophy follows the shared rules on the same layout boxes
       // Web measures, so it rests in the same spot on every platform.
       const box = ({ left, top, width, height }) => ({
@@ -662,11 +662,6 @@ module.exports = {
         heroTrophyStyle: heroPlace
           ? `width:${heroPlace.width}px;height:${heroPlace.height}px;left:calc(50% - ${heroPlace.width / 2}px);bottom:calc(100% + ${heroPlace.gap - heroPlace.drop}px);`
           : '',
-        entryScale: entryWelcomeScale({
-          arenaScale: fitted.arenaScale,
-          contentWidth: entrySize.width,
-          corridorWidth: corridor * fitted.arenaScale,
-        }),
         tableHeight,
         liveDockHeight: chrome.liveDockHeight - coach.dockSaving,
         tutorialCoachHeight: coach.height,
@@ -827,6 +822,8 @@ module.exports = {
       champion: 'champion',
       crowned: 'crowned',
       farewell: 'farewell',
+      levelup: 'levelup',
+      finaltable: 'finaltable',
     };
     if (!names[name]) return;
     // Finish both knocks before a following result cue. Keep only the latest
@@ -870,9 +867,9 @@ module.exports = {
     // Dispose any orphaned contexts before rebuilding a complete sound pool.
     this.stopSounds();
     if (!wx.createInnerAudioContext) return;
-    for (const name of ['fold', 'check', 'chip', 'deal', 'win']) {
+    const shortCue = (name, path) => {
       const audio = wx.createInnerAudioContext({ useWebAudioImplement: true });
-      audio.src = `/assets/sounds/${name}.wav`;
+      audio.src = path;
       audio.volume = 1;
       audio.obeyMuteSwitch = false;
       if (name === 'check')
@@ -889,8 +886,8 @@ module.exports = {
       });
       this._audio.push(audio);
       this._soundPool[name] = audio;
-    }
-    for (const [name, path] of Object.entries(ceremonySoundFiles())) {
+    };
+    const longCue = (name, path) => {
       const audio = wx.createInnerAudioContext();
       audio.src = path;
       audio.volume = 1;
@@ -898,7 +895,22 @@ module.exports = {
       audio.onError(() => {});
       this._audio.push(audio);
       this._soundPool[name] = audio;
-    }
+    };
+    for (const [name, path] of Object.entries(tableSoundFiles())) shortCue(name, path);
+    for (const [name, path] of Object.entries(ceremonySoundFiles())) longCue(name, path);
+    // Recordings come from the preloaded sounds subpackage. A pool rebuilt or
+    // stopped while it downloads ignores the late result.
+    const pool = this._soundPool;
+    if (typeof require.async === 'function')
+      require
+        .async('../../sounds/source.js')
+        .then((files) => {
+          if (this._soundPool !== pool || this._destroyed) return;
+          shortCue('chip', files.chip);
+          longCue('champion', files.champion);
+          longCue('crowned', files.crowned);
+        })
+        .catch(() => {});
   },
   stopSounds() {
     this.cancelSoundTail();
@@ -1296,7 +1308,10 @@ module.exports = {
     clearTimeout(this._resourceMotionTimer);
     this.setData({
       resourcePreviousLabel: this.data.resourceLabel,
-      resourceLabel: this.data.resourceLabel === '玩法指南' ? '对局记录' : '玩法指南',
+      resourceLabel:
+        RESOURCE_LABELS[
+          (RESOURCE_LABELS.indexOf(this.data.resourceLabel) + 1) % RESOURCE_LABELS.length
+        ],
       resourceRolling: true,
     });
     this._resourceMotionTimer = setTimeout(() => {
@@ -1315,7 +1330,7 @@ module.exports = {
       this.setData({
         resourceReducedMotion: reduced,
         resourceRolling: false,
-        resourceLabel: '玩法指南',
+        resourceLabel: RESOURCE_LABELS[0],
       });
       clearTimeout(this._resourceMotionTimer);
       this.startResourceRotation();
@@ -1356,6 +1371,37 @@ module.exports = {
     }
   },
   exitTutorial() {
+    this.call('exitTutorial');
+  },
+  // The table is the first page, so the system Back would close the mini
+  // program. While the tutorial is open an empty page container takes that
+  // Back and returns to the paused table, as the Web history entry does.
+  // Saved hands (the history page) leave normally; only the live table guards.
+  armExitGuard() {
+    if (this._readOnlyAttempt || this.data.historyReadOnly) return;
+    clearTimeout(this._exitTimer);
+    if (!this.data.exitGuard || !this.data.containedScroll)
+      this.setData({ exitGuard: true, containedScroll: true });
+  },
+  // Back from the page-container: the tutorial closes, otherwise the first
+  // press asks for a second one within EXIT_CONFIRM_MS before the mini
+  // program may leave.
+  pageBack() {
+    // Back closed the page-container; reopen it (false, then true) so the
+    // table guards the next Back once the tutorial has closed.
+    if (this.data.tutorialActive) {
+      this.tutorialBack();
+      this.setData({ exitGuard: false }, () => this.armExitGuard());
+      return;
+    }
+    wx.showToast?.({ title: '再按一次退出', icon: 'none', duration: EXIT_CONFIRM_MS });
+    this.setData({ exitGuard: false });
+    clearTimeout(this._exitTimer);
+    this._exitTimer = setTimeout(() => {
+      if (!this._destroyed && !this._hidden) this.armExitGuard();
+    }, EXIT_CONFIRM_MS);
+  },
+  tutorialBack() {
     this.call('exitTutorial');
   },
   tutorialNext() {
@@ -1533,6 +1579,8 @@ module.exports = {
     this._finishRequested = false;
     this.setData({ finishing: false });
     this.call('reset');
+    // The new game starts from the top: unlocking restores this position.
+    this._homeScroll = 0;
     this.closeReset();
     this.closeSettings();
   },

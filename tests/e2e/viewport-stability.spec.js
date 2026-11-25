@@ -198,7 +198,7 @@ test('Chinese, Korean and long locale persona tags keep the same height without 
             fits:
               label.scrollWidth <= label.clientWidth + 1 &&
               label.scrollHeight <= label.clientHeight + 1 &&
-              label.textContent === label.dataset.fullName,
+              label.textContent === label.dataset.styleTag,
             whiteSpace: getComputedStyle(label).whiteSpace,
             overflow: getComputedStyle(label).textOverflow,
           };

@@ -2,6 +2,7 @@ import { evaluate, seatPosition, currentPots } from '../engine/poker.js';
 import { compactActionAmounts } from '../engine/chip-format.js';
 import { getBotProfile, MOOD_LABELS } from '../engine/bot-profiles.js';
 import {
+  getLocale,
   formatChips,
   setLocalizedText,
   setLocalizedHTML,
@@ -12,6 +13,7 @@ import { renderCard } from './cards.js';
 import { portraitContent } from './portraits.js';
 import { SEAT_ANCHORS } from './seat-geometry.js';
 import { visibleRecentAction } from './recent-action.js';
+import { blindProgressText } from './effect-layouts.js';
 export { visibleRecentAction } from './recent-action.js';
 const escape = (value) =>
   String(value)
@@ -55,7 +57,9 @@ function positionBadge(g, id) {
 }
 
 export function renderSeatAction(g, p, { recent = false, dealing = false } = {}) {
-  if (g.phase === 'idle') return '<span class="seat-action-label">已就位</span>';
+  // Before the first deal, a seat that has left the game is out, not seated.
+  if (g.phase === 'idle')
+    return `<span class="seat-action-label">${p.out ? '已出局' : '已就位'}</span>`;
   if (p.out && !p.hole.length)
     return `<span class="seat-action-label">出局 · 第${p.place}名</span>`;
   if (!recent && g.actor === p.id && !dealing)
@@ -87,7 +91,11 @@ export function renderSeatAction(g, p, { recent = false, dealing = false } = {})
     (match[2] === '跟注'
       ? `本次补入 ${format(amount)}，本轮累计投入 ${format(retained?.bet ?? p.bet)}`
       : `${compactActionAmounts(action)} · 本轮累计投入 ${format(amount)}`);
-  return `<span class="seat-action-label">${label}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
+  // Every non-Chinese locale shows the universal SB / BB seat shorthand, so
+  // the long translated blind name never wraps beneath the seat.
+  const compactBlind = !getLocale().startsWith('zh') && (label === '小盲' || label === '大盲');
+  const displayLabel = compactBlind ? (label === '小盲' ? 'SB' : 'BB') : label;
+  return `<span class="seat-action-label"${compactBlind ? ` aria-label="${label}" title="${label}"` : ''}>${displayLabel}</span><strong class="seat-action-amount" title="${escape(meaning)}">${format(amount)}</strong>`;
 }
 
 // Live and archived tables share the complete seat structure and action layout.
@@ -116,7 +124,7 @@ export function renderOpponentSeats(
         [x, y] = SEAT_ANCHORS[count][p.id - 1];
       const rankMarkup =
         rank || winner
-          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${escape(p.name)} 获得底池 ${format(winner.amount)} 筹码" title="${escape(winner.label)} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}${rank?.label ?? '获胜'}</div>`
+          ? `<div class="hand-rank ${winner ? 'rank-winner winner-indicator' : ''}"${winner ? ` aria-label="${escape(p.name)} 获得底池 ${format(winner.amount)} 筹码" title="${escape(winner.label)} · 获得 ${format(winner.amount)} 筹码"` : ''}>${winner ? winnerIcon : ''}<span class="seat-rank-label">${rank?.label ?? '获胜'}</span></div>`
           : '';
       const profile = getBotProfile(p.botProfile),
         mood = g.emotionMode === 'off' ? 'steady' : p.botMood.kind,
@@ -132,7 +140,7 @@ export function renderOpponentSeats(
         crownedId === p.id
           ? `<span class="champion-trophy seat-champion-trophy ${x < 50 ? 'trophy-right' : 'trophy-left'} ${crownPending ? 'trophy-pending' : ''}" title="冠军">${TROPHY_MARKUP}</span>`
           : '';
-      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${p.out && !p.hole.length ? 'seat-out' : ''} ${crownedId === p.id ? 'is-champion' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile">${trophy}<span class="avatar avatar-${p.id - 1} ${moodShown ? `has-mood mood-${mood}` : ''}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}${moodShown ? `<i class="mood-badge mood-live mood-${mood}" aria-hidden="true"></i>` : ''}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' && p.hole.length ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.short}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
+      return `<div class="seat seat-${p.id} ${y === 0 ? 'seat-crown' : ''} ${x < 25 ? 'seat-left' : x > 75 ? 'seat-right' : ''} ${p.folded ? 'folded' : ''} ${p.out && !p.hole.length ? 'seat-out' : ''} ${crownedId === p.id ? 'is-champion' : ''} ${g.actor === p.id && !dealing ? 'thinking' : ''} ${isWinner ? 'winner' : ''}" data-player="${p.id}" data-profile="${escape(p.botProfile)}" data-mood="${escape(mood)}" style="left:${x}%;top:${y}%"><div id="seat-hand-${p.id}" class="mini-cards ${reveal ? 'revealed-cards' : ''}">${reveal ? p.hole.map((c, i) => card(c, { small: true, animate: arriving, delay: i * 140, best: !!rank && rank.cards.some((best) => best.key === c.key) })).join('') : p.hole.map((c, i) => `<span class="card-back ${newHand ? 'card-deal' : ''}" style="--delay:${p.id * 65 + i * 140}ms" aria-label="对手底牌"></span>`).join('')}</div><div class="seat-profile">${trophy}<span class="avatar avatar-${p.id - 1} ${moodShown ? `has-mood mood-${mood}` : ''}" title="${escape(title)}" aria-label="${escape(title)}">${portraitContent(profile.id, profiles[p.id])}${moodShown ? `<i class="mood-badge mood-live mood-${mood}" aria-hidden="true"></i>` : ''}</span><div><strong><span class="seat-name-label">${escape(p.name)}</span>${positionBadge(g, p.id)}<span class="seat-inspect-slot">${g.phase === 'done' && p.hole.length ? `<button class="seat-peek" data-peek-player="${p.id}" title="${reveal ? '收起底牌' : '查看底牌'}" aria-label="${reveal ? '收起' : '查看'} ${escape(p.name)} 的底牌" aria-pressed="${!!reveal}" aria-controls="seat-hand-${p.id}"><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M2 10C4 6 7 5 10 5C13 5 16 6 18 10C16 14 13 15 10 15C7 15 4 14 2 10Z"/><circle cx="10" cy="10" r="2.5"/></svg></button>` : ''}</span></strong><span class="seat-style-label" data-style-profile="${profile.id}" data-full-name="${escape(profile.name)}" data-style-tag="${escape(profile.abbr)}" aria-label="${escape(p.name)} 本手风格：${profile.name}">${profile.abbr}</span><span class="seat-bankroll"><span class="seat-stack">${format(p.stack)}</span></span></div></div><div class="seat-rank-slot">${rankMarkup}</div><div class="seat-action" aria-label="${escape(p.name)} 的最近行动">${renderSeatAction(g, p, { dealing })}</div></div>`;
     })
     .join('');
 }
@@ -172,7 +180,10 @@ export function createSnapshotSurface(template, g, { sessionNumber, visible, pee
   query('#street-divider').remove();
   setLocalizedText(query('#blind-values'), `${format(g.smallBlind)} / ${format(g.bigBlind)}`);
   query('#replay-label').hidden = !g.replayAttempt;
-  setLocalizedText(query('#replay-label'), '重打 ' + (g.replayAttempt || 0));
+  setLocalizedText(query('#replay-attempt'), '重打 ' + (g.replayAttempt || 0));
+  const progress = blindProgressText(g, format);
+  query('#blind-progress').hidden = !progress;
+  setLocalizedText(query('#blind-progress'), progress);
   if (query('#coach-content')) query('#coach-content').hidden = true;
   setLocalizedHTML(
     query('.seats'),

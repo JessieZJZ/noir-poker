@@ -77,7 +77,7 @@ try {
         street: ['翻牌前', '翻牌', '转牌', '河牌'][snapshot.street],
         position: 'SB',
         actual: '跟注',
-        label: '需要比较',
+        label: '建议弃牌',
         cards: [],
         board: [],
         pot: '100',

@@ -256,7 +256,8 @@ test('sound prepares the shared PCM player, waits for a real gesture and handles
     resumes: 0,
     notes: 0,
   });
-  expect(await page.evaluate(() => window.audioProbe.gains.length)).toBe(0);
+  // Only the output limiter's trim; cues are PCM buffers, not synth voices.
+  expect(await page.evaluate(() => window.audioProbe.gains.length)).toBe(1);
   expect(await page.evaluate(() => window.audioProbe.limiters)).toBe(1);
   await page.keyboard.press('Tab');
   expect(await page.evaluate(() => window.audioProbe)).toMatchObject({

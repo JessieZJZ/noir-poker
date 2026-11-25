@@ -10,6 +10,11 @@ import {
   createSoundOutput,
 } from '../../src/ui/sound-cues.js';
 import { soundWave } from '../../scripts/wechat.mjs';
+import {
+  SOUND_LIMIT_THRESHOLD_DB,
+  SOUND_SAFETY_KNEE,
+  soundLimiterTrim,
+} from '../../src/ui/sound-synth.js';
 
 const formerRms = {
   fold: 0.03893198712336045,
@@ -151,8 +156,8 @@ test('the final Web mix retains single-cue unity and bounds coincident action cu
 test("champions' crowd cheers are local recordings; the hero's is fuller and louder", async () => {
   const { CEREMONY_CUES, CHEER_FILES, SYNTHESIZED_CEREMONY_CUES } =
     await import('../../src/ui/ceremony-sounds.js');
-  assert.deepEqual(CEREMONY_CUES, ['champion', 'crowned', 'farewell']);
-  assert.deepEqual(SYNTHESIZED_CEREMONY_CUES, ['farewell']);
+  assert.deepEqual(CEREMONY_CUES, ['champion', 'crowned', 'farewell', 'levelup', 'finaltable']);
+  assert.deepEqual(SYNTHESIZED_CEREMONY_CUES, ['farewell', 'levelup', 'finaltable']);
   // Duration from the MP4 movie header, in seconds.
   const seconds = (bytes) => {
     const at = bytes.indexOf('mvhd'),
@@ -175,7 +180,7 @@ test("champions' crowd cheers are local recordings; the hero's is fuller and lou
   assert.ok(files.champion.bytes.length + files.crowned.bytes.length < 120 * 1024);
 });
 
-test('the synthesized game-end cue is bounded and fades to silence on every platform', async () => {
+test('the synthesized game-end and table-notice cues are bounded and fade to silence on every platform', async () => {
   const { ceremonySamples, ceremonyWav, SYNTHESIZED_CEREMONY_CUES } =
     await import('../../src/ui/ceremony-sounds.js');
   for (const cue of SYNTHESIZED_CEREMONY_CUES) {
@@ -193,7 +198,7 @@ test('cached ceremony WAVs change name whenever a synthesized cue changes', asyn
   // Fingerprint of the synthesized cues at this version. A different value
   // means they changed: bump CEREMONY_SOUND_VERSION and record the new value,
   // or WeChat keeps playing its cached copy of the old sound.
-  const fingerprints = { 3: '-933754938' };
+  const fingerprints = { 3: '-933754938', 4: '-687480149' };
   let sum = 0;
   for (const cue of SYNTHESIZED_CEREMONY_CUES) {
     const samples = ceremonySamples(cue);
@@ -201,4 +206,70 @@ test('cached ceremony WAVs change name whenever a synthesized cue changes', asyn
       sum = (sum * 31 + Math.round(samples[i] * 1e4)) % 1e9;
   }
   assert.equal(String(sum), fingerprints[CEREMONY_SOUND_VERSION], 'bump CEREMONY_SOUND_VERSION');
+});
+
+test('table-notice cues end within the notice, before the deal stops them', async () => {
+  const { ceremonySamples, CEREMONY_SAMPLE_RATE } = await import('../../src/ui/ceremony-sounds.js');
+  const { TABLE_NOTICE_MS } = await import('../../src/ui/effect-layouts.js');
+  for (const cue of ['levelup', 'finaltable'])
+    assert.ok(
+      (ceremonySamples(cue).length / CEREMONY_SAMPLE_RATE) * 1000 <= TABLE_NOTICE_MS,
+      `${cue} fits in ${TABLE_NOTICE_MS} ms`,
+    );
+});
+
+// Music and coinciding cues are limited by gain, not by bending the waveform.
+// The compressor's spec makeup gain is undone, so audio below the threshold
+// (every single cue, and the music alone) passes at unity.
+test('the Web mix limits coincident audio smoothly and keeps unlimited audio at unity', () => {
+  const nodes = [];
+  const param = (value = 0) => ({ value });
+  const node = (kind, extra = {}) => {
+    const item = {
+      kind,
+      connect(target) {
+        this.connected = target;
+        return target;
+      },
+      ...extra,
+    };
+    nodes.push(item);
+    return item;
+  };
+  const destination = { kind: 'destination' },
+    context = {
+      destination,
+      createWaveShaper: () => node('shaper'),
+      createGain: () => node('gain', { gain: param(1) }),
+      createDynamicsCompressor: () =>
+        node('limiter', {
+          threshold: param(),
+          knee: param(),
+          ratio: param(),
+          attack: param(),
+          release: param(),
+        }),
+    };
+  const input = createSoundOutput(context);
+  assert.equal(input.kind, 'limiter');
+  assert.equal(input.threshold.value, SOUND_LIMIT_THRESHOLD_DB);
+  assert.equal(input.knee.value, 0);
+  assert.equal(input.ratio.value, 20);
+  assert.ok(input.attack.value <= 0.006 && input.release.value >= 0.2);
+  const trim = input.connected,
+    safety = trim.connected;
+  assert.equal(trim.kind, 'gain');
+  assert.equal(safety.kind, 'shaper');
+  assert.equal(safety.connected, destination);
+  // Spec makeup: (1 / curve(0 dBFS))^0.6 with curve(0) = T - T / ratio.
+  const curveAtFullScale = Math.pow(10, (SOUND_LIMIT_THRESHOLD_DB * (1 - 1 / 20)) / 20);
+  const makeup = Math.pow(1 / curveAtFullScale, 0.6);
+  assert.ok(Math.abs(trim.gain.value * makeup - 1) < 1e-12);
+  assert.equal(trim.gain.value, soundLimiterTrim());
+  // Every mastered cue peaks below the limiter threshold and the safety knee.
+  const threshold = Math.pow(10, SOUND_LIMIT_THRESHOLD_DB / 20);
+  for (const name of SOUND_CUES)
+    for (const sample of soundSamples(name)) assert.ok(Math.abs(sample) < threshold);
+  assert.ok(SOUND_SAFETY_KNEE > threshold && SOUND_SAFETY_KNEE < 0.92);
+  assert.ok(SOUND_PEAK_CEILING < threshold);
 });

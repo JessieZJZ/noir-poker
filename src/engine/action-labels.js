@@ -44,6 +44,18 @@ export function actionLabel(step, action = step.action, amount = step.amount) {
   return action === 'fold' ? '弃牌' : '过牌';
 }
 
+// Review wording: a first preflop raise over limpers isolates them rather than
+// opening an untouched pot. The engine's bet ordinal and legality are unchanged.
+export function reviewActionLabel(step, action = step.action, amount = step.amount) {
+  const label = actionLabel(step, action, amount);
+  return !step.street &&
+    action === 'raise' &&
+    label.startsWith('2-bet 开池至 ') &&
+    (step.history || []).some((a) => a.street === 0 && a.action === 'call')
+    ? `2-bet 隔离加注至 ${number(amount)}`
+    : label;
+}
+
 export function historyActionLabel(history, index) {
   const a = history[index];
   if (a.action !== 'raise')

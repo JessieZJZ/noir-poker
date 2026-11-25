@@ -36,7 +36,9 @@ test('review separates lucky bad-price wins from reasonable losses with concise 
       await expect(page.locator('#review-selected-status')).toHaveClass(/consider/);
     } else {
       await page.locator('#review-timeline [data-review-index="3"]').click();
-      await expect(page.locator('#review-selected-status')).toHaveText(/^建议跟注 /);
+      // The kept call is affirmed silently: no badge repeats or praises it.
+      await expect(page.locator('#review-selected-status')).toBeHidden();
+      await expect(page.locator('#review-selected-status')).toHaveText('');
       await expect(page.locator('#review-selected-status')).toHaveClass(/sound/);
       await expect(page.locator('#review-practice-focus')).toBeHidden();
     }
@@ -1571,16 +1573,8 @@ test('nine-seat style assignment shows every persona at all sizes and executes t
     7: 'iris',
     8: 'balanced',
   };
-  const labels = [
-    '大注强攻',
-    '范围纪律',
-    '跟注诱导',
-    '宽松取值',
-    '听牌施压',
-    '小注控池',
-    '后位争夺',
-    '均衡',
-  ];
+  // Seat tags are the two-character Chinese short names.
+  const labels = ['强攻', '纪律', '诱导', '宽松', '施压', '控池', '后位', '均衡'];
   await page.evaluate(() => window.qa.foldWin(9));
   await page.locator('#opponents-button').click();
   await assignNamedLineup(page);

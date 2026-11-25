@@ -1,0 +1,48 @@
+<view class="practice-home">
+  <text class="practice-home-title" role="heading">本地练习</text>
+  <text class="practice-home-intro">认识牌型，学会判断，再上桌练习。</text>
+  <view class="practice-home-lesson">
+    <view class="practice-home-lesson-heading">
+      <view>
+        <text class="practice-home-lesson-title" role="heading">新手引导</text>
+        <text class="practice-home-lesson-copy">用示例牌面认识牌型和位置。</text>
+      </view>
+      <view class="practice-home-cards" aria-hidden="true">
+        <text>A♠</text>
+        <text>K<text class="practice-home-heart">♥</text></text>
+      </view>
+    </view>
+    <button
+      id="home-tutorial-button"
+      class="practice-home-tutorial"
+      hover-class="practice-home-pressed"
+      bindtap="openTutorial"
+    >
+      <text>打开新手引导</text><text class="practice-home-arrow" aria-hidden="true">→</text>
+    </button>
+  </view>
+  <view class="practice-home-tools">
+    <button
+      id="home-rankings-button"
+      hover-class="practice-home-pressed"
+      bindtap="openHandRankings"
+    >
+      <view class="practice-home-rank-icon" aria-hidden="true"><view /><view /></view>
+      <text>牌型速查</text>
+    </button>
+    <button id="home-win-rate-button" hover-class="practice-home-pressed" bindtap="openWinRate">
+      <view class="practice-home-calc-icon" aria-hidden="true" />
+      <text>胜率计算器</text>
+    </button>
+  </view>
+  <button
+    id="join-table-button"
+    class="practice-home-join"
+    hover-class="practice-home-pressed"
+    bindtap="joinTable"
+  >
+    <text>单机牌桌 · 开始训练</text>
+    <view class="practice-home-join-arrow" aria-hidden="true"><text>→</text></view>
+  </button>
+  <text class="practice-home-note">无需登录 · AI对战</text>
+</view>

@@ -14,12 +14,12 @@ const recordFor = (game) => ({
 test('current large-wager explanations and legacy flag-based explanations keep their recorded sizing contract', () => {
   const current = recordFor(observedSqueeze());
   assert.deepEqual(current.trace.observationSizing, { version: 1, largePreflopBB: 8 });
-  assert.match(explainOpponent(current).detail, /此前 32 手中 32 手翻前大额加注/);
+  assert.match(explainOpponent(current).detail, /此前 32 手翻前大额加注/);
   const legacy = structuredClone(current);
   delete legacy.trace.observationSizing;
   assert.equal(legacy.trace.view.allIn, undefined);
-  assert.match(explainOpponent(legacy).detail, /此前 32 手中 32 手翻前加注的记录/);
-  assert.doesNotMatch(explainOpponent(legacy).detail, /此前 32 手中 32 手翻前大额加注/);
+  assert.match(explainOpponent(legacy).detail, /此前 32 手翻前加注的记录/);
+  assert.doesNotMatch(explainOpponent(legacy).detail, /此前 32 手翻前大额加注/);
 });
 
 test('a short shove uses ordinary preflop history only when that grouping was recorded', () => {
@@ -41,10 +41,10 @@ test('a short shove uses ordinary preflop history only when that grouping was re
   act(game, opener, 'raise', 6 * game.bigBlind);
   const current = recordFor(game);
   assert.ok(current.trace.view.allIn);
-  assert.match(explainOpponent(current).detail, /此前 24 手中 24 手翻前加注/);
+  assert.match(explainOpponent(current).detail, /此前 24 手翻前加注/);
   const legacy = structuredClone(current);
   delete legacy.trace.observationSizing;
-  assert.doesNotMatch(explainOpponent(legacy).detail, /此前 24 手中 24 手翻前/);
+  assert.doesNotMatch(explainOpponent(legacy).detail, /此前 24 手翻前/);
   assert.match(explainOpponent(legacy).detail, /选择/);
 });
 

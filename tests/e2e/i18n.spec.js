@@ -2,16 +2,16 @@ import { test, expect } from '@playwright/test';
 const locales = ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'];
 const practiceTitles = {
   'zh-CN': '本局练习',
-  en: 'Session practice',
+  en: 'Current game',
   'zh-TW': '本局練習',
-  ja: 'このセッションの練習',
-  ko: '이번 세션 연습',
-  es: 'Práctica de esta sesión',
-  it: 'Pratica della sessione',
-  pt: 'Prática desta sessão',
-  de: 'Übung dieser Sitzung',
-  fr: 'Pratique de cette session',
-  ru: 'Практика в этой сессии',
+  ja: 'このゲームの練習',
+  ko: '이번 게임 연습',
+  es: 'Partida en curso',
+  it: 'Partita in corso',
+  pt: 'Treino desta partida',
+  de: 'Aktuelles Spiel',
+  fr: 'Partie en cours',
+  ru: 'Текущая игра',
 };
 test('localized HTML preserves URLs, identifiers and serialized rule data', async ({ page }) => {
   await page.goto('/');
@@ -20,7 +20,7 @@ test('localized HTML preserves URLs, identifiers and serialized rule data', asyn
     await loadLocale('en');
     const holder = document.createElement('div');
     holder.innerHTML = localizeHTML(
-      '<a id="弃牌" href="/弃牌" data-rule="弃牌" aria-label="弃牌">弃牌</a><span translate="no">郑建宙</span>',
+      '<a id="弃牌" href="/弃牌" data-rule="弃牌" aria-label="弃牌">弃牌</a><span translate="no">弃牌</span>',
     );
     const link = holder.querySelector('a');
     return {
@@ -29,7 +29,7 @@ test('localized HTML preserves URLs, identifiers and serialized rule data', asyn
       id: link.id,
       url: link.getAttribute('href'),
       rule: link.dataset.rule,
-      legalName: holder.querySelector('span').textContent,
+      protectedText: holder.querySelector('span').textContent,
     };
   });
   expect(result).toEqual({
@@ -38,7 +38,7 @@ test('localized HTML preserves URLs, identifiers and serialized rule data', asyn
     id: '弃牌',
     url: '/弃牌',
     rule: '弃牌',
-    legalName: '郑建宙',
+    protectedText: '弃牌',
   });
 });
 for (const locale of locales) {
@@ -84,7 +84,7 @@ for (const locale of locales) {
     await page.locator('#guide-menu-item').click();
     const guide = page.locator('#rules-dialog');
     await expect(guide).toBeVisible();
-    const raiseExample = ['es', 'it', 'pt', 'de', 'fr', 'ru'].includes(locale) ? '1,2K' : '1.2K';
+    const raiseExample = '1.2K';
     const callExample = guide.locator('.guide-body > p').filter({ hasText: raiseExample });
     await expect(callExample).toBeVisible();
     for (const amount of ['200', '600', '400', raiseExample, '1K'])
@@ -130,10 +130,17 @@ for (const locale of locales) {
       () => document.documentElement.scrollWidth > innerWidth + 1,
     );
     expect(overflow).toBe(false);
+    await page.setViewportSize({ width: 320, height: 844 });
     await page.goto('/app-privacy.html?lang=' + locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    await expect(page.locator('article:visible')).toHaveCount(1);
-    await expect(page.locator('article:visible')).toContainText('958182284@qq.com');
+    const policy = page.locator('article:visible');
+    const email = 'zhengjianzhou.jessy@gmail.com';
+    await expect(policy).toHaveCount(1);
+    await expect(policy).toContainText('noir studio');
+    await expect(policy.getByRole('link', { name: email, exact: true })).toHaveAttribute(
+      'href',
+      'mailto:' + email,
+    );
     // A lower-priority layer models the old WebView nested-heading defaults.
     // Authored margins must keep the page stable across browser generations.
     await page.addStyleTag({
@@ -144,12 +151,15 @@ for (const locale of locales) {
       const heading = getComputedStyle(document.querySelector('article:not([hidden]) h1'));
       return {
         family: getComputedStyle(document.body).fontFamily,
+        viewport: document.documentElement.clientWidth,
+        contentWidth: document.documentElement.scrollWidth,
         headingMargins: [heading.marginBlockStart, heading.marginBlockEnd],
         loaded: [...document.fonts]
           .filter((face) => face.status === 'loaded')
           .map((face) => face.family.replace(/["']/g, '')),
       };
     });
+    expect(policyFonts.contentWidth).toBeLessThanOrEqual(policyFonts.viewport);
     expect(policyFonts.family).toMatch(/^Manrope,/);
     expect(policyFonts.loaded).toContain('Manrope');
     expect(policyFonts.headingMargins).toEqual(['18.76px', '18.76px']);

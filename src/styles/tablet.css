@@ -40,6 +40,9 @@
   .entry-welcome {
     gap: 14px;
   }
+  .game-surface[data-entry-state='waiting'] .hand-label > #entry-structure {
+    font-size: 13px;
+  }
   .entry-eyebrow,
   .entry-footnote {
     font-size: 14px;
@@ -386,19 +389,25 @@
     min-width: 0;
     align-self: flex-end;
   }
+  /* With the rail's clearance below, the amount row stays within the panel's
+     top padding, below the turn status line. */
   .main .game-surface .bet-controls > label {
     flex-direction: row;
     grid-column: 1;
     grid-row: auto;
+    height: 18px;
+    line-height: 18px;
   }
   .main .game-surface .bet-controls > label strong {
     font-size: inherit;
     line-height: inherit;
   }
+  /* The 15px thumb extends 5px beyond the 5px rail on each side. Keep it
+     clear of the amount above and the shortcut row below (2px each). */
   .main .game-surface .bet-controls input {
     grid-column: 1;
     grid-row: auto;
-    margin: 4px 0 0;
+    margin: 7px 0;
   }
   .main .game-surface .bet-presets {
     grid-column: 1;

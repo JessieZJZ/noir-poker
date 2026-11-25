@@ -1,4 +1,4 @@
-import { formatChips, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
+import { formatChips, localizeText, setLocalizedText, setLocalizedHTML } from '../i18n/index.js';
 import {
   createReviewInput,
   actionLabel,
@@ -35,15 +35,17 @@ export function createReviewController({ card }) {
     const selection = opponentPerspective
       ? opponentSelection
       : { actorId: 0, sequence: last.input.decisions[selected]?.history.length + 1 };
-    setLocalizedHTML(
-      $('#review-activity-list'),
-      selectedActivity(last.input, selection.actorId, selection.sequence)
-        .map(
-          (event) =>
-            `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(event.text)}</li>`,
-        )
-        .join(''),
-    );
+    // Actor-aware logs are escaped and translated as complete sentences.
+    $('#review-activity-list').innerHTML = selectedActivity(
+      last.input,
+      selection.actorId,
+      selection.sequence,
+    )
+      .map(
+        (event) =>
+          `<li class="${event.emphasized ? 'review-activity-emphasis' : ''} ${event.current ? 'review-activity-current' : ''}" ${event.current ? 'aria-current="step"' : ''}>${event.parts ? renderActivityParts(event.parts) : esc(localizeText(event.text))}</li>`,
+      )
+      .join('');
   }
   const opponents = createOpponentReview({
     card,
@@ -93,6 +95,8 @@ export function createReviewController({ card }) {
       decision = steps[selected],
       result = analysis?.steps[selected] || last.partial?.[selected];
     setLocalizedText($('#review-dialog-title'), '第 ' + input.hand + ' 手，决策复盘');
+    $('#review-result-change').classList.toggle('positive', input.outcome.profit > 0);
+    $('#review-result-change').classList.toggle('negative', input.outcome.profit < 0);
     setLocalizedText(
       $('#review-result-change'),
       input.outcome.profit < 0
@@ -137,7 +141,7 @@ export function createReviewController({ card }) {
         .map((s, i) => {
           const r = analysis?.steps[i] || last.partial?.[i],
             status = coachingStatus(r);
-          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]}，${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.kind === 'keep' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
+          return `<button class="review-step ${selected === i ? 'selected' : ''}" data-review-index="${i}" aria-current="${selected === i ? 'step' : 'false'}"><span class="review-step-number">${i + 1}</span><span><small>${STREET_NAMES[s.street]}，${s.position}</small><strong>${actionLabel(s)}</strong></span>${r?.coaching.label === '' ? '' : `<span class="review-status ${status || 'pending'}">${r?.coaching.label || (status ? statusNames[status] : '待分析')}</span>`}</button>`;
         })
         .join(''),
     );
@@ -158,9 +162,13 @@ export function createReviewController({ card }) {
       $('#review-detail-title'),
       '第 ' + (selected + 1) + ' 步，' + STREET_NAMES[decision.street],
     );
+    // Only a different concrete action earns a badge; an affirmed action, or an
+    // unproven one kept as the candidate, stays silent so no advice repeats it.
+    const noBadge = result?.coaching.label === '';
+    $('#review-selected-status').hidden = noBadge;
     setLocalizedText(
       $('#review-selected-status'),
-      result?.coaching.label || (result ? statusNames[result.status] : '分析中'),
+      noBadge ? '' : result?.coaching.label || (result ? statusNames[result.status] : '分析中'),
     );
     $('#review-selected-status').className =
       'review-status ' + (coachingStatus(result) || 'pending');
@@ -364,6 +372,9 @@ export function createReviewController({ card }) {
   });
   return {
     openInput,
+    refreshLocale() {
+      if (dialog.open) renderDialog();
+    },
     update(g, token) {
       const key = token + ':' + g.hand;
       if (g.phase === 'done' && key !== seen) {

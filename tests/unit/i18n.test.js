@@ -15,7 +15,10 @@ test('pending all-in callers remain a possible risk rather than known strong car
     if (!['zh-TW', 'ja'].includes(locale)) assert.doesNotMatch(value, /\p{Script=Han}/u, locale);
   }
   await loadLocale('en');
-  assert.match(localizeText(source), /yet to respond to this all-in could enter with strong hands/);
+  assert.match(
+    localizeText(source),
+    /still to respond to this all-in could come in with strong hands/,
+  );
   await loadLocale('zh-CN');
 });
 
@@ -35,19 +38,19 @@ test('English templates preserve and reorder dynamic values, while rule state re
   startHand(game, () => 0.42);
   const before = JSON.stringify(game);
   await loadLocale('en');
-  assert.equal(localizeText('轮到你行动，'), 'Your turn,');
+  assert.equal(localizeText('轮到你行动，'), 'Your turn.');
   assert.equal(localizeText('第 12 手 · 决策复盘'), 'Hand 12 · Decision review');
   assert.equal(
     localizeText('轮到你了，跟注需要 75 筹码。本轮加注权未重开，仅可跟注或弃牌。'),
-    'Your turn. Calling costs 75 chips. Raising has not reopened. You may only call or fold.',
+    "Your turn. Calling costs 75 chips. Raising hasn't reopened this round; you can only call or fold.",
   );
   assert.equal(
     localizeText('本次补入 100，本轮累计投入 150'),
-    'Added 100; total bet this round 150',
+    'Added now: 100; total bet this round: 150',
   );
   assert.equal(
     localizeText('跟注占可争夺底池约 40%。随机范围与行动加权范围下，底池权益分别约 50% / 47%。'),
-    'Calling costs about 40% of the eligible pot.Pot equity against random and action-weighted ranges is approximately 50% / 47%, respectively.',
+    'Calling costs about 40% of the eligible pot. Pot equity against random and action-weighted ranges is approximately 50% / 47%, respectively.',
   );
   assert.equal(JSON.stringify(game), before);
   assert.equal(formatChips(5000), '5K');
@@ -93,7 +96,7 @@ test('practice comparisons translate complete trailing sentences after adjacent 
   assert.match(localizeText(cases[0]), /first compare Call 50 with Fold/);
   assert.match(localizeText(cases[0]), /Betting is not closed this round/);
   assert.match(localizeText(cases[1]), /If you call instead/);
-  assert.match(localizeText(cases[2]), /last player responding this round/);
+  assert.match(localizeText(cases[2]), /last to respond this round/);
   assert.match(localizeText(cases[2]), /next street brings a new board/);
   for (const source of [cases[1], cases[5]]) {
     assert.match(localizeText(source), /only showdown/);
@@ -102,22 +105,51 @@ test('practice comparisons translate complete trailing sentences after adjacent 
   await loadLocale('zh-CN');
 });
 
-test('the practice heading describes the current session in every supported locale', async () => {
+test('the practice heading describes the current game in every supported locale', async () => {
   for (const [locale, expected] of Object.entries({
     'zh-CN': '本局练习',
-    en: 'Session practice',
+    en: 'Current game',
     'zh-TW': '本局練習',
-    ja: 'このセッションの練習',
-    ko: '이번 세션 연습',
-    es: 'Práctica de esta sesión',
-    it: 'Pratica della sessione',
-    pt: 'Prática desta sessão',
-    de: 'Übung dieser Sitzung',
-    fr: 'Pratique de cette session',
-    ru: 'Практика в этой сессии',
+    ja: 'このゲームの練習',
+    ko: '이번 게임 연습',
+    es: 'Partida en curso',
+    it: 'Partita in corso',
+    pt: 'Treino desta partida',
+    de: 'Aktuelles Spiel',
+    fr: 'Partie en cours',
+    ru: 'Текущая игра',
   })) {
     await loadLocale(locale);
     assert.equal(localizeText('本局练习'), expected, locale);
+  }
+  await loadLocale('zh-CN');
+});
+
+test('filled-in pronouns are capitalized only at a sentence start and joins keep one space', async () => {
+  const opener =
+    '他也把跟注后仍可能面对的后街下注计入了这次收紧的考虑，没有只按眼前的跟注门槛继续。';
+  const inner = 'Q7o不够这个位置的全下标准，她选择弃牌，留着筹码等更好的机会。';
+  const observer = '这次你在 CO 位 2-bet 开池至 600，';
+  await loadLocale('en');
+  assert.match(localizeText(opener), /^They also factored/);
+  assert.match(localizeText(inner), /, so she folded/);
+  assert.equal(localizeText(observer), 'This time, you in CO 2-bet open to 600,');
+  assert.equal(localizeText('Mia在 CO 位 2-bet 开池至 600'), 'Mia in CO 2-bet open to 600');
+  assert.match(localizeText('你在 CO 位 2-bet 开池至 600'), /^You in CO 2-bet/);
+  // German keeps its own spelling of a sentence-start pronoun.
+  await loadLocale('de');
+  assert.match(localizeText(observer), / du /);
+  assert.doesNotMatch(localizeText(observer), / {2}/);
+  // Russian keeps the capitalized polite form, while a noun subject inside a
+  // sentence is lowercase.
+  await loadLocale('ru');
+  assert.match(localizeText(observer), /Вы/);
+  assert.match(localizeText(inner), /соперница/);
+  assert.doesNotMatch(localizeText(inner), /Соперница/);
+  for (const locale of ['en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru']) {
+    await loadLocale(locale);
+    for (const source of [opener, inner, observer])
+      assert.doesNotMatch(localizeText(source), /[\uE300\uE301]/u, locale);
   }
   await loadLocale('zh-CN');
 });
@@ -169,7 +201,7 @@ test('Japanese and Korean catalogs contain no damaged repetition or replacement 
   await loadLocale('zh-CN');
 });
 
-test('first-visit language follows the named timezone, while saved choices and unknown-zone fallbacks remain reliable', () => {
+test('first-visit language follows the device language, then the named timezone, while saved choices win', () => {
   for (const [zone, expected] of Object.entries({
     'Asia/Shanghai': 'zh-CN',
     'Asia/Urumqi': 'zh-CN',
@@ -188,9 +220,19 @@ test('first-visit language follows the named timezone, while saved choices and u
     'Asia/Vladivostok': 'ru',
     'America/New_York': 'en',
   })) {
-    assert.equal(resolveLocale(null, ['en-US'], zone), expected, zone);
+    // A supported device language wins wherever the device is.
+    assert.equal(resolveLocale(null, ['en-US'], zone), 'en', zone);
+    assert.equal(resolveLocale(null, ['zh-Hans-US'], zone), 'zh-CN', zone);
+    // Only without one does the time zone pick the regional default.
+    assert.equal(resolveLocale(null, ['ar-SA'], zone), expected, zone);
+    assert.equal(resolveLocale(null, [], zone), expected, zone);
     assert.equal(resolveLocale('fr', ['ja-JP'], zone), 'fr', zone);
   }
+  // A Chinese phone in New York and an English phone in Shanghai.
+  assert.equal(resolveLocale(null, ['zh-CN'], 'America/New_York'), 'zh-CN');
+  assert.equal(resolveLocale(null, ['en-GB', 'zh-Hans-CN'], 'Asia/Shanghai'), 'en');
+  // The first supported entry in the list decides.
+  assert.equal(resolveLocale(null, ['ar-SA', 'ja-JP', 'en-US'], 'Europe/Paris'), 'ja');
   for (const zone of [undefined, 'UTC', 'Etc/GMT-8', 'unknown', '__proto__', 'toString']) {
     assert.equal(resolveLocale(null, ['ko-KR'], zone), 'ko');
     assert.equal(resolveLocale(null, ['xx'], zone), 'en');

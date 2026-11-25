@@ -1,6 +1,7 @@
 // Vite injects this file into the table controller ONLY in test mode.
 // It deliberately uses the controller's real rendering, actions and engine.
 import { deckOfCards, settle } from '../engine/poker.js';
+import { blindLevels } from '../engine/blind-levels.js';
 import { deceptiveRecords } from '../../tests/fixtures/deceptive-decisions.js';
 import { checkedSeatGame } from '../../tests/fixtures/checked-actions.js';
 import { pairedFlushReviewGame } from '../../tests/fixtures/paired-flush-review.js';
@@ -29,7 +30,8 @@ function fixtureGame(count = 6, heroFirst = false) {
   lastBoard = 0;
 }
 
-window.qa = {
+// Published once the app is ready (see the end of this file).
+const qaFixtures = {
   checkedSeat(count = 9, missingLabel = false) {
     fixtureGame(count);
     game = checkedSeatGame(count);
@@ -104,8 +106,16 @@ window.qa = {
     return publicState();
   },
   // A rigged last hand: seat 1 is the only other seat left, or `rivals` seats
-  // remain. The hero (AA) or seat 1 (AA) wins an all-in on a dry board.
-  finale({ heroWins = true, rivals = 1, rebuysUsed = 3, count = 5, heroStack, rivalStack } = {}) {
+  // remain. The stronger hand wins an all-in on a dry board.
+  finale({
+    heroWins = true,
+    rivals = 1,
+    rebuysUsed = 3,
+    count = 5,
+    heroStack,
+    rivalStack,
+    highCard = false,
+  } = {}) {
     gameRecords.abandon(game);
     fixtureGame(count, true);
     requestedStakes = stakesFromSmallBlind(100);
@@ -128,9 +138,15 @@ window.qa = {
     });
     startHand(game);
     const card = (rank, suit) => ({ rank, suit, symbol: '♠♥♣♦'[suit], key: `${suit}-${rank}` });
-    const strong = [card(14, 0), card(14, 1)],
-      weak = [card(7, 2), card(2, 3)],
-      board = [card(13, 2), card(9, 3), card(4, 0), card(3, 1), card(12, 2)],
+    const strong = [card(14, 0), highCard ? card(13, 3) : card(14, 1)],
+      weak = [card(7, 2), highCard ? card(14, 1) : card(2, 3)],
+      board = [
+        highCard ? card(2, 2) : card(13, 2),
+        card(9, 3),
+        card(4, 0),
+        card(3, 1),
+        card(12, 2),
+      ],
       used = new Set([...strong, ...weak, ...board].map((c) => c.key));
     game.players[0].hole = heroWins ? strong : weak;
     game.players[1].hole = heroWins ? weak : strong;
@@ -150,6 +166,35 @@ window.qa = {
     gameRecords.begin(game, { newSession: true });
     render();
     this.stop();
+    return publicState();
+  },
+  // Deal the next hand through the real flow with a new blind level due and,
+  // with `final`, only the final table left: its notices play first.
+  noticeHand({ count = 7, final = false, cap = false } = {}) {
+    gameRecords.abandon(game);
+    fixtureGame(count, true);
+    requestedStakes = stakesFromSmallBlind(100);
+    game = newGame(count, requestedStakes);
+    applyBotSettings(game, pendingBotSettings);
+    saveTablePreferences({
+      playerCount: count,
+      difficulty: game.difficulty,
+      stakes: requestedStakes,
+    });
+    game.levelHands = game.levelLength;
+    if (cap) {
+      const levels = blindLevels(game.stakes, count);
+      Object.assign(game, levels.at(-2), {
+        hand: (levels.length - 1) * game.levelLength,
+        levelIndex: levels.length - 2,
+      });
+    }
+    if (final) {
+      const seats = count <= 6 ? 2 : 3;
+      for (const p of game.players.slice(seats))
+        Object.assign(p, { out: true, stack: 0, place: count - (p.id - seats) });
+    }
+    nextHand();
     return publicState();
   },
   // Hero shoves, seat 1 calls, everyone else folds (or calls with `allIn`),
@@ -235,6 +280,10 @@ window.qa = {
     }
     clearTimeout(timer);
     botWait = null;
+  },
+  // Scripted walkthroughs tap instantly; only the reading-hold test keeps the wait.
+  skipTutorialReading() {
+    tutorialHold = () => 0;
   },
   thinking() {
     return botWait
@@ -711,3 +760,8 @@ window.qa = {
     }));
   },
 };
+// Tests wait for window.qa before driving the table. Publish it only once the
+// app is ready and its launch screen no longer covers an inert page, so real
+// clicks and touches never land during startup.
+if (document.documentElement.dataset.appReady === 'true') window.qa = qaFixtures;
+else document.addEventListener('noir:ready', () => (window.qa = qaFixtures), { once: true });

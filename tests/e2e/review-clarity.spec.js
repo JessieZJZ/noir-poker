@@ -24,7 +24,7 @@ test('deep button suited connectors receive a concrete call and conditional sque
   const detail = page.locator('#review-detail');
   await expect(page.locator('#review-selected-status')).toHaveText('建议跟注 500');
   await expect(page.locator('#review-timeline .review-status')).toHaveText(['建议跟注 500']);
-  await expect(detail).toContainText('先比较跟注 500 与有条件的3-bet 加注至 2K');
+  await expect(detail).toContainText('先比较跟注 500 与有条件的 3-bet 加注至 2K');
   await expect(detail).toContainText('若开池者范围较宽、平跟者有足够弃牌空间');
   await expect(detail).toContainText('3-bet 加注至 2K');
   await expect(detail).toContainText('不代表天然拥有范围优势');
@@ -115,7 +115,9 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   // The bettor's full public line (check flop, bet turn) keeps bluffs in range:
   // both range estimates clear the 30.1% price, so the gutshot call is kept.
   await select(6);
-  await expect(page.locator('#review-selected-status')).toHaveText('建议跟注 520K');
+  // The kept call is affirmed silently: no badge repeats or praises it.
+  await expect(page.locator('#review-selected-status')).toBeHidden();
+  await expect(page.locator('#review-selected-status')).toHaveText('');
   await expect(page.locator('#review-selected-status')).toHaveClass(/sound/);
   await expect(summary).toContainText(/卡顺听牌.*4 张直接成牌候选.*约 9%.*不等于你的全部获胜机会/);
   await expect(summary).toContainText('这次跟注后已没有后续下注');
@@ -126,7 +128,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
     contentType: 'image/png',
   });
   await select(7);
-  await expect(evidence).toContainText('4 / 5 同花连接牌');
+  await expect(evidence).toContainText('5 / 4 同花连接牌');
   await expect(summary).toContainText(
     /同花连接牌.*37.0%.*点数仍偏低.*更高同花.*若出现加注或者再加注.*建议弃牌/,
   );
@@ -137,7 +139,8 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
     contentType: 'image/png',
   });
   await select(8);
-  await expect(page.locator('#review-selected-status')).toHaveText('建议全下跟注 1.62M');
+  // The unproven all-in call taken is neither endorsed nor repeated as advice.
+  await expect(page.locator('#review-selected-status')).toBeHidden();
   await expect(summary).toContainText(/全下跟注.*27.0%.*看完剩余公共牌.*足够较弱牌.*比较弃牌/);
   await expect(summary).not.toContainText(/还留.*0|你在翻后有位置|你需要重新决定/);
   const ownParagraph = summary.locator('p').last();
@@ -162,7 +165,7 @@ test('review prices, actor references and draw verdicts stay coherent in the exi
   const bot = page.locator('#review-opponent-detail .review-explanation');
   // The opponent tab explains his own draw and price, not player coaching.
   await expect(bot).toContainText('当前主要依靠两头顺听牌改善');
-  await expect(bot).toContainText('需要至少24.3%的胜率');
+  await expect(bot).toContainText('需要至少 24.3% 的胜率');
   const paragraphs = await bot.locator('.review-analysis-heading ~ p').allTextContents();
   expect(paragraphs.join('').match(/Kai/g)).toHaveLength(1);
   await expect(bot).not.toContainText('；');
@@ -188,6 +191,7 @@ test('new recommendation clauses and key information switch across all locales',
       el.dispatchEvent(new Event('change'));
     }, locale);
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
+    const allInAmount = '1.62M';
     for (const i of [0, 6, 7, 8, 9]) {
       await page.locator(`[data-review-index="${i}"]`).click();
       const text = await page
@@ -197,13 +201,13 @@ test('new recommendation clauses and key information switch across all locales',
         .allTextContents();
       expect(text.join('')).not.toMatch(/\{\d+\}/);
       if (locale === 'zh-CN')
-        await expect(page.locator('#review-selected-status')).toHaveText(/^建议/);
+        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建议)/);
       if (locale === 'zh-TW')
-        await expect(page.locator('#review-selected-status')).toHaveText(/^建議/);
+        await expect(page.locator('#review-selected-status')).toHaveText(/^(?:$|建議)/);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
         expect(text.join('')).not.toMatch(/\p{Script=Han}/u);
       await expect(page.locator('#review-evidence')).toContainText(
-        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? '1.62M' : '100K',
+        i === 0 ? '140K' : [6, 9].includes(i) ? '520K' : i === 8 ? allInAmount : '100K',
       );
     }
   }

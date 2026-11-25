@@ -91,7 +91,7 @@ test('the settings switch controls hints immediately and restores its choice on 
   await expect(toggle).toHaveAttribute('aria-checked', 'true');
 });
 
-test('single-line hints scroll horizontally below blinds without moving the table or the action dock', async ({
+test('single-line hints scroll in the left notice row without moving the table or action dock', async ({
   page,
 }) => {
   for (const size of [
@@ -110,7 +110,9 @@ test('single-line hints scroll horizontally below blinds without moving the tabl
       const table = document.querySelector('.table-viewport').getBoundingClientRect(),
         dock = document.querySelector('.action-dock').getBoundingClientRect();
       return {
-        belowBlinds: r.top >= blinds.bottom && r.top - blinds.bottom <= 8,
+        belowBlinds: r.top >= blinds.bottom,
+        leftOfProgress:
+          r.right <= document.querySelector('#blind-progress').getBoundingClientRect().left,
         aboveTable: r.bottom <= table.top,
         insideWidth: r.left >= 0 && r.right <= innerWidth,
         nowrap: getComputedStyle(text).whiteSpace,
@@ -125,6 +127,7 @@ test('single-line hints scroll horizontally below blinds without moving the tabl
       };
     });
     expect(layout.belowBlinds).toBe(true);
+    expect(layout.leftOfProgress).toBe(true);
     expect(layout.aboveTable).toBe(true);
     expect(layout.insideWidth).toBe(true);
     expect(layout.nowrap).toBe('nowrap');

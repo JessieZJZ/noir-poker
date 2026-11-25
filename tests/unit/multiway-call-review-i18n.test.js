@@ -127,7 +127,7 @@ test('actual observer fragments and named-subject variants retain counts, hand a
               translated[0],
               entry.callers === 1 ? /1 opponent has/ : /2 opponents have/,
             );
-            assert.match(translated[1], /calls with.*Q.*current price.*chance.*showdown/);
+            assert.match(translated[1], /called with.*Q.*current price.*chance.*showdown/);
             if (!entry.pending) {
               assert.match(
                 translated[2],

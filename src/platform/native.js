@@ -4,9 +4,30 @@ import { preferenceStorage } from './storage.js';
 let appActive = true;
 export const isAppActive = () => appActive;
 
-export function handleAndroidBack(document, app) {
+// Back at the table leaves the app only when pressed twice: the first press
+// shows "再按一次退出" for this long, a second press within it minimizes.
+export const EXIT_CONFIRM_MS = 2000;
+let exitPromptAt = -Infinity;
+export function handleAndroidBack(document, app, now = Date.now()) {
   const dialogs = [...document.querySelectorAll('dialog[open]')];
   if (dialogs.some((dialog) => dialog.id === 'orientation-dialog')) return;
+  const atTable =
+    !dialogs.length &&
+    !document.querySelector?.('#guide-menu:not([hidden])') &&
+    !document.body?.dataset.tutorial &&
+    !['hand', 'list'].includes(document.body?.dataset.recordsPage);
+  if (atTable) {
+    if (now - exitPromptAt <= EXIT_CONFIRM_MS) {
+      exitPromptAt = -Infinity;
+      return app.minimizeApp();
+    }
+    exitPromptAt = now;
+    document.dispatchEvent?.(
+      new CustomEvent('noir:exit-prompt', { detail: { duration: EXIT_CONFIRM_MS } }),
+    );
+    return;
+  }
+  exitPromptAt = -Infinity;
   if (dialogs.length) dialogs.at(-1).close();
   else if (document.querySelector?.('#guide-menu:not([hidden])'))
     document.querySelector('#rules-button')?.click();
@@ -14,13 +35,14 @@ export function handleAndroidBack(document, app) {
     document.dispatchEvent(new CustomEvent('noir:tutorial-exit'));
   else if (['hand', 'list'].includes(document.body?.dataset.recordsPage))
     document.defaultView.dispatchEvent(new Event('noir:records-back'));
-  else return app.minimizeApp();
 }
 
 export async function preparePlatform() {
   if (!Capacitor.isNativePlatform()) return;
   document.documentElement.classList.add('native-app');
   if (Capacitor.getPlatform() === 'ios') document.documentElement.classList.add('native-ios');
+  if (Capacitor.getPlatform() === 'android')
+    document.documentElement.classList.add('native-android');
   const [{ App }, { Preferences }] = await Promise.all([
     import('@capacitor/app'),
     import('@capacitor/preferences'),
@@ -34,6 +56,13 @@ export async function preparePlatform() {
     appActive = isActive;
     document.dispatchEvent(new CustomEvent('noir:app-state', { detail: { active: isActive } }));
     if (!isActive) void preferenceStorage.flush();
+  });
+  // Android reports inactive only at onStop, after the switch animation, when
+  // the WebView is already being backgrounded and audio can underrun. Its
+  // onPause "pause" arrives first, so audio fades while it still plays cleanly.
+  // The next appStateChange(true) on onResume lifts it.
+  await App.addListener('pause', () => {
+    document.dispatchEvent(new CustomEvent('noir:app-pausing'));
   });
   try {
     appActive = (await App.getState()).isActive;
@@ -74,12 +103,12 @@ function installNativeAbout(info) {
     dialog.append(paragraph);
   }
   const link = document.createElement('a');
-  link.href = 'mailto:958182284@qq.com';
+  link.href = 'mailto:zhengjianzhou.jessy@gmail.com';
   link.target = '_blank';
   link.rel = 'noopener noreferrer';
   link.textContent = localizeText('联系与支持');
   const publisher = document.createElement('p');
-  publisher.textContent = localizeText('发行者：郑建宙 · 958182284@qq.com');
+  publisher.textContent = localizeText('发行者：noir studio · zhengjianzhou.jessy@gmail.com');
   const policy = document.createElement('a');
   policy.href = './app-privacy.html';
   policy.textContent = localizeText('隐私政策');

@@ -1,7 +1,7 @@
 import { compactChips } from '../engine/chip-format.js';
 import { bigBlindOf } from '../engine/stakes.js';
 import { rankText } from '../engine/poker.js';
-import { actionLabel, historyActionLabel } from '../engine/action-labels.js';
+import { actionLabel, historyActionLabel, reviewActionLabel } from '../engine/action-labels.js';
 import { boardTexture } from './context.js';
 import { spotFacts } from './spot-facts.js';
 import { actorAtPosition } from '../engine/player-identity.js';
@@ -70,7 +70,7 @@ export function investmentText(s, c, price) {
   if (s.action === 'check') return `${before}，这次过牌无需投入，当前底池 ${n(s.pot)}`;
   if (s.action === 'raise') {
     const uncalled = guaranteedUncalledRaise(s, s.amount);
-    return `${before}，${actionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '。其中至少 ' + n(uncalled) + ' 无法被匹配，会退回。可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
+    return `${before}，${reviewActionLabel(s)}${c.extra !== s.amount ? '，本次追加 ' + n(c.extra) : ''}，行动前底池 ${n(s.pot)}${uncalled ? '。其中至少 ' + n(uncalled) + ' 无法被匹配，会退回。可被匹配的新增投入最多 ' + n(c.extra - uncalled) : ''}`;
   }
   return `${before}，这次${s.legal.callAmount === s.stack ? '跟注全下' : '跟注'}拿出 ${n(c.extra)}，跟注前底池 ${n(s.pot)}${price.cost ? '，底池赔率约 ' + ratio.toFixed(2) + ':1' : ''}${price.contestable - price.cost !== s.pot ? '（赔率只计算你可争夺的部分）' : ''}`;
 }
@@ -134,7 +134,7 @@ export function situationEntries(s, c, actorId = 0) {
               ([amount, names]) =>
                 `${names.join('、')}${names.length > 1 ? '均' : ''}跟注 ${n(amount)}`,
             )
-            .join('；') + '。',
+            .join('，') + '。',
           '这些跟注者的范围也会影响获池机会，不能只判断下注者是否在诈唬。',
         ],
       });
@@ -324,7 +324,13 @@ export function continuationNote(s, c, closing) {
     c.effective <= s.legal.callAmount
   )
     return '';
-  return `你在 ${s.position} 有位置，${s.action === 'check' ? '这次过牌没有增加投入，仍留 ' : '本次投入后还留 '}${n(s.stack - c.extra)}。若河牌未补成${drawCompletion(c.draw)}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
+  // One complete template per action: two adjacent values would leave the
+  // lead-in clause untranslated once the plan joins it with a comma.
+  const kept = n(s.stack - c.extra),
+    draw = drawCompletion(c.draw);
+  return s.action === 'check'
+    ? `你在 ${s.position} 有位置，这次过牌没有增加投入，仍留 ${kept}，若河牌未补成${draw}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`
+    : `你在 ${s.position} 有位置，本次投入后还留 ${kept}，若河牌未补成${draw}，且对手过牌、牌面支持你代表更强的成牌，可以考虑转诈唬。若对手继续下注，则按新的金额决定是否放弃。`;
 }
 
 export function publicHistory(s) {

@@ -1,6 +1,12 @@
-import { newGame, exportPlayerObservations, importPlayerObservations } from './poker.js';
+import {
+  newGame,
+  exportPlayerObservations,
+  importPlayerObservations,
+  forfeitHero,
+} from './poker.js';
 import { migrateCharacterState } from './character-state.js';
 import { sameStakes, validateStakes } from './stakes.js';
+import { blindLevels, finalTableSeats } from './blind-levels.js';
 
 export const GAME_RECORDS_KEY = 'noir-game-records-v1';
 // Settled hands keep their full table snapshot in a separate store, so the
@@ -91,14 +97,29 @@ function cards(value, maximum = 5) {
     keys.add(card.key);
   }
 }
+// Older snapshots and index rows keep the original level numbers and amounts.
+function matchesRecordedBlinds(stakes, playerCount, blinds, index) {
+  const matches = (row, i) =>
+    (index === undefined || index === i) &&
+    row.smallBlind === blinds.smallBlind &&
+    row.bigBlind === blinds.bigBlind;
+  if (blindLevels(stakes, playerCount).some(matches)) return true;
+  const oldCap = (stakes.startingStack * playerCount) / (finalTableSeats(playerCount) * 20);
+  return [1, 2, 3, 4, 6, 8, 10, 12, 15].some((multiple, i) => {
+    const bigBlind = stakes.bigBlind * multiple;
+    return bigBlind <= oldCap && matches({ smallBlind: stakes.smallBlind * multiple, bigBlind }, i);
+  });
+}
 function gameShape(game, stakes, playerCount, phase) {
   assert(object(game) && !hasDeck(game) && game.phase === phase);
   assert(sameStakes(validateStakes(game.stakes), stakes));
-  assert(
-    game.smallBlind === stakes.smallBlind &&
-      game.bigBlind === stakes.bigBlind &&
-      game.chipUnit === stakes.chipUnit,
-  );
+  // Each hand keeps the blind level it was dealt at; older records predate
+  // levels and always sit at the first one.
+  assert(game.chipUnit === stakes.chipUnit);
+  assert(matchesRecordedBlinds(stakes, playerCount, game, game.levelIndex ?? 0));
+  assert(game.levelHands === undefined || integer(game.levelHands));
+  assert(game.levelLength === undefined || integer(game.levelLength, 1));
+  assert(game.finalTable === undefined || typeof game.finalTable === 'boolean');
   assert(
     integer(game.hand) &&
       integer(game.dealer) &&
@@ -352,6 +373,12 @@ function validateState(value) {
       );
       cards(attempt.hole, 2);
       assert(attempt.hole.length === 2);
+      // Hands saved before blind levels carry no level; they used the start.
+      assert(
+        attempt.blinds === undefined ||
+          (object(attempt.blinds) &&
+            matchesRecordedBlinds(stakes, session.playerCount, attempt.blinds)),
+      );
       assert(!('snapshot' in attempt) && integer(attempt.bytes) && validOver(attempt.over));
       if (attempt.status === 'completed') {
         assert(Number.isSafeInteger(attempt.profit) && attempt.profit % stakes.chipUnit === 0);
@@ -393,6 +420,16 @@ function checkpoint(game, beforeAttempt = false) {
   restored.dealer = game.dealer;
   restored.stats = copy(game.stats);
   restored.rebuys = game.rebuys || 0;
+  // The blind level and final table carry over; the hand's notices do not.
+  for (const key of [
+    'levelIndex',
+    'levelHands',
+    'levelLength',
+    'finalTable',
+    'smallBlind',
+    'bigBlind',
+  ])
+    if (game[key] !== undefined) restored[key] = game[key];
   restored.over = game.over ? copy(game.over) : null;
   restored.difficulty = game.difficulty;
   restored.emotionMode = game.emotionMode;
@@ -635,6 +672,8 @@ export function createGameRecords({
         superseded: false,
         refill: !!game.logs?.some((entry) => entry.player === 0 && entry.text.includes('补充')),
         hole: copy(game.players[0].hole),
+        // The blind level this hand was dealt at.
+        blinds: { smallBlind: game.smallBlind, bigBlind: game.bigBlind },
         profit: null,
         wonPot: null,
         over: null,
@@ -696,8 +735,20 @@ export function createGameRecords({
       write();
       return withSnapshot(attempt);
     },
+    // A busted hero who ends the game without refilling takes their place
+    // then; it is written to the settled hand that cost the last chips.
     abandon(game) {
       if (game?.phase === 'done') this.capture(game);
+      if (game && !state.active && forfeitHero(game)) {
+        const settled = current()?.attempts.find(
+          (row) =>
+            row.hand === game.hand &&
+            row.attempt === (game.replayAttempt || 0) &&
+            row.status === 'completed' &&
+            !row.superseded,
+        );
+        if (settled && !settled.over) settled.over = copy(game.over);
+      }
       finishUnfinished();
       write();
     },

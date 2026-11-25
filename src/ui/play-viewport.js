@@ -1,14 +1,21 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { playSurfaceTop, readPlayViewport } from './stable-viewport.js';
 import { entryWelcomeCorridor, entryWelcomeScale } from './entry-welcome-scale.js';
+import { createLayoutBackstop } from './layout-backstop.js';
 // Keep the whole table in the first screen. Measurements are made at
 // scale 1 before fitting, so collision coordinates never mix CSS/visual pixels.
 export function createPlayViewport(surface, { layout = () => {}, settled = () => {} } = {}) {
   const viewport = surface.querySelector('.table-viewport'),
     arena = surface.querySelector('.arena'),
+    board = arena.querySelector('.board'),
+    handLabel = surface.querySelector('.hand-label'),
+    blindInfo = surface.querySelector('.blind-info'),
+    blindProgress = surface.querySelector('.blind-progress'),
+    hero = arena.querySelector('.hero-area'),
     mobile = matchMedia(COMPACT_PLAY_QUERY);
   let frame = null,
-    destroyed = false;
+    destroyed = false,
+    backstop;
 
   function tightenSeatRanks() {
     for (const seat of arena.querySelectorAll('.seat')) {
@@ -61,9 +68,44 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     });
   }
 
+  function shrinkText(element, property, fits, minimum = 1) {
+    if (fits()) return true;
+    const base = parseFloat(getComputedStyle(element).fontSize);
+    for (let size = base - 0.5; size >= minimum; size -= 0.5) {
+      element.style.setProperty(property, `${size}px`);
+      if (fits()) return true;
+    }
+    return false;
+  }
+
+  let entryHeaderLayout = '';
+  function fitHandHeader(waiting) {
+    handLabel.style.removeProperty('--fitted-hand-font');
+    blindInfo.style.removeProperty('--fitted-blind-font');
+    blindProgress.style.removeProperty('--fitted-progress-font');
+    if (waiting) return;
+
+    const fits = () => handLabel.scrollWidth <= handLabel.clientWidth;
+    // Give the hand label more space first. At the narrowest widths, shrink
+    // the whole label further without letting its replay badge wrap.
+    if (!shrinkText(blindInfo, '--fitted-blind-font', fits, 10))
+      shrinkText(handLabel, '--fitted-hand-font', fits);
+
+    if (blindProgress.hidden) return;
+    const text = document.createRange();
+    text.selectNodeContents(blindProgress);
+    // Right-aligned text can overflow to the left without growing scrollWidth.
+    shrinkText(
+      blindProgress,
+      '--fitted-progress-font',
+      () =>
+        text.getBoundingClientRect().width <= blindProgress.getBoundingClientRect().width + 0.25,
+    );
+  }
+
   function fit() {
-    if (destroyed) return;
-    if (document.documentElement.dataset.homeScrollLocked === 'true') return;
+    if (destroyed) return false;
+    if (document.documentElement.dataset.homeScrollLocked === 'true') return false;
     arena.style.removeProperty('transform');
     for (const rank of arena.querySelectorAll('.seat .hand-rank'))
       rank.style.removeProperty('translate');
@@ -106,16 +148,32 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
         ? `max(160px, calc(${budget} - var(--live-dock-height) - var(--dock-bottom-inset)))`
         : budget,
     );
-    // A translated or long session label may wrap in the waiting header.
-    // Retain its footprint when the shorter live label replaces it, so joining
-    // cannot move the felt. Re-measure while waiting after width/font changes.
+    fitHandHeader(waiting);
+    // A translated label or blind structure may wrap in the waiting header.
+    // Retain its height when the shorter live header replaces it, so joining
+    // cannot move the felt. Re-measure while waiting after width/font changes;
+    // in play, a new width or header breakpoint drops the retained height, as
+    // the waiting header would no longer have had it.
+    const header = surface.querySelector('.surface-top'),
+      headerStyle = getComputedStyle(header),
+      headerLayout = [
+        screen.width,
+        headerStyle.getPropertyValue('--hand-row'),
+        headerStyle.getPropertyValue('--hint-row'),
+        headerStyle.paddingTop,
+        headerStyle.paddingBottom,
+        headerStyle.rowGap,
+      ].join();
     if (waiting) {
-      const labelHeight = surface.querySelector('.hand-label').getBoundingClientRect().height;
-      surface.style.setProperty('--entry-hand-row', `${Math.ceil(labelHeight)}px`);
+      entryHeaderLayout = headerLayout;
+      surface.style.setProperty('--entry-top-height', `${header.getBoundingClientRect().height}px`);
+    } else if (headerLayout !== entryHeaderLayout) {
+      entryHeaderLayout = '';
+      surface.style.removeProperty('--entry-top-height');
     }
     // Hidden or rotating WebViews can briefly report a zero-sized viewport.
     // Wait for its resize notification instead of dividing by zero below.
-    if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return;
+    if (viewport.clientWidth === 0 || viewport.clientHeight === 0) return false;
     arena.style.width = `${viewport.clientWidth}px`;
     const landscape = mobile.matches && viewport.clientWidth > 600 && screenHeight < 600;
     arena.classList.toggle('compact-landscape', landscape);
@@ -169,6 +227,8 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
     viewport.scrollTop = 0;
     // Sizes kept constant on screen need the arena's final scale.
     settled();
+    backstop?.record();
+    return true;
   }
   function schedule() {
     if (destroyed) return;
@@ -213,17 +273,51 @@ export function createPlayViewport(surface, { layout = () => {}, settled = () =>
   window.visualViewport?.addEventListener('resize', resize);
   mobile.addEventListener('change', resize);
   document.fonts.ready.then(schedule);
+  document.fonts.addEventListener('loadingdone', schedule);
+  backstop = createLayoutBackstop({
+    read: () => [
+      window.innerWidth,
+      window.innerHeight,
+      viewport.clientWidth,
+      viewport.clientHeight,
+      mobile.matches,
+      board.offsetWidth,
+      board.offsetHeight,
+      hero.offsetWidth,
+      hero.offsetHeight,
+    ],
+    repair: fit,
+    canRepair: () =>
+      !document.hidden &&
+      document.documentElement.dataset.homeScrollLocked !== 'true' &&
+      viewport.clientWidth > 0 &&
+      viewport.clientHeight > 0,
+    active: !document.hidden,
+  });
+  let appActive = true;
+  const visibility = () => backstop.setActive(appActive && !document.hidden);
+  const appState = ({ detail }) => {
+    if (typeof detail?.active !== 'boolean') return;
+    appActive = detail.active;
+    visibility();
+  };
+  document.addEventListener('visibilitychange', visibility);
+  document.addEventListener('noir:app-state', appState);
   return {
     destroy() {
       destroyed = true;
       observer.disconnect();
       contentObserver.disconnect();
       insetsObserver.disconnect();
+      backstop.destroy();
       if (frame !== null) cancelAnimationFrame(frame);
       window.removeEventListener('resize', resize);
       window.removeEventListener('pageshow', resize);
       window.visualViewport?.removeEventListener('resize', resize);
       mobile.removeEventListener('change', resize);
+      document.fonts.removeEventListener('loadingdone', schedule);
+      document.removeEventListener('visibilitychange', visibility);
+      document.removeEventListener('noir:app-state', appState);
     },
     update(nextTable, done) {
       surface.classList.toggle('has-live-hand', !done);

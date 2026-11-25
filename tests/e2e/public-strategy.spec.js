@@ -53,7 +53,7 @@ for (const [group, locales] of [
       await page.locator('#rules-button').click();
       await page.locator('#guide-menu-item').click();
       const glossary = page.locator('#review-glossary');
-      await expect(glossary.locator('.position-glossary > div > b')).toHaveCount(35);
+      await expect(glossary.locator('.position-glossary > div > b')).toHaveCount(36);
       const guide = await glossary.innerText();
       expect(guide).not.toMatch(/\{\d+\}/);
       if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))

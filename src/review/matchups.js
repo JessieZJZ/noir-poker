@@ -77,6 +77,9 @@ export function preflopRangeNotes(s) {
     name = (id) => actorAtPosition(s, id),
     subject = s.reviewSubject || '你',
     notes = [];
+  // An observer review reads as one passage: earlier limps, then this raise,
+  // then the calls after it, continuing straight into the reviewed seat's action.
+  let lead = '';
   if (last) {
     const priorRaisers = new Map(
       raises
@@ -86,9 +89,13 @@ export function preflopRangeNotes(s) {
     );
     for (const prior of priorRaisers.values())
       notes.push(
-        `此前${name(prior.id)}${historyActionLabel(s.history, s.history.indexOf(prior))}，仍需回应最新加注。`,
+        observer
+          ? `此前${name(prior.id)} ${historyActionLabel(s.history, s.history.indexOf(prior))}，`
+          : `此前${name(prior.id)}${historyActionLabel(s.history, s.history.indexOf(prior))}，仍需回应最新加注。`,
       );
-    notes.push(`${name(last.id)}${historyActionLabel(s.history, s.history.indexOf(last))}。`);
+    const lastRaise = `${name(last.id)} ${historyActionLabel(s.history, s.history.indexOf(last))}`;
+    if (observer) lead = `这次${lastRaise}，`;
+    else notes.push(`对手最近一次翻前加注：${lastRaise}。`);
   } else if (
     !observer &&
     s.legal.canCheck &&
@@ -131,7 +138,7 @@ export function preflopRangeNotes(s) {
         (s.pending || []).includes(a.id) &&
         !raises.some((raise) => raise.id === a.id),
     );
-  const groupedCalls = (records, beforeRaise) => {
+  const groupedCalls = (records, beforeRaise, history = false) => {
     const groups = new Map();
     for (const action of new Map(records.map((a) => [a.id, a])).values()) {
       const actor = actorIdentity(s, action.id);
@@ -140,20 +147,35 @@ export function preflopRangeNotes(s) {
       groups.get(action.amount).push(label);
     }
     return [...groups].map(([amount, names]) =>
-      beforeRaise
+      history
         ? names.length > 1
-          ? `${names.join('、')}都先跟注 ${number(amount)} 入池。`
-          : `${names[0]}先跟注 ${number(amount)} 入池。`
-        : names.length > 1
-          ? `${names.join('、')}都已跟注这笔加注，各补 ${number(amount)}。`
-          : `${names[0]}已跟注这笔加注，补 ${number(amount)}。`,
+          ? `${names.join('、')}都跟注 ${number(amount)}，`
+          : `${names[0]}跟注 ${number(amount)}，`
+        : beforeRaise
+          ? names.length > 1
+            ? `${names.join('、')}都先跟注 ${number(amount)} 入池。`
+            : `${names[0]}先跟注 ${number(amount)} 入池。`
+          : names.length > 1
+            ? `${names.join('、')}都已跟注这笔加注，各补 ${number(amount)}。`
+            : `${names[0]}已跟注这笔加注，补 ${number(amount)}。`,
     );
   };
+  // An observer passage states these calls as history before this raise.
   if (earlierCallers.length)
-    notes.push(...groupedCalls(earlierCallers, true), '先前跟注后仍需回应最新加注。');
+    notes.push(
+      ...(observer
+        ? groupedCalls(earlierCallers, true, true)
+        : [...groupedCalls(earlierCallers, true), '先前跟注后仍需回应最新加注。']),
+    );
   const callAllIn = s.stack > 0 && s.legal.callAmount >= s.stack,
     commitment = callAllIn || s.players?.some((p) => p.id !== 0 && !p.folded && p.allin);
-  if (last && (limpers.length || callers.length))
+  if (lead) {
+    const flatCalls = '这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。';
+    if (limpers.length)
+      notes.push([...groupedCalls(limpers, true), callers.length ? '' : flatCalls].join(''));
+    notes.push(lead);
+    if (callers.length) notes.push([...groupedCalls(callers, false), flatCalls].join(''));
+  } else if (last && (limpers.length || callers.length))
     notes.push(
       [
         ...groupedCalls(limpers, true),
@@ -409,7 +431,7 @@ export function handMatchups(s, c) {
   const text = !s.street
     ? lead && lose
       ? c.handClass === 'pocket' && lead.score[0] === 0
-        ? `翻前牌组对比：${c.handLabel}已经成对，${lead.text}仍未成对，但面对 ${lose.text} 这样的更大对子会处于下风，公共牌仍可能改变强弱。`
+        ? `翻前牌组对比：${c.handLabel}已经成对，领先仍未成对的 ${lead.text}，但面对 ${lose.text} 这样的更大对子会处于下风，公共牌仍可能改变强弱。`
         : `翻前牌组对比：${c.handLabel}按当前牌型与点数高于 ${lead.text}，但低于 ${lose.text}，公共牌仍可能改变强弱。`
       : lead
         ? `翻前牌组对比：${c.handLabel}领先例如 ${lead.text}，这手强起手牌可以向较弱对子或高牌取值。`
@@ -747,7 +769,7 @@ export function valuePlan(s, c, matchups = c.matchups || handMatchups(s, c)) {
       : c.opponents > 1 && (c.handClass === 'top-pair' || c.handClass === 'overpair')
         ? c.texture.paired
           ? `这张 ${cardText(s.board)} 已经配对，公共牌的一对由所有玩家共享，对手持有相同点数的底牌就可能有三条。取值仍要有较弱牌愿意付费，不能只凭两对的总牌型扩大投入。`
-          : `这张 ${cardText(s.board)} 是多人底池，一对更容易遇到两对或暗三条，可以取值，但不把 ${number(s.stack)} 一次当成必需投入。`
+          : `这是多人底池，在 ${cardText(s.board)} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 ${number(s.stack)} 一次当成必需投入。`
         : s.street === 3
           ? `当前成牌可向较弱成牌取值，在 ${cardText(s.board)} 上加注，收益来自它们愿意跟注付费，尺度仍要给弱牌留下继续空间。`
           : `当前成牌可向较弱牌取值，在 ${cardText(s.board)} 上加注既收取跟注，也让听牌付费，尺度仍要给弱牌留下继续空间。`,

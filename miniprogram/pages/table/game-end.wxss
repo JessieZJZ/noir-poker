@@ -87,7 +87,12 @@
 .premium-start .hero-card::after {
   display: none;
 }
-/* The final stack holds the layout; the count is drawn centred over it. */
+/* The final stack holds the layout; the count is drawn centred over it. As
+   on Web the refilling figures are white; the page's later .stack colour
+   would otherwise turn them grey-green on the green pill. */
+.hero-identity .stack.stack-refill {
+  color: #ffffff;
+}
 .refill-hold {
   position: relative;
 }

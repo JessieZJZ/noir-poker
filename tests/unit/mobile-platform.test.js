@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createPreferenceStorage } from '../../src/platform/storage.js';
 import { createActivityClock } from '../../src/platform/activity-clock.js';
-import { handleAndroidBack } from '../../src/platform/native.js';
+import { handleAndroidBack, EXIT_CONFIRM_MS } from '../../src/platform/native.js';
 import { mobileMetadata, directoryDigest } from '../../scripts/mobile-lib.mjs';
 
 test('native preference hydration preserves values and migrates existing WebView settings', async () => {
@@ -80,6 +80,35 @@ test('thinking deadlines count active time only across repeated background pause
   assert.equal(deadline - clock.now(), 650);
 });
 
+test('Android back at the table asks for a second press within two seconds before leaving', async () => {
+  let minimized = 0;
+  const prompts = [];
+  const app = { minimizeApp: async () => minimized++ };
+  const table = {
+    querySelectorAll: () => [],
+    dispatchEvent: (event) => prompts.push([event.type, event.detail.duration]),
+  };
+  await handleAndroidBack(table, app, 10000);
+  assert.deepEqual(prompts, [['noir:exit-prompt', EXIT_CONFIRM_MS]]);
+  assert.equal(minimized, 0);
+  await handleAndroidBack(table, app, 10000 + EXIT_CONFIRM_MS);
+  assert.equal(minimized, 1);
+  // A late second press only prompts again.
+  await handleAndroidBack(table, app, 20000);
+  await handleAndroidBack(table, app, 20000 + EXIT_CONFIRM_MS + 1);
+  assert.equal(minimized, 1);
+  assert.equal(prompts.length, 3);
+  // Closing a dialog in between starts over.
+  await handleAndroidBack(
+    { querySelectorAll: () => [{ close() {} }] },
+    app,
+    20000 + EXIT_CONFIRM_MS + 2,
+  );
+  await handleAndroidBack(table, app, 20000 + EXIT_CONFIRM_MS + 3);
+  assert.equal(minimized, 1);
+  assert.equal(prompts.length, 4);
+});
+
 test('Android back closes the top dialog first and minimizes only at the table', async () => {
   const closed = [];
   const dialogs = [{ close: () => closed.push(1) }, { close: () => closed.push(2) }];
@@ -92,7 +121,10 @@ test('Android back closes the top dialog first and minimizes only at the table',
   await handleAndroidBack({ querySelectorAll: () => dialogs }, app);
   assert.deepEqual(closed, [2]);
   assert.equal(minimized, 0);
-  await handleAndroidBack({ querySelectorAll: () => [] }, app);
+  // Leaving the app takes two presses in a row at the table.
+  await handleAndroidBack({ querySelectorAll: () => [] }, app, 1000);
+  assert.equal(minimized, 0);
+  await handleAndroidBack({ querySelectorAll: () => [] }, app, 1500);
   assert.equal(minimized, 1);
   const navigated = [];
   for (const route of ['hand', 'list']) {

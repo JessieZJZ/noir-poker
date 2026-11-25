@@ -1,0 +1,135 @@
+/* Keep the hand, replay badge and blinds on the same line. */
+.game-surface:not([data-entry-state='waiting']) .surface-top .hand-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  white-space: nowrap;
+  font-size: var(--fitted-hand-font, var(--table-header-font, 14px));
+  /* Keep the first line exactly where the waiting message's first line sits. */
+  padding-bottom: max(
+    0px,
+    calc(var(--hand-row) - 1.2em - max(0px, calc((var(--hand-row) - 1.2em) / 2)))
+  );
+}
+.game-surface:not([data-entry-state='waiting']) .hand-label > * {
+  flex: none;
+}
+.game-surface .hand-label .session-label {
+  color: #556976;
+}
+.game-surface .hand-label .replay-label {
+  margin-inline-start: 2px;
+}
+.game-surface .surface-top .blind-info {
+  font-size: var(--fitted-blind-font, var(--table-header-font, 14px));
+}
+/* The second row keeps its existing height. Countdown width follows its text;
+   the hint gets every remaining pixel, with just one gap between the two. */
+.surface-bottom {
+  grid-area: 2 / 1 / 3 / -1;
+  display: flex;
+  min-height: 22px;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+.game-surface > .surface-top .blind-progress {
+  flex: 0 1 auto;
+  min-width: 0;
+  width: max-content;
+  max-width: 60%;
+  font-size: var(--fitted-progress-font, 12px);
+  line-height: 1;
+  color: #bca77c;
+  text-align: right;
+  white-space: nowrap;
+}
+.table-notices {
+  flex: 1 1 0;
+  display: flex;
+  min-width: 0;
+  align-items: center;
+}
+.table-notices .hint-banner {
+  flex: 1 1 0;
+  width: 0;
+}
+/* Prefer whole words over cramped translated headings. The table advertises
+   horizontal scrolling by keeping a readable minimum column width. */
+.profile-comparison table {
+  min-width: 690px;
+}
+.profile-comparison .profile-scroll-note {
+  color: #9bbdb0;
+  font-size: 12px;
+}
+.profile-comparison th {
+  word-break: normal;
+  overflow-wrap: normal;
+  hyphens: auto;
+}
+html[lang='ja'] .profile-comparison th,
+html[lang='ko'] .profile-comparison th {
+  word-break: keep-all;
+}
+/* Translated controls may use two lines inside their existing hit targets.
+   The measured fallback reduces only labels which still do not fit. */
+.game-surface .action-panel button,
+.header-actions button:not(#rules-button),
+.dialog-actions button,
+.win-rate-actions button,
+.win-rate-picker-actions button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  text-wrap: balance;
+  line-height: 1.12;
+}
+.game-surface .action-panel .action {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+.game-surface .action-panel .action strong {
+  white-space: nowrap;
+}
+.game-surface .next-button.has-mobile-label::after {
+  white-space: normal;
+  line-height: 1.12;
+}
+.game-surface .action-panel button[data-label-fit]:not(.has-mobile-label),
+.header-actions button[data-label-fit],
+.dialog-actions button[data-label-fit],
+.win-rate-actions button[data-label-fit],
+.win-rate-picker-actions button[data-label-fit] {
+  font-size: var(--button-label-font-size);
+}
+.game-surface .action-panel button[data-label-fit] span,
+.game-surface .action-panel button[data-label-fit] strong,
+.game-surface .next-button.has-mobile-label[data-label-fit]::after {
+  font-size: var(--button-label-font-size);
+  line-height: 1.12;
+}
+/* Android WebView can reuse compressed rasters for repositioned hero text.
+   Keep identity, recent action and the settlement rank on their own layers
+   so the glyphs retain their proportions as the table is scaled or moved. */
+.native-android .hero-identity,
+.native-android .hero-identity strong,
+.native-android .hero-identity .hero-stack,
+.native-android .hero-action-slot,
+.native-android .hero-last-action,
+.native-android .hero-last-action > *,
+.native-android .hero-rank-slot,
+.native-android .hero-hand-rank,
+.native-android .hero-hand-rank > * {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+@media (min-width: 601px) {
+  .game-surface > .surface-top .blind-progress {
+    font-size: var(--fitted-progress-font, clamp(14px, 1.5vw, 18px));
+  }
+  .main .game-surface > .surface-top {
+    --hint-row: 34px;
+  }
+}

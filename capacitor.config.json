@@ -1,6 +1,6 @@
 {
   "appId": "io.github.jessiezjz.noirpoker",
-  "appName": "NOIR Poker",
+  "appName": "Noir Poker",
   "webDir": ".artifacts/mobile/web",
   "backgroundColor": "#0b1017",
   "ios": { "preferredContentMode": "mobile" },

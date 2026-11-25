@@ -111,12 +111,12 @@ function sampledDeal(s, rng, weighted, ranges, cache, firstPairSampler) {
   return { holes, deck: pool };
 }
 function resume(s, deal) {
-  const g = newGame(s.players.length, {
-    smallBlind: s.smallBlind ?? bigBlindOf(s) / 2,
-    bigBlind: bigBlindOf(s),
-    startingStack: bigBlindOf(s) * 100,
-    chipUnit: chipUnitOf(s),
-  });
+  // The game's starting stakes follow from the chip denomination (its
+  // starting small blind); the snapshot keeps this hand's blind level.
+  const unit = chipUnitOf(s);
+  const g = newGame(s.players.length, { smallBlind: unit, bigBlind: unit * 2 });
+  g.smallBlind = s.smallBlind ?? bigBlindOf(s) / 2;
+  g.bigBlind = bigBlindOf(s);
   const button = s.players.find((p) => p.position === 'BTN')?.id;
   Object.assign(g, {
     phase: 'playing',

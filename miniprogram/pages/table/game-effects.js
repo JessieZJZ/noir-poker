@@ -1,11 +1,16 @@
 const {
   ceremonyWav,
   CEREMONY_CUES,
-  CHEER_FILES,
   SYNTHESIZED_CEREMONY_CUES,
   CEREMONY_SOUND_VERSION,
 } = require('../../shared/ui/ceremony-sounds.js');
 const { premiumSparks, confettiPieces } = require('../../shared/ui/effect-layouts.js');
+const {
+  synthSamples,
+  soundWav,
+  SYNTHESIZED_SOUND_CUES,
+  SOUND_SYNTH_VERSION,
+} = require('../../shared/ui/sound-synth.js');
 
 // Settled-hand snapshots live in the user data folder, one file per hand. The
 // folder holds far more than wx storage's 1 MB key limit; reads are synchronous.
@@ -53,16 +58,12 @@ function createSnapshotFiles() {
     },
   };
 }
-// The champions' cheers are packaged recordings. The remaining game-end cue is
-// synthesized once into a user file named by the sound version, so a changed
-// cue (or a cue that became a recording) replaces or removes the old file.
+// The synthesized ceremony cues (farewell and the table notices) are written
+// once into user files named by the sound version, so a changed cue (or one
+// that became a recording) replaces or removes the old file.
 function ceremonySoundFiles() {
-  const files = Object.fromEntries(
-    Object.entries(CHEER_FILES).map(([name, file]) => [
-      name,
-      `/assets/sounds/${file.split('/').pop()}`,
-    ]),
-  );
+  // The cheers themselves come from the sounds subpackage (sounds/source.js).
+  const files = {};
   const fs = wx.getFileSystemManager?.(),
     root = wx.env?.USER_DATA_PATH;
   if (!fs || !root) return files;
@@ -93,7 +94,38 @@ function ceremonySoundFiles() {
   }
   return files;
 }
+// The recorded chip stack is packaged; the other table cues are synthesized
+// once into user files named by the synth version, replacing stale copies.
+// Without a file system those cues stay silent rather than adding package size.
+function tableSoundFiles() {
+  const files = {};
+  const fs = wx.getFileSystemManager?.(),
+    root = wx.env?.USER_DATA_PATH;
+  if (!fs || !root) return files;
+  const current = (name) => `noir-sfx-${name}-v${SOUND_SYNTH_VERSION}.wav`;
+  try {
+    for (const entry of fs.readdirSync(root)) {
+      const match = /^noir-sfx-(\w+)-v\d+\.wav$/.exec(entry);
+      if (match && entry !== current(match[1])) fs.unlinkSync(`${root}/${entry}`);
+    }
+  } catch {}
+  for (const name of SYNTHESIZED_SOUND_CUES) {
+    const path = `${root}/${current(name)}`;
+    try {
+      fs.accessSync(path);
+    } catch {
+      try {
+        fs.writeFileSync(path, soundWav(synthSamples(name)));
+      } catch {
+        continue;
+      }
+    }
+    files[name] = path;
+  }
+  return files;
+}
 module.exports = {
+  tableSoundFiles,
   WECHAT_RECORDS_BUDGET,
   createSnapshotFiles,
   ceremonySoundFiles,

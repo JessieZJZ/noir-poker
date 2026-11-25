@@ -139,6 +139,72 @@ test('WeChat win rate page reproduces the shared session and reference flop', ()
   assert.match(hero.slots[0].card.artStyle, /^background-image/);
 });
 
+test('editing a card never repaints another slot or out with the edited face', () => {
+  const { page, timers } = openPage();
+  tap(page, 'openBoardCard', { index: 0 });
+  picks(page, '0-4', '0-3', '0-2');
+  tap(page, 'openPlayerCard', { id: 0, index: 0 });
+  picks(page, '0-5', '0-6');
+  tap(page, 'openPlayerCard', { id: 1, index: 0 });
+  picks(page, '0-8', '0-9');
+  runTimers(timers);
+  // 5♥ replaces 5♠ in place; setData keeps its objects, so the leaf patch must
+  // not write into the face that the 5♠ out reuses.
+  tap(page, 'openPlayerCard', { id: 0, index: 0 });
+  picks(page, '1-5');
+  runTimers(timers);
+  const [hero] = page.data.players;
+  assert.equal(hero.slots[0].card.key, '1-5');
+  assert.equal(hero.outs.count, 1);
+  assert.equal(hero.outs.cards[0].key, '0-5', 'Only the straight-flush 5♠ wins outright');
+  assert.equal(hero.outs.cards[0].suit, '♠');
+  assert.equal(hero.outs.cards[0].red, false);
+  assert.doesNotMatch(decodeURIComponent(hero.outs.cards[0].artStyle), /#c74760/);
+  assert.match(decodeURIComponent(hero.slots[0].card.artStyle), /#c74760/);
+});
+
+test('repeated card switches keep every slot, out and picker face on its own card', () => {
+  const { page, timers } = openPage();
+  const faces = new Map(
+    deckOfCards().map((card) => [card.key, presentation.exports.presentCard(card).smallArtStyle]),
+  );
+  const check = (node, path = 'data') => {
+    if (Array.isArray(node)) node.forEach((item, i) => check(item, `${path}[${i}]`));
+    else if (node && typeof node === 'object') {
+      if (typeof node.key === 'string' && 'artStyle' in node)
+        assert.equal(node.artStyle, faces.get(node.key), `${path} shows another card`);
+      for (const [field, value] of Object.entries(node)) check(value, `${path}.${field}`);
+    }
+  };
+  tap(page, 'openBoardCard', { index: 0 });
+  picks(page, '0-4', '0-3', '0-2');
+  tap(page, 'openPlayerCard', { id: 0, index: 0 });
+  picks(page, '2-12', '3-12');
+  tap(page, 'openPlayerCard', { id: 1, index: 0 });
+  picks(page, '0-8', '0-9');
+  runTimers(timers);
+  // The recorded sequence: switch each hero card several times in place.
+  for (const [index, key] of [
+    [0, '2-5'],
+    [1, '2-12'],
+    [1, '0-13'],
+    [0, '1-5'],
+    [1, '0-5'],
+    [0, '2-12'],
+  ]) {
+    tap(page, 'openPlayerCard', { id: 0, index });
+    picks(page, key);
+    tap(page, 'closePicker');
+    runTimers(timers);
+    check(page.data);
+    assert.equal(page.data.players[0].slots[index].card.key, key);
+  }
+  assert.deepEqual(
+    page.data.players[0].slots.map((slot) => slot.card.key),
+    ['2-12', '0-5'],
+  );
+});
+
 test('WeChat win rate page clears, deletes and shows the used state', () => {
   const { page } = openPage();
   tap(page, 'openPlayerCard', { id: 0, index: 0 });

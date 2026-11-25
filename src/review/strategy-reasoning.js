@@ -129,7 +129,7 @@ function rangeNote(s, assessment, f) {
               ? '过牌不增加投入，本轮仍需等待后面玩家行动。'
               : '过牌不增加投入，之后按最终摊牌结果分配底池。'
             : '过牌保留后手，后续按新的牌面和下注决定是否继续。';
-  return note('range', `${context}；${consequence}`, [context, '；', consequence]);
+  return note('range', `${context}。${consequence}`, [context, '。', consequence]);
 }
 
 function payingNote(assessment, f) {
@@ -150,24 +150,73 @@ function payingNote(assessment, f) {
     );
   if (!larger) return null;
   const lostMade = made >= 0.04 && made - mass(larger.worseMadeCallMass) > 0.04;
+  // Name the size first, then who still pays at it.
+  const prefix = f.includeAction
+    ? `${f.label} ${compactChips(f.amount)}，`
+    : `按 ${compactChips(f.amount)} 的尺度，`;
   const main =
     made >= 0.04
       ? draw >= 0.04
-        ? '按这个尺度的继续范围估计，仍有较弱成牌可能付费，也有听牌可能跟注。'
-        : '按这个尺度的继续范围估计，仍有较弱成牌可能付费。'
-      : '按这个尺度的继续范围估计，仍有听牌可能跟注，但这部分跟注并不一定来自更弱的牌。';
+        ? '估计较弱成牌仍会继续付费，听牌也可能跟注。'
+        : '估计较弱成牌仍会继续付费。'
+      : '估计仍有听牌会跟注，但这部分跟注并不一定来自更弱的牌。';
   const moreFolds =
     finite(selected.foldProbability) &&
     finite(larger.foldProbability) &&
     larger.foldProbability > selected.foldProbability;
-  const comparison = lostMade
-    ? `再加大到 ${compactChips(larger.amount)}，会更容易赶走较弱成牌。`
-    : moreFolds
-      ? `再加大到 ${compactChips(larger.amount)}，估计整体弃牌率会上升，继续跟注的听牌会减少。`
-      : `再加大到 ${compactChips(larger.amount)}，估计继续跟注的听牌会减少。`;
-  const prefix = f.includeAction ? `${f.label} ${compactChips(f.amount)}，` : '';
+  const bigger = compactChips(larger.amount);
+  const remaining = lostMade ? remainingAhead(selected, larger) : null;
+  const comparison = remaining
+    ? remaining.majority
+      ? remaining.threat === 'flush-straight'
+        ? `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的同花或顺子。`
+        : remaining.threat === 'flush'
+          ? `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的同花。`
+          : remaining.threat === 'straight'
+            ? `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的顺子。`
+            : `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的也多半是领先当前成牌的牌。`
+      : `如果加大到 ${bigger}，不仅更容易赶走这些较弱成牌，留下来继续跟注或加注的牌里，领先当前成牌的比例也会更高。`
+    : lostMade
+      ? `再加大到 ${bigger}，会更容易赶走较弱成牌。`
+      : moreFolds
+        ? `再加大到 ${bigger}，估计整体弃牌率会上升，继续跟注的听牌会减少。`
+        : `再加大到 ${bigger}，估计继续跟注的听牌会减少。`;
   const parts = [prefix, main, comparison].filter(Boolean);
   return { ...note('paying-range', parts.join(''), parts), comparison };
+}
+
+// Flushes and straights are the board threats named elsewhere in the review.
+// Other categories, or no clear majority, keep the general wording.
+const AHEAD_THREATS = { 5: 'flush', 4: 'straight', '5,4': 'flush-straight' };
+
+// What a larger size leaves behind: the share of continuing hands that are
+// already ahead now, from the public range model. Archived assessments that
+// predate these masses give no comparison.
+function remainingAhead(selected, larger) {
+  const share = (o) =>
+    finite(o.aheadContinueMass) && finite(o.continueMass) && o.continueMass > 0
+      ? o.aheadContinueMass / o.continueMass
+      : null;
+  const before = share(selected),
+    after = share(larger);
+  if (before === null || after === null || after - before < 0.05) return null;
+  const majority = after >= 0.5;
+  if (!majority && after - before < 0.08) return null;
+  const categories = Object.entries(larger.aheadContinueByCategory || {})
+    .filter(([, value]) => finite(value) && value > 0)
+    .sort((a, b) => b[1] - a[1]);
+  const named = [];
+  let covered = 0;
+  for (const [category, value] of categories) {
+    if (named.length === 2 || covered >= larger.aheadContinueMass * 0.6) break;
+    named.push(category);
+    covered += value;
+  }
+  const key = named.sort((a, b) => b - a).join(',');
+  return {
+    majority,
+    threat: covered >= larger.aheadContinueMass * 0.6 ? AHEAD_THREATS[key] || '' : '',
+  };
 }
 
 // Checked-through value and size-dependent payment are one causal reason.
@@ -235,7 +284,7 @@ function impliedNote(assessment, f) {
       'implied-odds',
       f.action === 'call'
         ? `跟注 ${compactChips(f.cost)} 后已没有后续下注，必须靠当前底池的最终获胜机会支持，不能指望补中后再收筹码。`
-        : `这次跟注要付 ${compactChips(f.cost)}，之后已没有额外筹码可赚；弃牌保留这笔钱，不把补中后的取值当作继续理由。`,
+        : `这次跟注要付 ${compactChips(f.cost)}，之后已没有额外筹码可赚。弃牌保留这笔钱，不把补中后的取值当作继续理由。`,
     );
   if (!call.eligible || !(call.futurePayBound > 0) || !(call.impliedValue > 0)) return null;
   const short = finite(call.equity) && finite(call.price) && call.equity < call.price;
@@ -244,7 +293,7 @@ function impliedNote(assessment, f) {
     return short
       ? note(
           'implied-odds',
-          `若跟注 ${compactChips(f.cost)} 主要依赖${improvement}后的额外收入，还需估计哪些较弱牌愿意付费；弃牌避免预支这笔不确定收入。`,
+          `若跟注 ${compactChips(f.cost)} 主要依赖${improvement}后的额外收入，还需估计哪些较弱牌愿意付费。弃牌避免预支这笔不确定收入。`,
         )
       : null;
   if (f.covered.has(TOPIC.FUTURE_COST))
@@ -259,8 +308,8 @@ function impliedNote(assessment, f) {
     !f.includeAction && !short
       ? '补中后的额外收入取决于较弱牌是否愿意付费，本次跟注只支付当前所需金额。'
       : short
-        ? `若跟注 ${compactChips(f.cost)} 主要依赖${improvement}获利，还需估计成牌后哪些较弱牌愿意付费；本次跟注只支付当前所需金额，下一街再被下注仍要另算成本。`
-        : `跟注 ${compactChips(f.cost)} 先按当前底池的价格判断，${improvement}后的额外收入取决于较弱牌是否愿意付费；本次跟注只支付当前所需金额，下一街再被下注仍要另算成本。`,
+        ? `若跟注 ${compactChips(f.cost)} 主要依赖${improvement}获利，还需估计成牌后哪些较弱牌愿意付费。本次跟注只支付当前所需金额，下一街再被下注仍要另算成本。`
+        : `跟注 ${compactChips(f.cost)} 先按当前底池的价格判断，${improvement}后的额外收入取决于较弱牌是否愿意付费。本次跟注只支付当前所需金额，下一街再被下注仍要另算成本。`,
   );
 }
 
@@ -308,11 +357,11 @@ function drawNote(s, f) {
     route = f.live.length
       ? f.allInAction
         ? f.includeAction
-          ? `${f.label} ${compactChips(f.amount)}，可向仍有筹码的对手争取弃牌；被跟注后就按最终摊牌结果分池。`
-          : '可向仍有筹码的对手争取弃牌；被跟注后就按最终摊牌结果分池。'
+          ? `${f.label} ${compactChips(f.amount)}，可向仍有筹码的对手争取弃牌。被跟注后就按最终摊牌结果分池。`
+          : '可向仍有筹码的对手争取弃牌。被跟注后就按最终摊牌结果分池。'
         : f.includeAction
-          ? `${finite(f.amount) ? f.label + ' ' + compactChips(f.amount) : f.label.replace(/至$/, '')}，既保留改善机会，也向仍有筹码的对手施压；被跟注后，下一张没改善或再遭加注时要重新比较价格。`
-          : '既保留改善机会，也向仍有筹码的对手施压；被跟注后，下一张没改善或再遭加注时要重新比较价格。'
+          ? `${finite(f.amount) ? f.label + ' ' + compactChips(f.amount) : f.label.replace(/至$/, '')}，既保留改善机会，也向仍有筹码的对手施压。被跟注后，下一张没改善或再遭加注时要重新比较价格。`
+          : '既保留改善机会，也向仍有筹码的对手施压。被跟注后，下一张没改善或再遭加注时要重新比较价格。'
       : '这次加注无法让已全下的对手弃牌，仍要靠最终摊牌获胜。';
   else if (f.action === 'call')
     route = f.closed
@@ -323,10 +372,10 @@ function drawNote(s, f) {
       !f.live.length || f.stack <= 0
         ? '无需追加筹码，等待后续公共牌与摊牌。'
         : !f.canFaceCurrentBet
-          ? '本轮已无人再行动，过牌可免费见下一张；进入下一街后再按牌面与下注判断。'
+          ? '本轮已无人再行动，过牌可免费见下一张。进入下一街后再按牌面与下注判断。'
           : f.plan?.kind === 'check-for-raise'
-            ? '先过牌；若对手下注，再按价格与弃牌空间比较过牌加注，对手过牌则在下一张后重估。'
-            : '先过牌保留改善机会；对手随后下注时，再按金额和继续范围比较跟注、加注或弃牌。';
+            ? '先过牌，若对手下注，再按价格与弃牌空间比较过牌加注，对手过牌则在下一张后重估。'
+            : '先过牌保留改善机会。对手随后下注时，再按金额和继续范围比较跟注、加注或弃牌。';
   else route = '弃牌保留尚未投入的筹码，不因听牌潜力承诺继续付费。';
   if (
     f.action === 'call' &&
@@ -335,8 +384,8 @@ function drawNote(s, f) {
     route = '';
   if (!f.includeAction && f.action === 'raise' && f.opponents.every((p) => !p.allin))
     route = f.allInAction
-      ? '对手全部弃牌可直接拿池；被跟注后就按最终摊牌结果分池。'
-      : '对手全部弃牌可直接拿池；被跟注后，下一张没改善或再遭加注时要重新比较价格。';
+      ? '对手全部弃牌可直接拿池。被跟注后就按最终摊牌结果分池。'
+      : '对手全部弃牌可直接拿池。被跟注后，下一张没改善或再遭加注时要重新比较价格。';
   const heading = `${cardText(s.hole)} 带${name}，`;
   const parts = route ? [heading, route, risk] : [standaloneHeading, risk];
   return {
@@ -352,19 +401,19 @@ function continuationNote(f) {
   if (f.action === 'check' && f.canFaceCurrentBet && f.plan?.kind === 'check-for-raise')
     return note(
       'continuation',
-      '先过牌给对手下注的机会；只有他下注后仍有较弱牌会继续，且价格合适，再比较过牌加注，若他过牌就在下一张后重估。',
+      '先过牌给对手下注的机会。只有他下注后仍有较弱牌会继续，且价格合适，再比较过牌加注，若他过牌就在下一张后重估。',
     );
   if (f.action === 'raise' && f.checkRaise && f.plan?.kind === 'check-raise-value')
     return note(
       'continuation',
       f.includeAction
-        ? `过牌加注至 ${compactChips(f.amount)}，向愿意继续的较弱牌取值；被跟注后若新牌补出明显听牌，或再遇大额加注，要重新判断牌力与价格。`
-        : '向愿意继续的较弱牌取值；被跟注后若新牌补出明显听牌，或再遇大额加注，要重新判断牌力与价格。',
+        ? `过牌加注至 ${compactChips(f.amount)}，向愿意继续的较弱牌取值。被跟注后若新牌补出明显听牌，或再遇大额加注，要重新判断牌力与价格。`
+        : '向愿意继续的较弱牌取值。被跟注后若新牌补出明显听牌，或再遇大额加注，要重新判断牌力与价格。',
     );
   if (f.action === 'raise' && ['range-bet', 'checkraise-followthrough'].includes(f.plan?.kind))
     return note(
       'continuation',
-      '这次下注尝试让更好的牌弃掉；若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。',
+      '这次下注尝试让更好的牌弃掉，若被跟注，下一张必须重新判断对手留下的范围，不自动继续下注。',
     );
   return null;
 }
@@ -401,10 +450,15 @@ function bluffCatchNote(s, assessment, f, observer = false) {
         : `跟注 ${compactChips(f.cost)} 是抓这些诈唬，仍会输给其中的强成牌。`
       : `弃牌放弃抓诈唬，保留还需支付的 ${compactChips(f.cost)}。`;
   if (observer) {
-    const parts = [story, '，', value, '。', route];
+    // An observed call is explained by the bluffs it catches; the strong
+    // hands on the same line are a reason to fold, stated only for folds.
+    const parts =
+      f.action === 'call' && !completed
+        ? [story, '，', '这次跟注就是在抓这些诈唬。']
+        : [story, '，', value, '。', route];
     return note('bluff-catch', parts.join(''), parts);
   }
-  return note('bluff-catch', `${story}，${value}；${route}`);
+  return note('bluff-catch', `${story}，${value}。${route}`);
 }
 
 // An observer gets the recorded action's support and tradeoffs, never a list
