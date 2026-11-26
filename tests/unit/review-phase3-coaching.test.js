@@ -125,7 +125,8 @@ test('a set on a four-flush turn retains its boat and quads redraw in the practi
   const c = coachDecision(s, r),
     text = summary(c);
   assert.match(text, /暗三条 4/);
-  assert.match(text, /一张该花色.*同花/);
+  // The four-flush threat is tied to the bet size, not listed on its own.
+  assert.match(text, /这次只投入底池的约 \d+%：牌面能让对手组成同花，这些牌都能赢这手三条/);
   assert.match(text, /改善为葫芦或四条/);
   assert.match(c.followUp, /改善为葫芦或四条/);
   assert.doesNotMatch(c.followUp, /当前没有听牌托底/);
@@ -436,7 +437,8 @@ test('an ordinary strong value bet explains weaker paying hands before higher-fl
   });
   const text = summary(coachDecision(s, r));
   assert.match(text, /仍能领先更低同花.*较弱牌愿意跟注/);
-  assert.ok(text.indexOf('下注的价值来自') < text.indexOf('更高的同花领先'));
+  assert.match(text, /牌面能让对手组成更高的同花，这些牌都能赢这手同花/);
+  assert.ok(text.indexOf('下注的价值来自') < text.indexOf('更高的同花'));
 });
 
 test('folding a low flush draw explains why formal completion chance above the price is not enough', () => {

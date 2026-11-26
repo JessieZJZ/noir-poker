@@ -26,7 +26,8 @@ test('reported A2 fold retains concrete threats and price without becoming a che
   const text = summary(e);
   assert.match(text, /Alex 在 SB 位拿 A♠ 2♦.*选择弃牌/);
   assert.match(text, /三张同花色.*同花/);
-  assert.match(text, /6 和 9.*顺子/);
+  // Every two-card straight the board allows, not only the first one.
+  assert.match(text, /6-9 \/ 9-J 这类两张牌.*顺子/);
   assert.match(text, /继续要补 300.*27.3%/);
   assert.doesNotMatch(text, /过牌|控池|再遇下注|应比较/);
   assert.doesNotMatch(text, advice);

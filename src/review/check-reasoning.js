@@ -2,84 +2,163 @@ import { compare, deckOfCards, evaluate, rankText } from '../engine/poker.js';
 import { showdownTargets } from './value-targets.js';
 
 // Card facts and before-action order only. No rival private cards or runout.
-export function checkRisks(s, c) {
-  const clauses = [];
+// What the board lets an opponent make that beats the current made hand.
+// A hand with no pair is behind any pair, so these facts say nothing for it.
+function boardFacts(s, c) {
   const score = c.made.score[0];
-  if (!s.street || c.handClass === 'board') return clauses;
-  if (c.texture.maxSuit >= 3 && score < 5)
-    clauses.push(
-      c.texture.maxSuit === 3
-        ? '公共牌已有三张同花色，对手若持两张该花色的底牌，就能组成同花，领先当前成牌。'
-        : '公共牌已有至少四张同花色，对手只需一张该花色的底牌，就能组成同花，领先当前成牌。',
-    );
+  if (!s.street || c.handClass === 'board' || score === 0) return null;
+  const facts = {
+    flush: c.texture.maxSuit >= 3 && score < 5 ? c.texture.maxSuit : 0,
+    higherFlush: false,
+    straightFlush: false,
+    straightSingles: [],
+    straightPairs: [],
+    tripsRank: 0,
+    boat: false,
+    quads: false,
+    higherBoat: 0,
+    quadsOverBoat: false,
+  };
   if (c.texture.maxSuit >= 3 && score === 5) {
     const known = new Set([...s.hole, ...s.board].map((card) => card.key));
     const suit = [0, 1, 2, 3].find(
       (value) => s.board.filter((card) => card.suit === value).length >= 3,
     );
     const possible = deckOfCards().filter((card) => card.suit === suit && !known.has(card.key));
-    let higherFlush = false,
-      straightFlush = false;
     for (let a = 0; a < possible.length; a++)
       for (let b = a + 1; b < possible.length; b++) {
         const other = evaluate([...s.board, possible[a], possible[b]]).score;
         if (compare(other, c.made.score) > 0) {
-          if (other[0] === 5) higherFlush = true;
-          if (other[0] === 8) straightFlush = true;
+          if (other[0] === 5) facts.higherFlush = true;
+          if (other[0] === 8) facts.straightFlush = true;
         }
       }
-    if (higherFlush) clauses.push('虽然已经成同花，对手仍可能用更高的同花领先。');
-    if (straightFlush) clauses.push('对手仍可能组成同花顺，领先当前的普通同花。');
   }
   if (score < 4 && c.texture.connected >= 3) {
     const ranks = new Set(s.board.map((card) => card.rank));
     if (ranks.has(14)) ranks.add(1);
-    const candidates = Array.from({ length: 10 }, (_, i) =>
+    const windows = Array.from({ length: 10 }, (_, i) =>
       Array.from({ length: 5 }, (_, j) => i + j + 1).filter((rank) => !ranks.has(rank)),
     ).filter((values) => values.length > 0 && values.length <= 2);
-    const single = candidates.filter((values) => values.length === 1).flat();
-    if (single.length) {
-      const distinct = [...new Set(single)].map((rank) => rankText(rank === 1 ? 14 : rank));
-      clauses.push(
-        distinct.length === 1
-          ? `对手底牌中有一张 ${distinct[0]}，就能在这张牌面上组成顺子，领先当前成牌。`
-          : `对手只需持有 ${distinct.join(' / ')} 中任意一张，就能在这张牌面上组成顺子，领先当前成牌。`,
-      );
-    } else if (candidates.length)
-      clauses.push(
-        `公共牌的连接也让对手同时持有 ${rankText(candidates[0][0] === 1 ? 14 : candidates[0][0])} 和 ${rankText(candidates[0][1] === 1 ? 14 : candidates[0][1])} 时可以组成顺子，领先当前成牌。`,
-      );
+    facts.straightSingles = [...new Set(windows.filter((values) => values.length === 1).flat())];
+    if (!facts.straightSingles.length)
+      facts.straightPairs = [
+        ...new Map(windows.map((values) => [values.join('-'), values])).values(),
+      ];
+  }
+  const boardRanks = [...new Set(s.board.map((card) => card.rank))];
+  const count = (rank, cards) => cards.filter((card) => card.rank === rank).length;
+  if (c.texture.paired && score <= 2)
+    facts.tripsRank =
+      boardRanks
+        .filter((rank) => count(rank, s.board) === 2 && 2 + count(rank, s.hole) < 4)
+        .sort((a, b) => b - a)[0] || 0;
+  if (c.texture.paired && score <= 2 && facts.tripsRank) facts.boat = true;
+  if (c.texture.paired && score >= 3 && score < 6) {
+    facts.boat = true;
+    facts.quads = boardRanks.some((rank) => {
+      const needed = 4 - count(rank, s.board);
+      return needed >= 0 && needed <= 2 && 4 - count(rank, s.board) - count(rank, s.hole) >= needed;
+    });
   }
   if (score === 6) {
-    const pairs = [...new Set(s.board.map((card) => card.rank))].filter(
-      (rank) => s.board.filter((card) => card.rank === rank).length >= 2,
-    );
-    const higher = pairs.find(
-      (rank) =>
-        rank > c.made.score[1] &&
-        [...s.board, ...s.hole].filter((card) => card.rank === rank).length < 4,
-    );
-    if (pairs.length >= 2 && higher)
-      clauses.push(
-        `公共牌的 ${rankText(higher)} 对配合对手底牌中的 ${rankText(higher)}，能组成三张 ${rankText(higher)} 的更大葫芦，领先当前三张 ${rankText(c.made.score[1])} 的葫芦。`,
-      );
-    if (c.matchups?.strongerMadeCategories?.includes(7))
-      clauses.push('对手仍可能组成四条，领先当前葫芦。');
+    const pairs = boardRanks.filter((rank) => count(rank, s.board) >= 2);
+    facts.higherBoat =
+      pairs.length >= 2
+        ? pairs.find(
+            (rank) => rank > c.made.score[1] && count(rank, [...s.board, ...s.hole]) < 4,
+          ) || 0
+        : 0;
+    facts.quadsOverBoat = !!c.matchups?.strongerMadeCategories?.includes(7);
   }
-  if (c.texture.paired && score >= 3 && score < 6) {
-    const quadPossible = [...new Set(s.board.map((card) => card.rank))].some((rank) => {
-      const publicCount = s.board.filter((card) => card.rank === rank).length;
-      const privateCount = s.hole.filter((card) => card.rank === rank).length;
-      const needed = 4 - publicCount;
-      return needed >= 0 && needed <= 2 && 4 - publicCount - privateCount >= needed;
-    });
+  return facts;
+}
+
+const straightRank = (rank) => rankText(rank === 1 ? 14 : rank);
+
+export function checkRisks(s, c) {
+  const clauses = [];
+  const facts = boardFacts(s, c);
+  if (!facts) return clauses;
+  if (facts.flush)
     clauses.push(
-      quadPossible
+      facts.flush === 3
+        ? '公共牌已有三张同花色，对手若持两张该花色的底牌，就能组成同花，领先当前成牌。'
+        : '公共牌已有至少四张同花色，对手只需一张该花色的底牌，就能组成同花，领先当前成牌。',
+    );
+  if (facts.higherFlush) clauses.push('虽然已经成同花，对手仍可能用更高的同花领先。');
+  if (facts.straightFlush) clauses.push('对手仍可能组成同花顺，领先当前的普通同花。');
+  if (facts.straightSingles.length) {
+    const distinct = facts.straightSingles.map(straightRank);
+    clauses.push(
+      distinct.length === 1
+        ? `对手底牌中有一张 ${distinct[0]}，就能在这张牌面上组成顺子，领先当前成牌。`
+        : `对手只需持有 ${distinct.join(' / ')} 中任意一张，就能在这张牌面上组成顺子，领先当前成牌。`,
+    );
+  } else if (facts.straightPairs.length === 1) {
+    const [a, b] = facts.straightPairs[0].map(straightRank);
+    clauses.push(`公共牌的连接让对手同时持有 ${a} 和 ${b} 时可以组成顺子，领先当前成牌。`);
+  } else if (facts.straightPairs.length > 1)
+    clauses.push(
+      `公共牌的连接让对手持有 ${facts.straightPairs
+        .slice(0, 3)
+        .map((pair) => pair.map(straightRank).join('-'))
+        .join(' / ')} 这类两张牌时都能组成顺子，领先当前成牌。`,
+    );
+  if (facts.higherBoat)
+    clauses.push(
+      `公共牌的 ${rankText(facts.higherBoat)} 对配合对手底牌中的 ${rankText(facts.higherBoat)}，能组成三张 ${rankText(facts.higherBoat)} 的更大葫芦，领先当前三张 ${rankText(c.made.score[1])} 的葫芦。`,
+    );
+  if (facts.quadsOverBoat) clauses.push('对手仍可能组成四条，领先当前葫芦。');
+  if (c.made.score[0] >= 3 && c.made.score[0] < 6 && facts.boat)
+    clauses.push(
+      facts.quads
         ? '公共牌已配对，对手可能组成葫芦或四条，这些牌会领先当前成牌。'
         : '公共牌已配对，对手仍可能组成葫芦，领先当前成牌。这手底牌已排除该公共对子组成四条的可能。',
     );
-  }
   return clauses;
+}
+
+const HAND_CATEGORIES = ['高牌', '一对', '两对', '三条', '顺子', '同花', '葫芦', '四条', '同花顺'];
+
+// The stronger hands as short catalog words, weakest first. Trips on a paired
+// board are listed here only: check and fold reasoning already explains the
+// shared board pair in its own kicker and trips sentences.
+export function boardThreats(s, c) {
+  const facts = boardFacts(s, c);
+  if (!facts) return [];
+  return [
+    facts.tripsRank ? '三条' : '',
+    facts.straightSingles.length || facts.straightPairs.length ? '顺子' : '',
+    facts.flush ? '同花' : '',
+    facts.higherFlush ? '更高的同花' : '',
+    facts.boat ? '葫芦' : '',
+    facts.higherBoat ? '更大的葫芦' : '',
+    facts.quads || facts.quadsOverBoat ? '四条' : '',
+    facts.straightFlush ? '同花顺' : '',
+  ].filter(Boolean);
+}
+
+// A made-hand bet ties the board's stronger hands to its size: a large bet is
+// mostly called by them, a small one still lets weaker made hands pay.
+export function valueSizingNote(s, c, investment) {
+  const threats = boardThreats(s, c);
+  if (!threats.length || !(investment > 0) || !(s.pot > 0)) return '';
+  const share = investment / s.pot,
+    percent = `${Math.max(1, Math.round(share * 100))}%`,
+    hand = HAND_CATEGORIES[c.made.score[0]],
+    list = threats.join('、');
+  return share <= 0.5
+    ? `这次只投入底池的约 ${percent}：牌面能让对手组成${list}，这些牌都能赢这手${hand}。下注过大时，愿意跟的多半是这些更强的牌；小注更容易让更弱的成牌也跟注。`
+    : `这次投入约为底池的 ${percent}，而牌面能让对手组成${list}，这些牌都能赢这手${hand}：下得越大，愿意跟的越集中在这些更强的牌上。`;
+}
+
+// A made-hand call names what it can run into, as the risk of calling.
+export function callRiskNote(s, c) {
+  const threats = boardThreats(s, c);
+  return threats.length
+    ? `跟注的风险是：牌面能让对手组成${threats.join('、')}，这些牌都能赢这手${HAND_CATEGORIES[c.made.score[0]]}。`
+    : '';
 }
 
 export function madeRedrawReasoning(s, c) {

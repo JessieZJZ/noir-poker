@@ -107,15 +107,21 @@ test('range notes preserve caller families while keeping an actual fold focused 
   s.history.push({ id: 2, street: 0, action: 'call', amount: 600 });
   const r = analyzeDecision(s, options),
     text = summary(r.coaching);
-  assert.match(text, /Theo.*已跟注这笔加注.*小对子、同花牌或连接牌.*藏着强牌/);
+  // A fold rests on the hand's own weakness: the callers are stated, their
+  // possible holdings are not.
+  assert.match(text, /Theo.*已跟注这笔加注/);
+  assert.doesNotMatch(text, /小对子、同花牌或连接牌/);
   assert.doesNotMatch(text, /你若再加注|你若只跟注/);
   assert.equal(text.match(/已跟注这笔加注/g).length, 1);
   // An actual call still needs the opener/caller distinction. Shortening a
   // fold must not remove the public range explanation from a live defense.
   assert.match(
     range({ ...s, action: 'call' }),
-    /小对子、同花牌或连接牌.*同时考虑加注范围和跟注入池的范围/,
+    /这些跟注可能是小对子、同花牌或连接牌，也可能藏着强牌。/,
   );
+  assert.doesNotMatch(range({ ...s, action: 'call' }), /若再加注|这次再加注/);
+  // Only an actual re-raise is told it faces both the raiser and the callers.
+  assert.match(range({ ...s, action: 'raise' }), /你这次再加注，要同时面对加注者和跟注者的范围。/);
   for (const spot of [turnBluffReview(), pocketNinesCheckedBoard(), suitedBroadwayFiveBetFold()]) {
     const c = decisionContext(spot),
       m = handMatchups(spot, c);

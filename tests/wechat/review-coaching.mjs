@@ -349,7 +349,8 @@ try {
   await fixture('clear-call-information-and-suited-ace', reportedKeyInfoCall(), (step) => {
     assert.match(step.evidence.join(''), /跟注前底池 460K.*底池赔率约 3.29:1/);
     assert.match(step.evidence.join(''), /跟注 140K 后可争夺 600K.*23.3% 的胜率覆盖这次成本/);
-    assert.match(step.reason, /你若再加注，需要同时考虑加注范围和跟注入池的范围/);
+    assert.match(step.reason, /这些跟注可能是小对子、同花牌或连接牌，也可能藏着强牌/);
+    assert.doesNotMatch(step.reason, /若再加注/);
     assert.match(step.reason, /这次跟注后还留有 2.51M 筹码/);
     assert.match(step.reason, /翻后要先于仍在局中的非盲位对手行动.*较难直接实现全部摊牌机会/);
     assert.match(step.reason, /坚果同花听牌.*击中 A.*较弱 Ax/);

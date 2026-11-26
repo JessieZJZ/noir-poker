@@ -105,7 +105,9 @@ test('fold, check, raise and both kinds of all-in state actual cost without inve
 test('suited ace continuation explains nut-flush potential and top-pair value with clear hero subjects', () => {
   const r = analyzeDecision(reportedKeyInfoCall(), options);
   const text = summary(r.coaching);
-  assert.match(text, /你若再加注.*加注范围和跟注入池的范围.*再补 140K 跟注/);
+  // A call is not told what a re-raise would need to consider.
+  assert.match(text, /这些跟注可能是小对子.*再补 140K 跟注/);
+  assert.doesNotMatch(text, /若再加注/);
   assert.match(text, /你持有 A 同花底牌.*坚果同花听牌/);
   assert.match(text, /你若击中 A.*顶对.*较弱 Ax.*取值/);
   assert.doesNotMatch(text, /因此再加注|只跟入|；/);

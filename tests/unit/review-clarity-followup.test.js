@@ -20,7 +20,7 @@ test('four actual equal-price limpers share one sentence and the summary omits g
   // Observer reviews read in order: the limps, this raise, then the reviewed seat.
   assert.match(
     text,
-    /都先跟注 20K 入池。这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。这次 Luna 在 BTN 位 2-bet 开池至 190K，Theo 在 SB 位拿/,
+    /都先跟注 20K 入池。这些跟注可能是小对子、同花牌或连接牌，也可能藏着强牌。这次 Luna 在 BTN 位 2-bet 开池至 190K，Theo 在 SB 位拿/,
   );
   assert.doesNotMatch(text, /对手最近一次翻前加注/);
   assert.doesNotMatch(text, /明显大于普通开池|不能只根据位置套用|不能只考虑开池者会不会弃牌/);

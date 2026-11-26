@@ -94,7 +94,7 @@ test('unpaired preflop value comparisons name worse kickers rather than smaller 
     const s = preflop({ hole, action: 'raise', amount: 5000, call: 1400 });
     const c = coachDecision(s, estimate(s, { status: 'consider' }));
     conditionalSurface(c);
-    assert.match(c.explanation, /只有更差踢脚的高牌.*仍愿意支付/);
+    assert.match(c.explanation, /这次加注要有更差踢脚的高牌.*愿意跟，才算取值/);
     assert.match(c.followUp, /更差踢脚的高牌/);
     assert.doesNotMatch(c.explanation + c.followUp, /更小对子|较弱对子或高牌/);
   }
@@ -195,7 +195,10 @@ test('a value-family code cannot bypass the unproven cold re-raise condition', (
   conditionalSurface(c);
   assert.equal(c.evKind, 'uncertain');
   assert.equal(c.supported, false);
-  assert.match(c.explanation, /更差踢脚的高牌[^。]*仍愿意支付|较弱牌[^。]*(?:付费|跟注)/);
+  assert.match(
+    c.explanation,
+    /更差踢脚的高牌[^。]*(?:仍愿意支付|愿意跟)|较弱牌[^。]*(?:付费|跟注)/,
+  );
 });
 
 test('actual full-stack weak isolation distinguishes showdown from a hypothetical smaller call', () => {

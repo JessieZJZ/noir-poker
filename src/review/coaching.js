@@ -25,7 +25,13 @@ import {
 } from './presentation.js';
 import { heavyPreflopPressure } from './presentation.js';
 import { rangeNoteClauses } from './matchups.js';
-import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
+import {
+  callRiskNote,
+  checkReasoning,
+  checkRisks,
+  madeRedrawReasoning,
+  valueSizingNote,
+} from './check-reasoning.js';
 import { guaranteedBoardCoaching, closedDrawChance, riverRangeReason } from './strategy-facts.js';
 import { valueDrawNote, flushCompletionNote, showdownTargets } from './value-targets.js';
 import { REVIEW_TOPICS as TOPIC, proseReason, unpackProseReason } from './prose-topics.js';
@@ -539,12 +545,14 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
         : c.preflopRaises >= 2
           ? '前面已有多次加注，愿意继续的范围通常比普通开池更强，不能只凭起手牌级别把这次再加注当作价值下注。'
           : c.preflopRaises && c.tier >= 2
-            ? `面对已有开池，只有${preflopPayTargets(s)}仍愿意支付这个尺度时，才有取值依据。若主要靠对手弃牌，需要开池者及其他尚未弃牌的对手都有足够弃牌空间。`
+            ? `面对已有开池，这次加注要有${preflopPayTargets(s)}愿意跟，才算取值；如果主要靠对手弃牌，开池者和其他没弃牌的人都得经常放弃。`
             : c.preflopRaises
-              ? c.opponents === 1
-                ? '这次再加注主要依赖开池者弃牌，被跟注后的摊牌机会也必须与投入尺度相称。'
-                : '这次再加注主要依赖开池者和其他尚未弃牌、仍有筹码的对手共同弃牌，被跟注后的摊牌机会也必须与投入尺度相称。'
-              : '这次进攻需要后面的对手有足够弃牌空间，或愿意用较弱牌跟注，底牌潜力本身不能证明这个尺度划算。',
+              ? // The action story already says every live opponent must fold;
+                // add only what a call costs. An all-in says so just below.
+                exhaustsStack(s)
+                ? ''
+                : `被跟注时，这次拿出的 ${fmt(c.matchedExtra || c.extra)} 要靠翻牌后改善或继续施压才能收回，这手牌本身很难在摊牌时赢。`
+              : '这次开池要靠后面的人经常弃牌，或被更弱的牌跟注，才能划算；光有底牌潜力不够。',
       c.preflopRaises >= 2 ? preflopPressureFocus(s, c) : '',
       exhaustsStack(s)
         ? '你实际已经全下，被跟注后只能以这手牌争取摊牌，不能再靠后街施压弥补成本。'
@@ -785,18 +793,24 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
       suitedConnector ? waitingNote(s, c) : '',
     ].filter(Boolean);
   }
-  if (s.action === 'fold' && !s.legal.canCheck && s.street === 0)
+  if (s.action === 'fold' && !s.legal.canCheck && s.street === 0) {
+    // State the decision first, then weigh the hand's potential against it.
+    const potential = preflopPotential(s);
     return [
-      ...preflopPotential(s),
       '前面还没有对手加注，当前是在决定是否跟大盲入池。',
+      ...potential,
       c.tier >= 2
         ? suggested.action === 'fold'
           ? '这手起手牌仍有竞争力，弃牌放弃了用位置、摊牌机会或加注争取底池的选择。是否继续取决于对手的入池与再加注范围。'
           : '这手起手牌有较强竞争力，可以比较主动加注与跟注，不必自动放弃。'
         : s.hole[0].rank === s.hole[1].rank
           ? '这手小对子已有摊牌机会，也能争取翻牌击中暗三条，需要结合位置、跟注价格、有效筹码和后面的再加注风险判断。'
-          : '这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。',
+          : // A potential sentence that already turns ("但…") needs no second turn.
+            potential.length && !potential.some((text) => /但/.test(text))
+            ? '但这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。'
+            : '这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。',
     ];
+  }
   if (s.action === 'fold' && !s.legal.canCheck)
     return draw.outs
       ? [`跟注需要至少约 ${pricePct(r.metrics.required)} 的胜率。`, ...drawFoldReasons(s, c)]
@@ -1217,11 +1231,19 @@ export function coachDecision(s, r) {
       if (duplicate >= 0) reasonParts.splice(duplicate, 1);
       if (!reasonParts.includes(completedFlush)) reasonParts.unshift(completedFlush);
     }
+    // The board's stronger hands mean different things by action: the size
+    // of a made-hand bet, the risk of a call, the caution behind a fold.
+    const threatNotes =
+      s.action === 'raise'
+        ? [valueSizingNote(s, r.context, r.context.extra)]
+        : s.action === 'call'
+          ? [callRiskNote(s, r.context)]
+          : risks;
     const publicAdditions =
       s.street && s.action !== 'check'
         ? [
             completedFlush,
-            ...risks,
+            ...threatNotes,
             ...madeRedrawReasoning(s, r.context),
             r.code !== 'flush-board-shove' && action.action === 'raise'
               ? valueDrawNote(s, r.context)

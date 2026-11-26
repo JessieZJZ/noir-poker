@@ -106,24 +106,29 @@ export function enrichStrategy(coaching, s, assessment, options) {
   if (accepted.some((n) => n.topic === 'paying-range'))
     parts = parts.map((p) =>
       p.flatMap((text) =>
-        text
-          .split(/(?<=[。！？])/u)
-          .filter(
-            (t) =>
-              !/^(?:当前|目前)已有成牌，下注的价值来自对手用更弱成牌跟注。$/.test(t) &&
-              !/^河牌已经发完，价值来自较弱成牌愿意跟注。$/.test(t) &&
-              !(
-                options?.audience === 'observer' &&
-                /^这是用[^。]*取值：这次拿出 [^，]+，希望更弱成牌(?:或听牌)?付费。$/u.test(t)
-              ) &&
-              !(
-                options?.audience === 'observer' &&
-                t === '牌面有同花或顺子连接，下注也让追牌的人付出成本。' &&
-                accepted.some((n) => n.topic === 'paying-range' && /听牌/.test(n.text))
-              ) &&
-              (!/^取值也可能来自.*听牌.*跟注.*愿意支付这个尺度。$/.test(t) ||
-                !accepted.some((n) => n.topic === 'paying-range' && /听牌/.test(n.text))),
-          ),
+        text.split(/(?<=[。！？])/u).filter(
+          (t) =>
+            !/^(?:当前|目前)已有成牌，下注的价值来自对手用更弱成牌跟注。$/.test(t) &&
+            !/^河牌已经发完，价值来自较弱成牌愿意跟注。$/.test(t) &&
+            !(
+              options?.audience === 'observer' &&
+              /^这是用[^。]*取值：这次拿出 [^，]+，希望更弱成牌(?:或听牌)?付费。$/u.test(t)
+            ) &&
+            // The model's own size comparison already names what a larger
+            // bet leaves behind; drop the card-rule sizing sentence then.
+            !(
+              /^(?:这次只投入底池的约 |下注过大时，愿意跟的多半是这些更强的牌|这次投入约为底池的 )/u.test(
+                t,
+              ) && accepted.some((n) => n.topic === 'paying-range' && /领先当前成牌/.test(n.text))
+            ) &&
+            !(
+              options?.audience === 'observer' &&
+              t === '牌面有同花或顺子连接，下注也让追牌的人付出成本。' &&
+              accepted.some((n) => n.topic === 'paying-range' && /听牌/.test(n.text))
+            ) &&
+            (!/^取值也可能来自.*听牌.*跟注.*愿意支付这个尺度。$/.test(t) ||
+              !accepted.some((n) => n.topic === 'paying-range' && /听牌/.test(n.text))),
+        ),
       ),
     );
   if (accepted.some((n) => n.topic === 'draw-plan'))

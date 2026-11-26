@@ -15,6 +15,7 @@ import {
   checkReasoning,
   checkRisks,
   madeRedrawReasoning,
+  valueSizingNote,
   multiwayPairCheckReason,
   weakTopPairCheckReason,
 } from './check-reasoning.js';
@@ -734,13 +735,21 @@ export function explainOpponent(record, identities = []) {
           ].filter(Boolean);
           logic = logicParts.join('');
         }
-      } else if (c.made.score[0] >= 1 && !['board', 'board-pair'].includes(c.handClass))
-        logic = `这是用 ${hand} 取值：这次拿出 ${n(f.investment)}，希望更弱成牌${v.street < 3 && (draw.outs || wet) ? '或听牌' : ''}付费。${v.street === 3 ? '' : v.hole[0].rank === v.hole[1].rank && c.made.score[0] <= 2 ? '愿意继续的高张也需要付出筹码，不能免费观察下一张。' : wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
-      else
+      } else if (c.made.score[0] >= 1 && !['board', 'board-pair'].includes(c.handClass)) {
+        logic = `这是用${hand}取值：这次拿出 ${n(f.investment)}，希望更弱成牌${v.street < 3 && (draw.outs || wet) ? '或听牌' : ''}付费。${v.street === 3 ? '' : v.hole[0].rank === v.hole[1].rank && c.made.score[0] <= 2 ? '愿意继续的高张也需要付出筹码，不能免费观察下一张。' : wet ? '牌面有同花或顺子连接，下注也让追牌的人付出成本。' : '牌面较干燥，价值主要来自更弱成牌的跟注。'}`;
+        // The board's stronger hands explain the size of a value bet; listed
+        // alone they read like a reason to check or fold instead.
+        const sizing = v.street > 0 ? valueSizingNote(snapshot, c, f.investment) : '';
+        if (sizing) {
+          logicParts = [logic, sizing];
+          logic = logicParts.join('');
+        }
+      } else {
         logic = `${subject}只有${hand}，却按价值牌进攻了 ${n(f.investment)}，没有明确的弱成牌付费依据，这次把牌力看得过于乐观。`;
-      if (v.street > 0 && checkRisks(snapshot, c).length) {
-        logicParts = [logic, ...checkRisks(snapshot, c)];
-        logic = logicParts.join('');
+        if (v.street > 0 && checkRisks(snapshot, c).length) {
+          logicParts = [logic, ...checkRisks(snapshot, c)];
+          logic = logicParts.join('');
+        }
       }
       break;
     case 'semi-bluff':
