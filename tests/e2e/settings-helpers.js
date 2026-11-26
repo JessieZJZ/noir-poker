@@ -1,4 +1,5 @@
 import { expect } from '@playwright/test';
+import { settleDialogBack } from './history-helpers.js';
 
 export async function openSettings(page) {
   // Until the app is ready the launch screen covers the page. Clicking through
@@ -14,11 +15,7 @@ export async function closeSettings(page) {
   const dialog = page.locator('#opponents-dialog');
   if (await dialog.isVisible()) await dialog.locator('.close-dialog').click();
   await expect(dialog).toBeHidden();
-  // Closing pops the history entry settings held for Back. A reload or
-  // navigation started before that pop lands can be swallowed by it.
-  await expect
-    .poll(() => page.evaluate(() => history.state?.noirLayer ?? null))
-    .not.toBe('dialog:opponents-dialog');
+  await settleDialogBack(page, 'opponents-dialog');
 }
 
 export async function toggleSound(page) {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { settleDialogBack } from './history-helpers.js';
 
 const gate = () => {
   let release;
@@ -106,6 +107,8 @@ test('cold navigation and reload show only the initialized table, even when modu
       await page.locator('#guide-menu-item').click();
       await expect(page.locator('#rules-dialog')).toBeVisible();
       await page.locator('#rules-dialog .close-dialog').first().click();
+      await expect(page.locator('#rules-dialog')).toBeHidden();
+      await settleDialogBack(page, 'rules-dialog');
     } finally {
       entry.release();
       controller.release();

@@ -5,6 +5,7 @@ import {
   recordGeometryDifferences,
 } from '../fixtures/records-geometry.js';
 import { closeSettings } from './settings-helpers.js';
+import { settleDialogBack } from './history-helpers.js';
 
 const records = (page) => page.evaluate(() => window.noir.getRecords());
 // The saved index with each hand's snapshot attached, for tests to edit and
@@ -1085,6 +1086,7 @@ test('historical pot dialogs and showdown stay bound to the saved hand while liv
   await expect(page.locator('#history-showdown-scene')).toHaveText(showdownText);
   await page.locator('#pot-dialog .close-dialog').first().click();
   await expect(page.locator('#pot-dialog')).toBeHidden();
+  await settleDialogBack(page, 'pot-dialog');
   await expect(page.locator('#history-showdown-stage')).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('history-showdown.png') });
   await backToGame(page);

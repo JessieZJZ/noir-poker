@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { closeSettings } from './settings-helpers.js';
 const locales = ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'];
 const practiceTitles = {
   'zh-CN': '本局练习',
@@ -237,7 +238,7 @@ test('live switching keeps settings, controls and the entire current hand across
       (await page.locator('[data-profile-preview="balanced"] strong').textContent()).slice(0, 1),
     );
   }
-  await dialog.locator('.close-dialog').click();
+  await closeSettings(page);
   await expect(page.locator('#call-button')).toBeEnabled();
   await page.locator('#call-button').click();
   await page.evaluate(() => window.qa.stop());
