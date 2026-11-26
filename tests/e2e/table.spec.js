@@ -1442,7 +1442,7 @@ test('first visit presents balanced opponents with sound enabled', async ({ page
   for (let id = 1; id <= 8; id++)
     await expect(page.locator(`[data-bot-seat="${id}"]`)).toHaveValue('balanced');
   await expect(page.locator('#emotion-mode')).toHaveValue('subtle');
-  await page.locator('#opponents-dialog .close-dialog').click();
+  await closeSettings(page);
 
   await page.evaluate(() => localStorage.setItem('noir-table-v1', '{broken'));
   await page.reload();

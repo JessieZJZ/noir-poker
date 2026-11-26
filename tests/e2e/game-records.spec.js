@@ -4,6 +4,7 @@ import {
   readRecordTableGeometry,
   recordGeometryDifferences,
 } from '../fixtures/records-geometry.js';
+import { closeSettings } from './settings-helpers.js';
 
 const records = (page) => page.evaluate(() => window.noir.getRecords());
 // The saved index with each hand's snapshot attached, for tests to edit and
@@ -539,7 +540,7 @@ test('historical headers show each attempt start date with the year, align the r
   await page.locator(`[data-record-hand="${session.attempts[0].id}"]`).click();
   await page.locator('#opponents-button').click();
   await page.locator('#language-select').selectOption('en');
-  await page.locator('#opponents-dialog .close-dialog').click();
+  await closeSettings(page);
   await expect(page.locator('#records-hand-start')).toHaveText('01/01/2026, 08:01');
   await expect(page.locator('#records-hand-start')).toHaveAttribute('datetime', starts[0]);
   await page.reload();
