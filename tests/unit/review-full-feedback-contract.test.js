@@ -276,7 +276,7 @@ test('a better candidate than a bad shove still carries the bluff and payment pr
     assert.equal(c.recommendedAction.summary, c.label);
     assert.match(c.recommendedAction.condition, /弃牌空间/);
     if (hole === 'Ah Td') assert.match(c.recommendedAction.condition, /较弱起手牌愿意/);
-    assert.match(c.explanation, /这手建议.*只有|这手建议.*取值需要/);
+    assert.match(c.explanation, /这手建议.*能不能这样打|这手建议.*已有对手全下|这手建议.*取值需要/);
     assert.doesNotMatch(c.explanation, /只有仍有筹码的开池者/);
   }
 });

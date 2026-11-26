@@ -1475,7 +1475,15 @@
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Blinds rise every {0} hands up to {1}; the final table starts at {2} players, and from then on they rise every {3} hands.",
     "每 8 手涨盲，最高 6K / 12K": "Blinds rise every 8 hands, up to 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Blinds rise every 8 hands up to 6K / 12K; the final table starts at 3 players, and from then on they rise every 5 hands.",
-    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV is the expected chip return from repeating a strategy over the long term. Winning one hand does not prove long-term profitability. Reviews use simulations based on information available before your action and assumed opponent ranges. They do not grade decisions using hidden opponent cards or later cards, and do not guarantee optimal play or a win. Switch to Opponent reasoning to see why the computers took their actual actions in this hand."
+    "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV is the expected chip return from repeating a strategy over the long term. Winning one hand does not prove long-term profitability. Reviews use simulations based on information available before your action and assumed opponent ranges. They do not grade decisions using hidden opponent cards or later cards, and do not guarantee optimal play or a win. Switch to Opponent reasoning to see why the computers took their actual actions in this hand.",
+    "这手建议{0}，额外投入 {1}。": "The recommendation here is {0}, putting in {1} more.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "The recommendation here is {0}, putting in {1} more; the {3} that {2} cannot cover comes back to you.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "The recommendation here is {0}, putting in {1} more; the {2} that no opponent can cover comes back to you.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "An opponent is already all-in, so folds from the others cannot win you the pot outright. This raise mainly depends on whether your hand wins often enough against the hands that call; it can cost up to {0} more.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Whether this works comes down to two things: does {0} fold often enough — a fold wins you the current {1} pot right away; and when called, does your hand win often enough — losing costs {2} more.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Whether this works comes down to two things: does {0} fold often enough — a fold wins you the current {1} pot right away; and when called, can your hand justify this {2} investment after the flop.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Whether this works comes down to two things: do the other {0} opponents all fold often enough — if they all fold, you win the current {1} pot right away; and when someone calls, does your hand win often enough — losing costs up to {2} more.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Whether this works comes down to two things: do the other {0} opponents all fold often enough — if they all fold, you win the current {1} pot right away; and when someone calls, can your hand justify this {2} investment after the flop."
   },
   "zh-TW": {
     "设置": "設定",
@@ -2395,7 +2403,15 @@
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "翻後很少主動下注，所以{0}把這次下注估計得更偏強牌。",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "每 {0} 手升一級，最高 {1}；剩 {2} 人進入決賽圈，之後每 {3} 手升一級。",
     "每 8 手涨盲，最高 6K / 12K": "每 8 手漲盲，最高 6K / 12K",
-    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "每 8 手升一級，最高 6K / 12K；剩 3 人進入決賽圈，之後每 5 手升一級。"
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "每 8 手升一級，最高 6K / 12K；剩 3 人進入決賽圈，之後每 5 手升一級。",
+    "这手建议{0}，额外投入 {1}。": "這手建議{0}，額外投入 {1}。",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "這手建議{0}，額外投入 {1}，其中 {2} 跟不起的 {3} 會退回給你。",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "這手建議{0}，額外投入 {1}，其中對手都跟不起的 {2} 會退回給你。",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "已有對手全下，其他人棄牌也不能讓你直接拿下底池，這次加注主要看你的牌對上跟注的牌贏面夠不夠，最多要再付出 {0}。",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "能不能這樣打，看兩點：{0} 棄牌的次數夠不夠多——棄牌時你直接贏下現在 {1} 的底池；被跟注時，你的牌贏面夠不夠——輸了要再付出 {2}。",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "能不能這樣打，看兩點：{0} 棄牌的次數夠不夠多——棄牌時你直接贏下現在 {1} 的底池；被跟注時，你的牌在翻牌後能不能撐起這 {2} 的投入。",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "能不能這樣打，看兩點：其餘 {0} 位對手是不是經常都棄牌——都棄牌時你直接贏下現在 {1} 的底池；有人跟注時，你的牌贏面夠不夠——輸了最多再付出 {2}。",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "能不能這樣打，看兩點：其餘 {0} 位對手是不是經常都棄牌——都棄牌時你直接贏下現在 {1} 的底池；有人跟注時，你的牌在翻牌後能不能撐起這 {2} 的投入。"
   },
   "ja": {
     "设置": "設定",
@@ -3795,7 +3811,15 @@
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "{0} ハンドごとにブラインドが上がり、最高 {1} です。残り {2} 人でファイナルテーブルとなり、以降は {3} ハンドごとに上がります。",
     "每 8 手涨盲，最高 6K / 12K": "8 ハンドごとにブラインド上昇・最高 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8 ハンドごとにブラインドが上がり、最高 6K / 12K です。残り 3 人でファイナルテーブルとなり、以降は 5 ハンドごとに上がります。",
-    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "{0} のボードでマルチウェイのポットなので、ワンペアはツーペアやセットに当たりやすくなります。バリューは取れますが、{1} を一度にすべて入れる必要はありません。"
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "{0} のボードでマルチウェイのポットなので、ワンペアはツーペアやセットに当たりやすくなります。バリューは取れますが、{1} を一度にすべて入れる必要はありません。",
+    "这手建议{0}，额外投入 {1}。": "このハンドでは{0}を推奨し、追加額は{1}です。",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "このハンドでは{0}を推奨し、追加額は{1}です。そのうち{2}がコールしきれない{3}はあなたに返却されます。",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "このハンドでは{0}を推奨し、追加額は{1}です。そのうちどの相手もコールしきれない{2}はあなたに返却されます。",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "すでに相手がオールインしているため、他のプレイヤーがフォールドしてもポットをそのまま獲得することはできません。このレイズは、コールしてくる手に対してあなたの手の勝ち目が十分かどうかが主な判断材料で、最大で{0}を追加で失う可能性があります。",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "この打ち方が成り立つかは2点で決まります。{0}が十分な頻度でフォールドするか――フォールドすれば今の{1}のポットをそのまま獲得します。コールされたとき、あなたの手に十分な勝ち目があるか――負ければさらに{2}を失います。",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "この打ち方が成り立つかは2点で決まります。{0}が十分な頻度でフォールドするか――フォールドすれば今の{1}のポットをそのまま獲得します。コールされたとき、あなたの手がフロップ以降でこの{2}の投資に見合うか。",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "この打ち方が成り立つかは2点で決まります。残り{0}人の相手が全員十分な頻度でフォールドするか――全員フォールドすれば今の{1}のポットをそのまま獲得します。誰かにコールされたとき、あなたの手に十分な勝ち目があるか――負ければ最大で{2}を追加で失います。",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "この打ち方が成り立つかは2点で決まります。残り{0}人の相手が全員十分な頻度でフォールドするか――全員フォールドすれば今の{1}のポットをそのまま獲得します。誰かにコールされたとき、あなたの手がフロップ以降でこの{2}の投資に見合うか。"
   },
   "ko": {
     "设置": "설정",
@@ -5340,7 +5364,6 @@
     "这手建议{0}。继续投入需要对手的下注范围里保留足够较弱牌或未成牌诈唬，不能只因有听牌就继续。": "{0}을(를) 권장합니다. 계속 투입하려면 상대 베팅 레인지에 더 약한 핸드나 빗나간 블러프가 충분히 남아 있어야 하며, 드로가 있다는 이유만으로 계속할 수는 없습니다.",
     "这手建议{0}，先用较小成本保留翻后位置和改善机会。": "이 핸드에서는 {0}을(를) 권장합니다. 우선 적은 비용으로 포스트플랍 포지션과 개선 기회를 남깁니다.",
     "这手建议{0}，额外投入 {1}。取值需要{2}愿意支付这个尺度，若它们退出而强牌继续，就不能仅凭底牌级别肯定加注。": "이 핸드에서는 {0}을(를) 권장하며 추가 투입은 {1}입니다. 밸류를 얻으려면 {2}이(가) 이 사이즈에도 콜해야 합니다. 이들이 폴드하고 강한 핸드만 계속한다면 스타팅 핸드 등급만으로 레이즈를 정당화할 수 없습니다.",
-    "这手建议{0}，额外投入 {1}。只有仍有筹码的已入池对手和其他待回应玩家共同留下足够弃牌空间，且被跟注后的摊牌机会与投入尺度相称时，才有施压依据。": "이 핸드에서는 {0}을(를) 권장하며 추가 투입은 {1}입니다. 이미 팟에 참여했고 칩이 남은 상대와 아직 응답하지 않은 플레이어들이 함께 충분한 폴드 가능성을 제공하고, 콜을 받았을 때의 쇼다운 기회도 투입 규모에 걸맞아야 압박할 근거가 있습니다.",
     "这手建议弃牌，保住行动前剩下的 {0}，不再付出筹码。": "이 핸드에서는 폴드를 권합니다. 액션 전에 남은 {0}을(를) 지키고 칩을 더 내지 않습니다.",
     "这手建议补 {0} 跟注，前提是对手会用{1}下注，当前成牌才能以这个价格争取摊牌。": "이 핸드에서는 {0}을(를) 더 내고 콜할 것을 권장하지만, 상대가 {1}(으)로 베팅한다는 전제가 있어야 현재 메이드 핸드로 이 가격에 쇼다운을 다툴 수 있습니다.",
     "这手建议跟注，保留当前强起手牌的摊牌机会。": "현재 강한 스타팅 핸드의 쇼다운 기회를 남기도록 콜을 권합니다.",
@@ -5525,7 +5548,15 @@
     "翻后很少主动下注，所以{0}把这次下注估计得更偏强牌。": "플랍 이후 먼저 베팅하는 일이 드물어, {0}은(는) 이번 베팅을 강한 핸드 쪽으로 추정했습니다.",
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "{0}핸드마다 블라인드가 올라 최고 {1}까지 오르며, {2}명이 남으면 파이널 테이블이 되고 이후에는 {3}핸드마다 오릅니다.",
     "每 8 手涨盲，最高 6K / 12K": "8핸드마다 블라인드 상승, 최고 6K / 12K",
-    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8핸드마다 블라인드가 올라 최고 6K / 12K까지 오르며, 3명이 남으면 파이널 테이블이 되고 이후에는 5핸드마다 오릅니다."
+    "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "8핸드마다 블라인드가 올라 최고 6K / 12K까지 오르며, 3명이 남으면 파이널 테이블이 되고 이후에는 5핸드마다 오릅니다.",
+    "这手建议{0}，额外投入 {1}。": "이 핸드에서는 {0}을(를) 권장하며 추가 투입은 {1}입니다.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "이 핸드에서는 {0}을(를) 권장하며 추가 투입은 {1}입니다. 그중 {2}이(가) 따라올 수 없는 {3}은(는) 돌려받습니다.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "이 핸드에서는 {0}을(를) 권장하며 추가 투입은 {1}입니다. 그중 어떤 상대도 따라올 수 없는 {2}은(는) 돌려받습니다.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "이미 상대가 올인했으므로 다른 플레이어가 폴드해도 팟을 바로 가져올 수 없습니다. 이번 레이즈는 콜하는 핸드를 상대로 당신의 핸드가 충분히 자주 이기는지에 주로 달려 있으며, 최대 {0}을(를) 더 잃을 수 있습니다.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "이렇게 플레이할 수 있는지는 두 가지에 달려 있습니다. {0}이(가) 충분히 자주 폴드하는가 — 폴드하면 지금의 {1} 팟을 바로 가져옵니다. 콜을 받았을 때 당신의 핸드가 충분히 자주 이기는가 — 지면 {2}을(를) 더 잃습니다.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "이렇게 플레이할 수 있는지는 두 가지에 달려 있습니다. {0}이(가) 충분히 자주 폴드하는가 — 폴드하면 지금의 {1} 팟을 바로 가져옵니다. 콜을 받았을 때 당신의 핸드가 플롭 이후 이 {2}의 투입을 감당할 수 있는가.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "이렇게 플레이할 수 있는지는 두 가지에 달려 있습니다. 나머지 {0}명의 상대가 모두 충분히 자주 폴드하는가 — 모두 폴드하면 지금의 {1} 팟을 바로 가져옵니다. 누군가 콜했을 때 당신의 핸드가 충분히 자주 이기는가 — 지면 최대 {2}을(를) 더 잃습니다.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "이렇게 플레이할 수 있는지는 두 가지에 달려 있습니다. 나머지 {0}명의 상대가 모두 충분히 자주 폴드하는가 — 모두 폴드하면 지금의 {1} 팟을 바로 가져옵니다. 누군가 콜했을 때 당신의 핸드가 플롭 이후 이 {2}의 투입을 감당할 수 있는가."
   },
   "es": {
     "设置": "Ajustes",
@@ -7011,7 +7042,15 @@
     "每 {0} 手升一级，最高 {1}；剩 {2} 人进入决赛圈，之后每 {3} 手升一级。": "Las ciegas suben cada {0} manos hasta {1}; la mesa final empieza con {2} jugadores y desde entonces suben cada {3} manos.",
     "每 8 手涨盲，最高 6K / 12K": "Ciegas cada 8 manos, hasta 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Las ciegas suben cada 8 manos hasta 6K / 12K; la mesa final empieza con 3 jugadores y desde entonces suben cada 5 manos.",
-    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "En el board {0} hay varios jugadores, y una pareja puede encontrarse más fácilmente con doble pareja o un set; puedes buscar valor, pero no es obligatorio invertir {1} de golpe."
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "En el board {0} hay varios jugadores, y una pareja puede encontrarse más fácilmente con doble pareja o un set; puedes buscar valor, pero no es obligatorio invertir {1} de golpe.",
+    "这手建议{0}，额外投入 {1}。": "Se recomienda {0}, invirtiendo {1} más.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "Se recomienda {0}, invirtiendo {1} más; los {3} que {2} no puede cubrir te vuelven.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "Se recomienda {0}, invirtiendo {1} más; los {2} que ningún rival puede cubrir te vuelven.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "Un rival ya está all-in, así que aunque los demás se retiren no ganas el bote directamente. Esta subida depende sobre todo de si tu mano gana lo suficiente contra las que pagan; puede costarte hasta {0} más.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Que esto funcione depende de dos cosas: si {0} se retira con suficiente frecuencia (si se retira, ganas ya el bote actual de {1}) y, si te pagan, si tu mano gana lo suficiente (si pierdes, te cuesta {2} más).",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Que esto funcione depende de dos cosas: si {0} se retira con suficiente frecuencia (si se retira, ganas ya el bote actual de {1}) y, si te pagan, si tu mano puede sostener después del flop esta inversión de {2}.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Que esto funcione depende de dos cosas: si los otros {0} rivales se retiran todos con suficiente frecuencia (si todos se retiran, ganas ya el bote actual de {1}) y, si alguien paga, si tu mano gana lo suficiente (si pierdes, te cuesta hasta {2} más).",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Que esto funcione depende de dos cosas: si los otros {0} rivales se retiran todos con suficiente frecuencia (si todos se retiran, ganas ya el bote actual de {1}) y, si alguien paga, si tu mano puede sostener después del flop esta inversión de {2}."
   },
   "it": {
     "设置": "Impostazioni",
@@ -8469,7 +8508,15 @@
     "每 8 手涨盲，最高 6K / 12K": "Bui in salita ogni 8 mani, max 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "I bui salgono ogni 8 mani fino a 6K / 12K; il tavolo finale inizia a 3 giocatori e da lì salgono ogni 5 mani.",
     "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "L’EV è il guadagno atteso in fiches ripetendo una giocata nel lungo periodo: vincere una mano non dimostra che sia redditizia nel tempo. L’analisi stima con simulazioni basate sulle informazioni visibili prima della tua azione e su range ipotetici degli avversari. Non giudica le scelte usando le carte coperte degli avversari o le carte uscite dopo, e non garantisce la giocata ottimale né una linea vincente. Apri «Ragionamento avversario» per vedere perché il computer ha giocato così in questa mano.",
-    "{0}{1} 筹码 · 本局净变化": "{0}{1} fiches · variazione netta della partita"
+    "{0}{1} 筹码 · 本局净变化": "{0}{1} fiches · variazione netta della partita",
+    "这手建议{0}，额外投入 {1}。": "Si consiglia {0}, investendo altri {1}.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "Si consiglia {0}, investendo altri {1}; i {3} che {2} non può coprire ti tornano indietro.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "Si consiglia {0}, investendo altri {1}; i {2} che nessun avversario può coprire ti tornano indietro.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "Un avversario è già all-in, quindi i fold degli altri non ti fanno vincere subito il piatto. Questo rilancio dipende soprattutto da quanto spesso la tua mano batte quelle che chiamano; può costarti fino ad altri {0}.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Se funziona dipende da due cose: se {0} folda abbastanza spesso (con un fold vinci subito l’attuale piatto da {1}) e, se vieni chiamato, se la tua mano vince abbastanza spesso (perdendo paghi altri {2}).",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Se funziona dipende da due cose: se {0} folda abbastanza spesso (con un fold vinci subito l’attuale piatto da {1}) e, se vieni chiamato, se la tua mano può reggere dopo il flop questo investimento di {2}.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Se funziona dipende da due cose: se gli altri {0} avversari foldano tutti abbastanza spesso (se foldano tutti vinci subito l’attuale piatto da {1}) e, se qualcuno chiama, se la tua mano vince abbastanza spesso (perdendo paghi fino ad altri {2}).",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Se funziona dipende da due cose: se gli altri {0} avversari foldano tutti abbastanza spesso (se foldano tutti vinci subito l’attuale piatto da {1}) e, se qualcuno chiama, se la tua mano può reggere dopo il flop questo investimento di {2}."
   },
   "pt": {
     "设置": "Configurações",
@@ -9993,7 +10040,15 @@
     "每 8 手涨盲，最高 6K / 12K": "Blinds a cada 8 mãos, até 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Os blinds sobem a cada 8 mãos até 6K / 12K; a mesa final começa com 3 jogadores e, a partir daí, sobem a cada 5 mãos.",
     "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV é o ganho esperado em fichas ao repetir uma estratégia no longo prazo. Ganhar uma mão não comprova lucro no longo prazo. A análise faz estimativas por simulação com base nas informações visíveis antes da sua ação e em ranges supostos dos adversários. Não avalia decisões usando cartas ocultas dos adversários ou cartas distribuídas depois, nem garante a jogada ideal ou um caminho para vencer. Mude para “Raciocínio do adversário” para ver os motivos reais das ações dos bots nesta mão.",
-    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "No board {0}, o pote é multiway e um par encontra dois pares ou sets com mais facilidade; dá para buscar valor, mas sem tratar {1} como investimento obrigatório de uma vez."
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "No board {0}, o pote é multiway e um par encontra dois pares ou sets com mais facilidade; dá para buscar valor, mas sem tratar {1} como investimento obrigatório de uma vez.",
+    "这手建议{0}，额外投入 {1}。": "A recomendação é {0}, investindo mais {1}.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "A recomendação é {0}, investindo mais {1}; os {3} que {2} não consegue cobrir voltam para você.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "A recomendação é {0}, investindo mais {1}; os {2} que nenhum adversário consegue cobrir voltam para você.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "Um adversário já está all-in, então os folds dos outros não fazem você ganhar o pote na hora. Este raise depende principalmente de a sua mão ganhar o suficiente contra as que pagam; pode custar até mais {0}.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Se isso funciona depende de duas coisas: se {0} desiste com frequência suficiente (um fold dá a você na hora o pote atual de {1}) e, quando há call, se a sua mão ganha o suficiente (perdendo, custa mais {2}).",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Se isso funciona depende de duas coisas: se {0} desiste com frequência suficiente (um fold dá a você na hora o pote atual de {1}) e, quando há call, se a sua mão sustenta depois do flop este investimento de {2}.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Se isso funciona depende de duas coisas: se os outros {0} adversários desistem todos com frequência suficiente (se todos desistirem, você leva na hora o pote atual de {1}) e, se alguém pagar, se a sua mão ganha o suficiente (perdendo, custa até mais {2}).",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Se isso funciona depende de duas coisas: se os outros {0} adversários desistem todos com frequência suficiente (se todos desistirem, você leva na hora o pote atual de {1}) e, se alguém pagar, se a sua mão sustenta depois do flop este investimento de {2}."
   },
   "de": {
     "设置": "Einstellungen",
@@ -11498,7 +11553,15 @@
     "每 8 手涨盲，最高 6K / 12K": "Blinds alle 8 Hände, bis 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Die Blinds steigen alle 8 Hände bis 6K / 12K; bei 3 verbleibenden Spielern beginnt der Finaltisch, danach steigen sie alle 5 Hände.",
     "翻前牌组对比：{0}已经成对，领先仍未成对的 {1}，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Vergleich vor dem Flop: {0} ist bereits ein Paar, {1} dagegen ungepaart. Gegen ein höheres Pocket Pair wie {2} liegt die Hand jedoch zurück. Das Board kann die Rangfolge noch verändern.",
-    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Auf dem Board {0} im Multiway-Pot trifft ein Paar leichter auf zwei Paare oder ein Set. Value ist möglich, aber die {1} müssen nicht auf einmal investiert werden."
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Auf dem Board {0} im Multiway-Pot trifft ein Paar leichter auf zwei Paare oder ein Set. Value ist möglich, aber die {1} müssen nicht auf einmal investiert werden.",
+    "这手建议{0}，额外投入 {1}。": "Empfohlen ist {0}, mit {1} zusätzlichem Einsatz.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "Empfohlen ist {0}, mit {1} zusätzlichem Einsatz; die {3}, die {2} nicht mitgehen kann, gehen an dich zurück.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "Empfohlen ist {0}, mit {1} zusätzlichem Einsatz; die {2}, die kein Gegner mitgehen kann, gehen an dich zurück.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "Ein Gegner ist bereits all-in, daher gewinnst du den Pot nicht direkt, wenn die anderen folden. Dieser Raise hängt vor allem davon ab, ob deine Hand gegen die callenden Hände oft genug gewinnt; er kann dich bis zu {0} mehr kosten.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Ob das funktioniert, hängt an zwei Dingen: ob {0} oft genug foldet (ein Fold bringt dir sofort den aktuellen Pot von {1}) und ob deine Hand nach einem Call oft genug gewinnt (verlierst du, kostet es {2} mehr).",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Ob das funktioniert, hängt an zwei Dingen: ob {0} oft genug foldet (ein Fold bringt dir sofort den aktuellen Pot von {1}) und ob deine Hand nach einem Call diesen Einsatz von {2} nach dem Flop tragen kann.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Ob das funktioniert, hängt an zwei Dingen: ob die übrigen {0} Gegner oft genug alle folden (dann gewinnst du sofort den aktuellen Pot von {1}) und ob deine Hand oft genug gewinnt, wenn jemand callt (verlierst du, kostet es bis zu {2} mehr).",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Ob das funktioniert, hängt an zwei Dingen: ob die übrigen {0} Gegner oft genug alle folden (dann gewinnst du sofort den aktuellen Pot von {1}) und ob deine Hand diesen Einsatz von {2} nach dem Flop tragen kann, wenn jemand callt."
   },
   "fr": {
     "设置": "Réglages",
@@ -13189,7 +13252,15 @@
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Les blindes montent toutes les 8 mains jusqu’à 6K / 12K ; la table finale commence à 3 joueurs, puis elles montent toutes les 5 mains.",
     "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "L’EV est le gain moyen en jetons attendu lorsqu’on répète une même stratégie sur le long terme. Une main gagnée ne prouve pas qu’elle est rentable. L’analyse fournit des estimations simulées à partir des informations visibles avant votre action et de ranges adverses supposées ; elle ne juge pas votre choix d’après les cartes cachées adverses ou les cartes distribuées ensuite, et ne garantit ni solution optimale ni victoire. Ouvrez « Raisonnement adverse » pour voir pourquoi les bots ont agi ainsi dans cette main.",
     "翻前牌组对比：{0}已经成对，领先仍未成对的 {1}，但面对 {2} 这样的更大对子会处于下风，公共牌仍可能改变强弱。": "Comparaison préflop : {0} forme déjà une paire, tandis que {1} n’est pas appariée ; elle reste toutefois derrière une paire servie supérieure comme {2}. Les cartes communes peuvent encore modifier la hiérarchie.",
-    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Sur le board {0}, le pot se joue à plusieurs ; une paire tombe plus facilement sur deux paires ou un set. Vous pouvez chercher de la value, sans forcément engager les {1} d’un coup."
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "Sur le board {0}, le pot se joue à plusieurs ; une paire tombe plus facilement sur deux paires ou un set. Vous pouvez chercher de la value, sans forcément engager les {1} d’un coup.",
+    "这手建议{0}，额外投入 {1}。": "Recommandation : {0}, en ajoutant {1}.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "Recommandation : {0}, en ajoutant {1} ; les {3} que {2} ne peut pas suivre vous reviennent.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "Recommandation : {0}, en ajoutant {1} ; les {2} qu’aucun adversaire ne peut suivre vous reviennent.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "Un adversaire est déjà à tapis, donc les folds des autres ne vous font pas gagner le pot directement. Cette relance dépend surtout de vos chances contre les mains qui suivent ; elle peut vous coûter jusqu’à {0} de plus.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Cela dépend de deux choses : que {0} se couche assez souvent (un fold vous donne tout de suite le pot actuel de {1}) et, si vous êtes suivi, que votre main gagne assez souvent (en perdant, vous payez {2} de plus).",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Cela dépend de deux choses : que {0} se couche assez souvent (un fold vous donne tout de suite le pot actuel de {1}) et, si vous êtes suivi, que votre main puisse justifier après le flop cet investissement de {2}.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Cela dépend de deux choses : que les {0} autres adversaires se couchent tous assez souvent (s’ils se couchent tous, vous gagnez tout de suite le pot actuel de {1}) et, si quelqu’un suit, que votre main gagne assez souvent (en perdant, vous payez jusqu’à {2} de plus).",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Cela dépend de deux choses : que les {0} autres adversaires se couchent tous assez souvent (s’ils se couchent tous, vous gagnez tout de suite le pot actuel de {1}) et, si quelqu’un suit, que votre main puisse justifier après le flop cet investissement de {2}."
   },
   "ru": {
     "设置": "Настройки",
@@ -14843,6 +14914,14 @@
     "每 8 手涨盲，最高 6K / 12K": "Блайнды каждые 8 раздач, до 6K / 12K",
     "每 8 手升一级，最高 6K / 12K；剩 3 人进入决赛圈，之后每 5 手升一级。": "Блайнды растут каждые 8 раздач до 6K / 12K; финальный стол начинается при 3 игроках, после этого блайнды растут каждые 5 раздач.",
     "EV 是长期重复一种打法的预期筹码收益，一次赢牌不能证明长期赚钱。复盘根据你行动前可见的信息与假设的对手范围做模拟估算，不用对手暗牌或后来发出的牌评价选择，也不保证最优解或必胜路线。可以切换“对手为什么这样打”，了解这手牌中电脑的实际行动原因。": "EV — ожидаемый выигрыш в фишках при многократном повторении одной стратегии. Одна выигранная раздача не доказывает долгосрочную прибыльность. Разбор строит симуляционные оценки по информации, доступной до вашего действия, и по предполагаемым диапазонам соперников. Скрытые карты соперников и карты, открытые позже, не используются для оценки выбора. Оптимальное решение или победа не гарантируются. Переключитесь на «Решения соперников», чтобы увидеть, почему компьютерные соперники действовали так в этой раздаче.",
-    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "На борде {0} в мультипоте одна пара чаще встречает две пары или сет; добирать можно, но не обязательно вкладывать сразу {1}."
+    "这是多人底池，在 {0} 这个牌面上，一对更容易遇到两对或暗三条，可以取值，但不把 {1} 一次当成必需投入。": "На борде {0} в мультипоте одна пара чаще встречает две пары или сет; добирать можно, но не обязательно вкладывать сразу {1}.",
+    "这手建议{0}，额外投入 {1}。": "Рекомендуется {0}, вложив ещё {1}.",
+    "这手建议{0}，额外投入 {1}，其中 {2} 跟不起的 {3} 会退回给你。": "Рекомендуется {0}, вложив ещё {1}; {3}, которые {2} не может уравнять, вернутся вам.",
+    "这手建议{0}，额外投入 {1}，其中对手都跟不起的 {2} 会退回给你。": "Рекомендуется {0}, вложив ещё {1}; {2}, которые не может уравнять ни один соперник, вернутся вам.",
+    "已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 {0}。": "Один соперник уже олл-ин, поэтому фолды остальных не принесут вам банк сразу. Этот рейз в основном зависит от того, достаточно ли часто ваша рука выигрывает у колирующих рук; он может стоить вам ещё до {0}.",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 {2}。": "Сработает ли это, зависит от двух вещей: достаточно ли часто {0} сбрасывает карты (при фолде вы сразу забираете текущий банк {1}) и достаточно ли часто ваша рука выигрывает при колле (проигрыш обойдётся ещё в {2}).",
+    "能不能这样打，看两点：{0} 弃牌的次数够不够多——弃牌时你直接赢下现在 {1} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Сработает ли это, зависит от двух вещей: достаточно ли часто {0} сбрасывает карты (при фолде вы сразу забираете текущий банк {1}) и выдержит ли ваша рука после флопа это вложение в {2}, если вас уравняют.",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 {2}。": "Сработает ли это, зависит от двух вещей: достаточно ли часто все остальные соперники ({0}) сбрасывают карты (если все сбросят, вы сразу забираете текущий банк {1}) и достаточно ли часто ваша рука выигрывает, если кто-то уравняет (проигрыш обойдётся ещё до {2}).",
+    "能不能这样打，看两点：其余 {0} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 {1} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 {2} 的投入。": "Сработает ли это, зависит от двух вещей: достаточно ли часто все остальные соперники ({0}) сбрасывают карты (если все сбросят, вы сразу забираете текущий банк {1}) и выдержит ли ваша рука после флопа это вложение в {2}, если кто-то уравняет."
   }
 }
