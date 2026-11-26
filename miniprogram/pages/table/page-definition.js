@@ -1408,14 +1408,6 @@ module.exports = {
       this.rearmBackGuard();
       return;
     }
-    // On iPhone the first page has no swipe that leaves the mini program, so
-    // a prompt to press again would promise nothing: keep guarding instead.
-    if (this._platform === undefined)
-      this._platform = (wx.getDeviceInfo?.() || wx.getSystemInfoSync?.() || {}).platform || '';
-    if (this._platform === 'ios') {
-      this.rearmBackGuard();
-      return;
-    }
     wx.showToast?.({ title: '再按一次退出', icon: 'none', duration: EXIT_CONFIRM_MS });
     this.setData({ exitGuard: false });
     clearTimeout(this._exitTimer);

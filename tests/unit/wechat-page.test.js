@@ -3458,17 +3458,19 @@ test('WeChat Back closes the top layer, innermost first, before the tutorial or 
   assert.equal(prompts(), 1);
 });
 
-test('WeChat Back on an iPhone table never prompts to leave', (t) => {
-  // The first page has no swipe that leaves the mini program on iPhone.
+test('WeChat Back on an iPhone table asks for a second swipe like Android', (t) => {
+  // On iPhone the left-edge swipe is Back; on the first page it would leave
+  // the mini program, so the container takes it and asks first.
   const { page, toasts, wx } = setup(t);
   wx.getDeviceInfo = () => ({ platform: 'ios' });
   page.onShow();
-  page.pageBack();
-  assert.equal(toasts.filter((toast) => toast.title === '再按一次退出').length, 0);
-  assert.equal(guarded(page), true);
   page.openSettings();
   page.pageBack();
-  assert.equal(page.data.settingsOpen, false, 'Layers still close on iPhone');
+  assert.equal(page.data.settingsOpen, false, 'A layer closes first');
+  assert.equal(toasts.filter((toast) => toast.title === '再按一次退出').length, 0);
+  page.pageBack();
+  assert.equal(toasts.filter((toast) => toast.title === '再按一次退出').length, 1);
+  assert.equal(page.data.exitGuard, false, 'The next swipe within two seconds leaves');
 });
 
 test('WeChat Back on a saved hand closes its review before leaving the page', (t) => {
