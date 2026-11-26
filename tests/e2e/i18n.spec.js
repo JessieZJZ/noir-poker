@@ -68,6 +68,8 @@ for (const locale of locales) {
     await page.locator('#player-count').selectOption('9');
     await expect(page.locator('#opponents-dialog')).toBeVisible();
     await page.locator('#opponents-dialog .close-dialog').click();
+    // Closing pops the dialog's Back entry; let that finish before reloading.
+    await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBe(null);
     await page.reload();
     await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
     await expect(page.locator('html')).toHaveAttribute('lang', locale);

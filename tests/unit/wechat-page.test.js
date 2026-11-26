@@ -3390,7 +3390,7 @@ test('WeChat Back during the tutorial returns to the table instead of closing th
   // the tutorial (intro card included) is open, and only then.
   assert.match(
     template,
-    /<page-container\s+show="\{\{tutorialActive \|\| exitGuard\}\}"\s+overlay="\{\{false\}\}"\s+duration="\{\{0\}\}"[^>]*custom-style="height: 0;[^"]*"\s+bind:beforeleave="pageBack"/,
+    /<page-container\s+show="\{\{\(tutorialActive \|\| exitGuard \|\| layerGuard\) && guardArmed\}\}"\s+overlay="\{\{false\}\}"\s+duration="\{\{0\}\}"[^>]*custom-style="height: 0;[^"]*"\s+bind:beforeleave="pageBack"/,
   );
   assert.equal(page.data.tutorialActive, false);
   const controller = page._controller;
@@ -3402,6 +3402,71 @@ test('WeChat Back during the tutorial returns to the table instead of closing th
   assert.equal(exits, 1);
   // The container is reopened so the table guards the next Back.
   assert.equal(page.data.exitGuard, true);
+});
+
+// Back closes what is open, innermost first, as Android Back and the browser
+// Back do for the app and the Web; only an empty table asks to leave.
+const guarded = (page) =>
+  !!(
+    (page.data.tutorialActive || page.data.exitGuard || page.data.layerGuard) &&
+    page.data.guardArmed
+  );
+
+test('WeChat Back closes the top layer, innermost first, before the tutorial or the exit prompt', (t) => {
+  const { page, toasts } = setup(t);
+  page.onShow();
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  page.openSettings();
+  page.setData({ detailProfile: { name: 'Mia' } });
+  page.pageBack();
+  assert.equal(page.data.detailProfile, null, 'An opponent detail closes before settings');
+  assert.equal(page.data.settingsOpen, true);
+  assert.equal(guarded(page), true, 'The container is shown again for the next Back');
+  page.pageBack();
+  assert.equal(page.data.settingsOpen, false);
+  page.setOverlay({ reviewOpen: true });
+  page.setOverlay({ potOpen: true });
+  page.pageBack();
+  assert.deepEqual([page.data.potOpen, page.data.reviewOpen], [false, true]);
+  page.pageBack();
+  assert.equal(page.data.reviewOpen, false);
+  for (const [open, flag] of [
+    ['resetPractice', 'resetOpen'],
+    ['openActivity', 'activityOpen'],
+  ]) {
+    page[open]();
+    page.pageBack();
+    assert.equal(page.data[flag], false, flag);
+  }
+  page.setData({ resourceMenuOpen: true });
+  page.pageBack();
+  assert.equal(page.data.resourceMenuOpen, false);
+  assert.equal(prompts(), 0, 'No exit prompt while something was open');
+  // A layer over the tutorial closes alone; the next Back leaves the tutorial.
+  const controller = page._controller;
+  let exits = 0;
+  page._controller = { ...controller, exitTutorial: () => ++exits };
+  page.setData({ tutorialActive: true });
+  page.setOverlay({ guideOpen: true });
+  page.pageBack();
+  assert.deepEqual([page.data.guideOpen, exits], [false, 0]);
+  page.pageBack();
+  assert.equal(exits, 1);
+  page._controller = controller;
+  page.setData({ tutorialActive: false });
+  page.pageBack();
+  assert.equal(prompts(), 1);
+});
+
+test('WeChat Back on a saved hand closes its review before leaving the page', (t) => {
+  const { page } = setup(t);
+  page.setData({ historyReadOnly: true, exitGuard: false });
+  assert.equal(guarded(page), false, 'With nothing open, Back leaves the saved hand');
+  page.setOverlay({ reviewOpen: true });
+  assert.equal(guarded(page), true);
+  page.pageBack();
+  assert.equal(page.data.reviewOpen, false);
+  assert.equal(guarded(page), false);
 });
 
 test('WeChat Back on the live table asks for a second press before leaving', (t) => {

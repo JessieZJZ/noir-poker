@@ -628,7 +628,7 @@ test('reloading a historical URL retains its list parent and does not reload pra
   expect((await state(page)).hand).toBe(resumed.hand);
 });
 
-test('same-page locale refresh preserves historical review while Back closes it with the page', async ({
+test('same-page locale refresh preserves historical review; Back closes it, then the page', async ({
   page,
 }) => {
   const pageErrors = [];
@@ -648,9 +648,13 @@ test('same-page locale refresh preserves historical review while Back closes it 
   });
   await expect(page.locator('#review-dialog')).toBeVisible();
   expect((await state(page)).recordsRoute).toEqual({ page: 'hand', id: attempt.id });
+  // Back closes the open review first and keeps the saved hand on screen,
+  // like Android Back in the app and Back in the WeChat mini program.
+  await page.goBack();
+  await expect(page.locator('#review-dialog')).toBeHidden();
+  expect((await state(page)).recordsRoute).toEqual({ page: 'hand', id: attempt.id });
   await page.goBack();
   await expect(page).toHaveURL(/#records$/);
-  await expect(page.locator('#review-dialog')).toBeHidden();
   expect(await records(page)).toEqual(saved);
   expect(pageErrors).toEqual([]);
 });
@@ -784,6 +788,8 @@ test('historical settlement and review stay fixed while the live game advances',
     timeout: 120000,
   });
   await page.locator('#review-dialog .close-dialog').first().click();
+  // Closing pops the review's Back entry; let that finish before going back.
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBe(null);
   await page.goBack();
   await expect(page).toHaveURL(/#records$/);
   await backToGame(page);

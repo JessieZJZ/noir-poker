@@ -27,6 +27,9 @@ try {
   prepareDropdowns();
   const { prepareButtonLabels } = await import('./ui/button-label-fit.js');
   prepareButtonLabels();
+  // Back (browser button or phone gesture) closes the open dialog first.
+  const { trackDialogBack } = await import('./ui/dialog-back.js');
+  trackDialogBack(document);
   // The controller has prepared the waiting table and its pre-paint fitting.
   // Readiness must also complete while the page's animation clock is paused.
   document.documentElement.dataset.appReady = 'true';

@@ -121,6 +121,13 @@ test('Android back closes the top dialog first and minimizes only at the table',
   await handleAndroidBack({ querySelectorAll: () => dialogs }, app);
   assert.deepEqual(closed, [2]);
   assert.equal(minimized, 0);
+  // Like Esc, a dialog's cancel handler can close its sub-view instead.
+  const settings = {
+    dispatchEvent: (event) => event.preventDefault(),
+    close: () => closed.push('settings'),
+  };
+  await handleAndroidBack({ querySelectorAll: () => [settings] }, app);
+  assert.deepEqual(closed, [2], 'The settings dialog stays open while its detail closes');
   // Leaving the app takes two presses in a row at the table.
   await handleAndroidBack({ querySelectorAll: () => [] }, app, 1000);
   assert.equal(minimized, 0);

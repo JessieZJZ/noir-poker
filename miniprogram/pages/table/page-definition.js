@@ -157,6 +157,12 @@ module.exports = {
     // The live table's page-container takes Back: one press asks for a
     // second (再按一次退出), which then leaves the mini program.
     exitGuard: false,
+    // Any open full-screen layer also takes Back, saved hands included, so
+    // Back closes it instead of leaving the page.
+    layerGuard: false,
+    // Back closes the page-container; dropping this for one update shows it
+    // again for the next Back.
+    guardArmed: true,
     containedScroll: false,
     tutorialCoachHeight: 0,
     tutorialSide: false,
@@ -514,10 +520,13 @@ module.exports = {
       'resetOpen',
     ].some((key) => next[key]);
     const unlocking = this.data.homeLocked && !homeLocked;
-    this.setData({ ...patch, homeLocked, homeOffset: -(this._homeScroll || 0) }, () => {
-      if (unlocking) wx.pageScrollTo?.({ scrollTop: this._homeScroll || 0, duration: 0 });
-      onReady?.();
-    });
+    this.setData(
+      { ...patch, homeLocked, layerGuard: homeLocked, homeOffset: -(this._homeScroll || 0) },
+      () => {
+        if (unlocking) wx.pageScrollTo?.({ scrollTop: this._homeScroll || 0, duration: 0 });
+        onReady?.();
+      },
+    );
   },
   updateWindow(event) {
     const app = getApp();
@@ -1376,22 +1385,27 @@ module.exports = {
   // The table is the first page, so the system Back would close the mini
   // program. While the tutorial is open an empty page container takes that
   // Back and returns to the paused table, as the Web history entry does.
-  // Saved hands (the history page) leave normally; only the live table guards.
+  // Saved hands (the history page) guard only while a layer is open (the
+  // layerGuard), so Back there closes the review and then leaves normally.
   armExitGuard() {
     if (this._readOnlyAttempt || this.data.historyReadOnly) return;
     clearTimeout(this._exitTimer);
     if (!this.data.exitGuard || !this.data.containedScroll)
       this.setData({ exitGuard: true, containedScroll: true });
   },
-  // Back from the page-container: the tutorial closes, otherwise the first
-  // press asks for a second one within EXIT_CONFIRM_MS before the mini
-  // program may leave.
+  // Back from the page-container closes the top layer, innermost first, as
+  // Android Back and the browser Back do on the Web. With no layer open the
+  // tutorial closes; otherwise the first press asks for a second one within
+  // EXIT_CONFIRM_MS before the mini program may leave.
   pageBack() {
-    // Back closed the page-container; reopen it (false, then true) so the
-    // table guards the next Back once the tutorial has closed.
+    // One Back, one step: a closed layer leaves the tutorial running.
+    if (this.closeTopLayer()) {
+      this.rearmBackGuard();
+      return;
+    }
     if (this.data.tutorialActive) {
       this.tutorialBack();
-      this.setData({ exitGuard: false }, () => this.armExitGuard());
+      this.rearmBackGuard();
       return;
     }
     wx.showToast?.({ title: '再按一次退出', icon: 'none', duration: EXIT_CONFIRM_MS });
@@ -1400,6 +1414,28 @@ module.exports = {
     this._exitTimer = setTimeout(() => {
       if (!this._destroyed && !this._hidden) this.armExitGuard();
     }, EXIT_CONFIRM_MS);
+  },
+  // The layers Back closes, top first. A sub-view (the settings dropdown or an
+  // opponent's detail) closes before the layer that holds it.
+  closeTopLayer() {
+    const d = this.data;
+    const close = [
+      [d.resetOpen, 'closeReset'],
+      [d.selection, 'closeSelect'],
+      [d.detailProfile, 'closeProfile'],
+      [d.potOpen, 'closePots'],
+      [d.activityOpen, 'closeActivity'],
+      [d.reviewOpen, 'closeReview'],
+      [d.guideOpen, 'closeGuide'],
+      [d.settingsOpen, 'closeSettings'],
+      [d.resourceMenuOpen, 'closeResourceMenu'],
+    ].find(([open]) => open);
+    if (!close) return false;
+    this[close[1]]();
+    return true;
+  },
+  rearmBackGuard() {
+    this.setData({ guardArmed: false }, () => this.setData({ guardArmed: true }));
   },
   tutorialBack() {
     this.call('exitTutorial');

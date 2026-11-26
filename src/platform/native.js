@@ -1,6 +1,7 @@
 import { localizeText, localizeHTML } from '../i18n/index.js';
 import { Capacitor } from '@capacitor/core';
 import { preferenceStorage } from './storage.js';
+import { dismissDialog } from '../ui/dialog-back.js';
 let appActive = true;
 export const isAppActive = () => appActive;
 
@@ -28,7 +29,8 @@ export function handleAndroidBack(document, app, now = Date.now()) {
     return;
   }
   exitPromptAt = -Infinity;
-  if (dialogs.length) dialogs.at(-1).close();
+  // Like Esc: a sub-view (an opponent's detail in settings) closes first.
+  if (dialogs.length) dismissDialog(dialogs.at(-1));
   else if (document.querySelector?.('#guide-menu:not([hidden])'))
     document.querySelector('#rules-button')?.click();
   else if (document.body?.dataset.tutorial)

@@ -173,6 +173,8 @@ test('combined settings immediately save preferences without changing the curren
     await page.evaluate(() => JSON.parse(localStorage.getItem('noir-table-v1')).difficulty),
   ).toBe('normal');
   await page.locator('#opponents-dialog .close-dialog').click();
+  // Closing pops the dialog's Back entry; let that finish before reloading.
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBe(null);
   await page.reload();
   await page.waitForFunction(() => !!window.qa);
   await page.locator('#opponents-button').click();
