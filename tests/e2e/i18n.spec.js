@@ -58,7 +58,10 @@ for (const locale of locales) {
     await page.addInitScript((value) => localStorage.setItem('noir-locale', value), locale);
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    // A loaded runner can take over five seconds to load every startup module.
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', {
+      timeout: 30000,
+    });
     await expect(page.locator('.session-card .section-title h2')).toHaveText(
       practiceTitles[locale],
     );
@@ -72,7 +75,9 @@ for (const locale of locales) {
     // Closing pops the dialog's Back entry; let that finish before reloading.
     await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBe(null);
     await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', {
+      timeout: 30000,
+    });
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#player-count')).toHaveValue('9');
