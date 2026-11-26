@@ -1,3 +1,5 @@
+import { dismissDialog } from './dialog-back.js';
+
 export function recordsRoute(hash) {
   if (hash === '#records') return { page: 'list' };
   if (!hash.startsWith('#records/')) return { page: 'game' };
@@ -132,6 +134,12 @@ export function createRecordsNavigation({
   }
   function back() {
     if (pending || current.page === 'game') return;
+    // A dialog over a saved hand closes first. The iPhone edge swipe sends
+    // this directly; Android Back closes dialogs before it gets here.
+    const dialog = [...(window.document?.querySelectorAll('dialog[open]') ?? [])]
+      .filter((open) => open.id !== 'orientation-dialog')
+      .at(-1);
+    if (dialog) return void dismissDialog(dialog);
     if (current.page === 'list') return returnGame();
     pending = true;
     window.history.back();

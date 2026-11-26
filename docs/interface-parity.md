@@ -52,7 +52,7 @@ npm run wechat:check
 
 ## 返回手势与返回键
 
-三端的返回都先关闭打开的全屏层，再回到上一页，最后才离开。Web 打开设置、玩法指南、复盘、底池明细、重新开始确认等对话框时各写入一层浏览历史（`src/ui/dialog-back.js`，共用 `history-layer.js` 的同一条记录，地址和对局记录路由不变），浏览器返回或手机浏览器的返回手势关闭最上层，下面仍打开的层重新得到这条记录；用按钮或 Esc 关闭时记录同时撤回。返回与 Esc 等价：对话框自己的 `cancel` 处理可以先关闭子视图（设置里的对手详情）。新手引导与胜率计算器保留各自的历史层，旋转提示不响应返回。App 的 Android 返回键按同样顺序关闭（`handleAndroidBack`），小程序见 [微信小程序](wechat.md)。回归：`tests/unit/history-layer.test.js`、`tests/unit/dialog-back.test.js`、`tests/unit/mobile-platform.test.js`、`tests/unit/wechat-page.test.js` 与 `tests/e2e/dialog-back.spec.js`。
+三端的返回都先关闭打开的全屏层，再回到上一页，最后才离开。Web 打开设置、玩法指南、复盘、底池明细、重新开始确认等对话框时各写入一层浏览历史（`src/ui/dialog-back.js`，共用 `history-layer.js` 的同一条记录，地址和对局记录路由不变），浏览器返回或手机浏览器的返回手势关闭最上层，下面仍打开的层重新得到这条记录；用按钮或 Esc 关闭时记录同时撤回。返回与 Esc 等价：对话框自己的 `cancel` 处理可以先关闭子视图（设置里的对手详情）。新手引导与胜率计算器保留各自的历史层，旋转提示不响应返回。App 的 Android 返回键按同样顺序关闭（`handleAndroidBack`）；iPhone/iPad App 的边缘右滑在牌桌上走同一组浏览历史层，在对局记录页由 `noir:records-back` 先关闭对话框；iPhone Safari 的右滑即浏览器返回（WebKit 下的 `dialog-back` 与对局记录 E2E 已跑通）。小程序见 [微信小程序](wechat.md)。回归：`tests/unit/history-layer.test.js`、`tests/unit/dialog-back.test.js`、`tests/unit/mobile-platform.test.js`、`tests/unit/wechat-page.test.js` 与 `tests/e2e/dialog-back.spec.js`。
 
 ## 强牌、补码与冠军动效
 
