@@ -70,7 +70,7 @@
     padding: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    overscroll-behavior: contain;
+    /* A swipe past either end goes on to scroll the settings. */
     scrollbar-gutter: stable;
     background: #13282a;
     box-shadow: 0 8px 28px #0005;

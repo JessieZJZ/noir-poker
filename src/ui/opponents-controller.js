@@ -32,6 +32,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   let draft = null,
     selected = 'balanced';
   let detailOpen = false,
+    detailOpened = null,
     returnProfile = null,
     savedScroll = null,
     reveal = null;
@@ -82,9 +83,12 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
       region,
       viewport,
       clientHeight: body.clientHeight,
+      opened: detailOpened ?? undefined,
     });
     // Keep the introduction in the currently visible choices area, even when a lower row
-    // was clicked. The choices keep their dimensions and the settings body does not move.
+    // was clicked. The choices keep their dimensions and the settings body does not move
+    // when it opens. A swipe past either end of the introduction scrolls the settings,
+    // and the introduction leaves with the choices.
     panel.style.setProperty('--profile-detail-top', `${top}px`);
     panel.style.setProperty('--profile-detail-height', `${height}px`);
   }
@@ -96,6 +100,7 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   function closeDetail({ focus = true, restoreScroll = true } = {}) {
     cancelReveal();
     detailOpen = false;
+    detailOpened = null;
     stage.dataset.detailOpen = 'false';
     cards.inert = false;
     cards.removeAttribute('aria-hidden');
@@ -123,7 +128,13 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
     stage.dataset.detailOpen = 'true';
     panel.hidden = false;
     panel.scrollTop = 0;
+    detailOpened = null;
     positionDetail();
+    detailOpened = profileDetailBounds({
+      region: stage.getBoundingClientRect(),
+      viewport: body.getBoundingClientRect(),
+      clientHeight: body.clientHeight,
+    }).top;
     const bounds = panel.getBoundingClientRect();
     const x = Math.max(0, Math.min(bounds.width, origin.left + origin.width / 2 - bounds.left));
     const y = Math.max(0, Math.min(bounds.height, origin.top + origin.height / 2 - bounds.top));
