@@ -1095,6 +1095,34 @@ test('historical pot dialogs and showdown stay bound to the saved hand while liv
   expect(await page.locator('#pot-dialog-content').textContent()).not.toBe(potText);
 });
 
+test('the header brand returns to the live hand without reloading the app', async ({ page }) => {
+  await page.evaluate(() => window.qa.recordsFinish());
+  const live = await state(page);
+  await page.evaluate(() => (window.__sameDocument = true));
+  await openRecords(page);
+  const attempt = (await records(page))
+    .flatMap((session) => session.attempts)
+    .find((item) => item.status === 'completed');
+  await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+  await expect(page).toHaveURL(/#records\//);
+  await page.locator('.header .brand').click();
+  await expect(page).not.toHaveURL(/#records/);
+  await expect(page.locator('#records-page')).toBeHidden();
+  await expect(page.locator('main.main')).toBeVisible();
+  const back = await state(page);
+  expect([back.sessionNumber, back.hand, back.phase]).toEqual([
+    live.sessionNumber,
+    live.hand,
+    live.phase,
+  ]);
+  // On the table itself the brand stays on the same hand and scrolls up.
+  await page.evaluate(() => window.scrollTo(0, 300));
+  await page.locator('.header .brand').click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  expect((await state(page)).hand).toBe(live.hand);
+  expect(await page.evaluate(() => window.__sameDocument)).toBe(true);
+});
+
 // Records rely on system Back: unwind the detail and list pages to the game.
 async function backToGame(page) {
   while (/#records/.test(page.url())) await page.goBack();
