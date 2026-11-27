@@ -1952,7 +1952,7 @@ test('A7 review separates steal, 3bet and 4bet; opponents expose actual decision
   expect(layout.scroll).toBeLessThanOrEqual(layout.width + 1);
 });
 
-test('review timelines hint at horizontal scrolling and keep late selections in place', async ({
+test('review timelines hint at later decisions and keep late selections in place', async ({
   page,
 }) => {
   // Allow three real simulations on shared CI hardware without reducing
@@ -1960,6 +1960,9 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
   // analysis may take up to its 60s wait there.
   test.setTimeout(240000);
   for (const width of [320, 390, 1280]) {
+    // Portrait rows show half of the next card; landscape stacks the
+    // decisions in the side list beside the detail.
+    const landscape = width > 900;
     await page.setViewportSize({ width, height: 900 });
     await page.evaluate(() => window.qa.reviewLine());
     await page.locator('#review-hand-button').click();
@@ -1969,24 +1972,43 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
     {
       const heroTimeline = page.locator('#review-timeline');
       const heroIndex = (await heroTimeline.locator('.review-step').count()) - 1;
-      await heroTimeline.evaluate((timeline) => {
-        const item = timeline.lastElementChild.getBoundingClientRect();
-        timeline.scrollLeft += item.left - timeline.getBoundingClientRect().left - 2;
-      });
-      const before = await heroTimeline.evaluate((el) => el.scrollLeft);
-      expect(before).toBeGreaterThan(0);
+      await heroTimeline.evaluate((timeline, landscape) => {
+        const item = timeline.lastElementChild.getBoundingClientRect(),
+          box = timeline.getBoundingClientRect();
+        if (landscape) timeline.scrollTop += item.top - box.top - 2;
+        else timeline.scrollLeft += item.left - box.left - 2;
+      }, landscape);
+      const before = await heroTimeline.evaluate((el) => ({
+        left: el.scrollLeft,
+        top: el.scrollTop,
+      }));
+      if (landscape) expect(before.left).toBe(0);
+      else expect(before.left).toBeGreaterThan(0);
       await heroTimeline.locator(`[data-review-index="${heroIndex}"]`).click();
       await expect(heroTimeline.locator('[aria-current="step"]')).toHaveAttribute(
         'data-review-index',
         String(heroIndex),
       );
-      expect(Math.abs((await heroTimeline.evaluate((el) => el.scrollLeft)) - before)).toBeLessThan(
-        1.1,
-      );
+      const after = await heroTimeline.evaluate((el) => ({
+        left: el.scrollLeft,
+        top: el.scrollTop,
+      }));
+      expect(Math.abs(after.left - before.left)).toBeLessThan(1.1);
+      expect(Math.abs(after.top - before.top)).toBeLessThan(1.1);
     }
     await page.locator('#review-opponents-tab').click();
     const timeline = page.locator('#review-opponents .review-timeline');
-    {
+    if (landscape) {
+      const column = await timeline.evaluate((el) => {
+        const [first, second] = [...el.children].map((child) => child.getBoundingClientRect());
+        return {
+          sameLeft: Math.abs(first.left - second.left) < 1,
+          below: second.top >= first.bottom - 1,
+          row: el.scrollWidth > el.clientWidth + 1,
+        };
+      });
+      expect(column).toEqual({ sameLeft: true, below: true, row: false });
+    } else {
       const preview = await timeline.evaluate((el) => {
         const third = el.children[2].getBoundingClientRect();
         return (el.getBoundingClientRect().right - third.left - 2) / third.width;
@@ -1994,13 +2016,14 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
       expect(preview).toBeGreaterThan(0.45);
       expect(preview).toBeLessThan(0.55);
     }
-    await timeline.evaluate((el) => {
+    await timeline.evaluate((el, landscape) => {
       const item = el.children[5].getBoundingClientRect(),
         bounds = el.getBoundingClientRect();
-      el.scrollLeft += item.left - bounds.left - 2;
-    });
+      if (landscape) el.scrollTop += item.top - bounds.top - 2;
+      else el.scrollLeft += item.left - bounds.left - 2;
+    }, landscape);
     const before = await timeline.evaluate((el) => ({ left: el.scrollLeft, top: el.scrollTop }));
-    expect(before.left).toBeGreaterThan(0);
+    if (!landscape) expect(before.left).toBeGreaterThan(0);
     const lateCard = timeline.locator('[data-opponent-index="5"]');
     const heading = await lateCard.locator('small').innerText();
     await lateCard.click();
@@ -2019,7 +2042,7 @@ test('review timelines hint at horizontal scrolling and keep late selections in 
       'data-opponent-index',
       '4',
     );
-    expect(await timeline.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+    if (!landscape) expect(await timeline.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
     await page.locator('#review-opponent-filter').selectOption('1');
     await expect(timeline.locator('.review-step').first()).toHaveAttribute('aria-current', 'step');
     await expect(timeline).toContainText('Mia');

@@ -997,3 +997,22 @@
   max-width: 100%;
   white-space: normal;
 }
+/* Landscape keeps the side list for any number of decisions, as it does for
+   one or two: the decisions stack beside the detail instead of above it. */
+@media (min-width: 701px) and (orientation: landscape) {
+  .review-layout.has-horizontal-review {
+    grid-template-columns: 235px minmax(0, 1fr);
+    gap: 24px;
+  }
+  .review-timeline.has-overflow {
+    flex-direction: column;
+    max-height: 600px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-bottom: 2px;
+  }
+  .review-timeline.has-overflow > .review-step,
+  #review-opponents .review-timeline.has-overflow > .review-step {
+    flex: 0 0 auto;
+  }
+}

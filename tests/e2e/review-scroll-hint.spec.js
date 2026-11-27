@@ -1,12 +1,22 @@
 import { test, expect } from '@playwright/test';
 
-for (const width of [320, 390, 768, 1280]) {
-  test(`${width}px review exposes half of the third card only when there are more than two`, async ({
+// Portrait screens show two decisions and half of the third in a row above
+// the detail. Landscape keeps every decision in the side list beside it.
+const sizes = [
+  [320, 900],
+  [390, 900],
+  [768, 900],
+  [1180, 820],
+  [1280, 900],
+];
+for (const [width, height] of sizes) {
+  const landscape = width > height && width > 700;
+  test(`${width}x${height} review ${landscape ? 'keeps every decision in the side list' : 'exposes half of the third card only when there are more than two'}`, async ({
     page,
   }, info) => {
     await page.goto('/');
     await page.waitForFunction(() => !!window.qa);
-    await page.setViewportSize({ width, height: 900 });
+    await page.setViewportSize({ width, height });
     for (const count of [1, 2, 3, 4]) {
       await page.evaluate((count) => {
         window.qa.reviewLine();
@@ -22,6 +32,35 @@ for (const width of [320, 390, 768, 1280]) {
           perspective === 'hero' ? '#review-timeline' : '#review-opponents .review-timeline',
         );
         await expect(timeline.locator('.review-step')).toHaveCount(count);
+        if (landscape) {
+          const layout = await timeline.evaluate((element) => {
+            const steps = [...element.children].map((step) => step.getBoundingClientRect()),
+              box = element.getBoundingClientRect(),
+              detail = element.closest('nav').nextElementSibling.getBoundingClientRect();
+            return {
+              stacked: steps.every(
+                (step, i) =>
+                  i === 0 ||
+                  (Math.abs(step.left - steps[0].left) < 1 && step.top >= steps[i - 1].bottom - 1),
+              ),
+              beside: box.right <= detail.left + 1 && box.top < detail.bottom,
+              rowScroll: element.scrollWidth > element.clientWidth + 1,
+              width: box.width,
+            };
+          });
+          expect(layout, `${count} decisions`).toMatchObject({
+            stacked: true,
+            beside: true,
+            rowScroll: false,
+          });
+          expect(layout.width).toBeLessThan(260);
+          if (count === 4)
+            await info.attach(`${perspective}-side-list`, {
+              body: await page.locator('#review-dialog').screenshot(),
+              contentType: 'image/png',
+            });
+          continue;
+        }
         if (count <= 2) {
           await expect(timeline).not.toHaveClass(/has-overflow/);
           continue;
