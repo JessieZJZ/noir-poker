@@ -11,6 +11,11 @@ body[data-tutorial] #review-hand-button,
 body[data-tutorial] .continue-deal-button.tutorial-locked {
   display: none;
 }
+/* Landscape tablets lay the practice card and the activity side by side; with
+   the practice card hidden, the activity takes the whole row. */
+body[data-tutorial] .sidebar > .activity-card {
+  grid-column: 1 / -1;
+}
 .tutorial-coach {
   display: flex;
   flex: none;
