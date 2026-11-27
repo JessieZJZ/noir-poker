@@ -611,8 +611,9 @@
   <view class="settings-title">设置</view>
   <scroll-view
     scroll-y
+    id="settings-scroll"
     class="modal-scroll"
-    bindscroll="settingsScrolled"
+    bindscroll="{{profileDetail.scroll}}"
     scroll-top="{{settingsScrollTop}}"
     ><view class="modal-body">
       <view class="settings-module general-settings" aria-label="通用设置">
@@ -791,26 +792,78 @@
       >
       <view class="settings-module"
         ><text class="module-title">风格介绍</text
-        ><view class="profile-grid"
-          ><button
-            hover-class="none"
-            wx:for="{{profiles}}"
-            wx:key="id"
-            id="profile-{{item.id}}"
-            class="profile-card {{selectedProfile === item.id ? 'selected' : ''}}"
-            data-id="{{item.id}}"
-            bindtap="viewProfile"
+        ><view class="profile-stage {{detailProfile ? 'detail-open' : ''}}"
+          ><view class="profile-grid"
+            ><button
+              hover-class="none"
+              wx:for="{{profiles}}"
+              wx:key="id"
+              id="profile-{{item.id}}"
+              class="profile-card {{selectedProfile === item.id ? 'selected' : ''}}"
+              data-id="{{item.id}}"
+              bindtap="viewProfile"
+            >
+              <image
+                wx:if="{{item.portrait}}"
+                src="{{item.portrait}}"
+                class="profile-avatar"
+                mode="aspectFill"
+              /><view wx:else class="profile-avatar initials">均</view
+              ><text class="profile-name">{{item.short}}</text
+              ><text class="profile-tag">{{item.tag}}</text>
+            </button></view
           >
-            <image
-              wx:if="{{item.portrait}}"
-              src="{{item.portrait}}"
-              class="profile-avatar"
-              mode="aspectFill"
-            /><view wx:else class="profile-avatar initials">均</view
-            ><text class="profile-name">{{item.short}}</text
-            ><text class="profile-tag">{{item.tag}}</text>
-          </button></view
-        ></view
+          <view
+            wx:if="{{detailProfile && detailBounds}}"
+            id="profile-detail"
+            class="profile-detail is-revealing"
+            geometry="{{detailBounds}}"
+            change:geometry="{{profileDetail.sync}}"
+            style="top: {{detailBounds.top}}px; height: {{detailBounds.height}}px; --profile-reveal-x: {{detailBounds.x}}px; --profile-reveal-y: {{detailBounds.y}}px; --profile-reveal-radius: {{detailBounds.radius}}px;"
+            ><view class="modal-header"
+              ><view class="detail-identity"
+                ><image
+                  wx:if="{{detailProfile.portrait}}"
+                  src="{{detailProfile.portrait}}"
+                  class="detail-avatar"
+                  mode="aspectFill"
+                /><view wx:else class="detail-avatar initials">均</view
+                ><text>{{detailProfile.name}}</text></view
+              >
+              <button
+                hover-class="none"
+                class="close"
+                bindtap="closeProfile"
+                aria-label="关闭风格介绍"
+              >
+                <view class="close-icon" /></button></view
+            ><scroll-view scroll-y class="modal-scroll"
+              ><view class="modal-body"
+                ><text class="detail-description">{{detailProfile.description}}</text
+                ><view class="profile-axes"
+                  ><view class="axis" wx:for="{{detailProfile.axisRows}}" wx:key="id"
+                    ><text>{{item.label}}</text
+                    ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
+                    ><text>{{item.value}}</text></view
+                  ></view
+                ><text class="profile-sizing"
+                  >常用翻后下注：<text class="profile-sizing-value"
+                    >{{detailProfile.sizingLow}}–{{detailProfile.sizingHigh}}% 池</text
+                  ></text
+                ><view class="research-copy"
+                  ><view
+                    class="character-section"
+                    wx:for="{{detailProfile.character.sections}}"
+                    wx:key="title"
+                    wx:for-item="section"
+                    ><text class="module-title">{{section.title}}</text
+                    ><text wx:for="{{section.paragraphs}}" wx:key="*this">{{item}}</text></view
+                  ></view
+                ></view
+              ></scroll-view
+            ></view
+          >
+        </view></view
       >
       <view class="settings-module"
         ><view class="module-heading"
@@ -878,48 +931,6 @@
       >
     </view></scroll-view
   ><view class="settings-save-row"><text>设置自动保存在此设备。</text></view>
-  <view
-    wx:if="{{detailProfile}}"
-    class="profile-detail is-revealing"
-    style="top: {{detailBounds ? detailBounds.top : topInset + 155.5}}px; left: {{detailBounds ? detailBounds.left : 34}}px; width: {{detailBounds ? detailBounds.width : windowWidth - 68}}px; height: {{detailBounds ? detailBounds.height : windowHeight - topInset - bottomInset - 216}}px; bottom: auto; right: auto; --profile-reveal-x: {{detailBounds ? detailBounds.x : 30}}px; --profile-reveal-y: {{detailBounds ? detailBounds.y : 30}}px; --profile-reveal-radius: {{detailBounds ? detailBounds.radius : windowHeight}}px;"
-    ><view class="modal-header"
-      ><view class="detail-identity"
-        ><image
-          wx:if="{{detailProfile.portrait}}"
-          src="{{detailProfile.portrait}}"
-          class="detail-avatar"
-          mode="aspectFill"
-        /><view wx:else class="detail-avatar initials">均</view
-        ><text>{{detailProfile.name}}</text></view
-      >
-      <button hover-class="none" class="close" bindtap="closeProfile" aria-label="关闭风格介绍">
-        <view class="close-icon" /></button></view
-    ><scroll-view scroll-y class="modal-scroll"
-      ><view class="modal-body"
-        ><text class="detail-description">{{detailProfile.description}}</text
-        ><view class="profile-axes"
-          ><view class="axis" wx:for="{{detailProfile.axisRows}}" wx:key="id"
-            ><text>{{item.label}}</text
-            ><view class="axis-track"><view style="width: {{item.value}}%;" /></view
-            ><text>{{item.value}}</text></view
-          ></view
-        ><text class="profile-sizing"
-          >常用翻后下注：<text class="profile-sizing-value"
-            >{{detailProfile.sizingLow}}–{{detailProfile.sizingHigh}}% 池</text
-          ></text
-        ><view class="research-copy"
-          ><view
-            class="character-section"
-            wx:for="{{detailProfile.character.sections}}"
-            wx:key="title"
-            wx:for-item="section"
-            ><text class="module-title">{{section.title}}</text
-            ><text wx:for="{{section.paragraphs}}" wx:key="*this">{{item}}</text></view
-          ></view
-        ></view
-      ></scroll-view
-    ></view
-  >
 </view>
 
 <view
@@ -1036,166 +1047,175 @@
         >
           <text>{{opponentOptions[opponentFilter]}}</text><view class="select-chevron" /></button
       ></view>
-      <view class="review-timeline-title"
-        ><text>{{reviewPerspective === 'hero' ? '你的决策' : '对手的实际行动'}}</text
-        ><text>{{reviewSteps.length}} 次行动</text></view
-      >
-      <scroll-view
-        scroll-x
-        class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}} {{reviewSteps.length > 2 ? 'has-overflow' : ''}}"
-        ><view class="review-timeline-inner"
-          ><button
-            hover-class="none"
-            wx:for="{{reviewSteps}}"
-            wx:key="index"
-            class="review-step {{reviewIndex === index ? 'selected' : ''}}"
-            data-index="{{index}}"
-            bindtap="selectReviewStep"
+      <view class="review-layout"
+        ><view class="review-nav"
+          ><view class="review-timeline-title"
+            ><text>{{reviewPerspective === 'hero' ? '你的决策' : '对手的实际行动'}}</text
+            ><text>{{reviewSteps.length}} 次行动</text></view
           >
-            <text class="review-step-number">{{index + 1}}</text
-            ><view
-              ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-step-meta"
-                >{{item.street}}，{{item.position}}</text
-              ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
-              ><text class="review-step-action">{{item.actual}}</text></view
-            ><text
-              wx:if="{{reviewPerspective === 'hero' && !item.keep && item.label}}"
-              class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
-              >{{item.label}}</text
-            >
-          </button></view
-        ></scroll-view
-      >
-      <view wx:if="{{selectedReviewStep}}" class="review-detail">
-        <view class="review-detail-header"
-          ><text
-            >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
-            selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
-          ><text
-            wx:if="{{reviewPerspective === 'hero' && selectedReviewStep.label}}"
-            class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
-            >{{selectedReviewStep.label}}</text
-          ></view
-        >
-        <view class="review-scene">
-          <view class="review-card-rows"
-            ><view
-              ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-card-label"
-                >你的底牌</text
-              ><text wx:else class="review-card-label">{{selectedReviewStep.name}} 当时的底牌</text
-              ><view class="review-cards"
-                ><view
-                  wx:for="{{selectedReviewStep.cards}}"
-                  wx:key="key"
-                  class="card review-card-face {{item.red ? 'red' : ''}}"
-                  ><text class="card-rank">{{item.rank}}</text
-                  ><text class="card-suit">{{item.suit}}</text
-                  ><text class="card-corner">{{item.rank}}</text></view
-                ></view
-              ></view
-            ><view
-              ><text class="review-card-label">当时的公共牌</text
-              ><view class="review-cards"
-                ><view
-                  wx:for="{{selectedReviewStep.board}}"
-                  wx:key="key"
-                  class="card review-card-face {{item.red ? 'red' : ''}}"
-                  ><text class="card-rank">{{item.rank}}</text
-                  ><text class="card-suit">{{item.suit}}</text
-                  ><text class="card-corner">{{item.rank}}</text></view
-                ><text wx:if="{{!selectedReviewStep.board.length}}" class="review-no-board"
-                  >公共牌尚未发出</text
-                ></view
-              ></view
-            ></view
-          >
-          <view class="review-scene-meta"
-            ><view><text>位置</text><text>{{selectedReviewStep.position}}</text></view
-            ><view><text>当时底池</text><text>{{selectedReviewStep.pot}}</text></view
-            ><view><text>剩余筹码</text><text>{{selectedReviewStep.stack}}</text></view></view
-          >
-        </view>
-        <view class="review-coaching {{reviewPerspective === 'opponent' ? 'opponent-reason' : ''}}">
-          <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
-            >{{selectedReviewStep.reason}}</text
-          >
-          <block wx:if="{{selectedReviewStep.commentary.length}}">
-            <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
-              <text
-                wx:if="{{item.text}}"
-                class="{{item.text === '复盘分析总结' ? 'review-analysis-heading' : ''}}"
-                >{{item.text}}</text
+          <scroll-view
+            scroll-x="{{windowWidth <= windowHeight || windowWidth < 701}}"
+            scroll-y="{{windowWidth > windowHeight && windowWidth >= 701}}"
+            class="review-timeline {{reviewPerspective === 'opponent' ? 'opponent' : ''}} {{reviewSteps.length > 2 ? 'has-overflow' : ''}}"
+            ><view class="review-timeline-inner"
+              ><button
+                hover-class="none"
+                wx:for="{{reviewSteps}}"
+                wx:key="index"
+                class="review-step {{reviewIndex === index ? 'selected' : ''}}"
+                data-index="{{index}}"
+                bindtap="selectReviewStep"
               >
-              <view wx:else class="review-matchups">
-                <text class="module-title">{{item.matchups.title}}</text>
-                <text class="review-board-summary">{{item.matchups.boardSummary}}</text>
-                <text class="module-title">{{item.matchups.strengthTitle}}</text>
-                <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
-                <text wx:if="{{item.matchups.note}}" class="review-matchup-note"
-                  >{{item.matchups.note}}</text
+                <text class="review-step-number">{{index + 1}}</text
+                ><view
+                  ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-step-meta"
+                    >{{item.street}}，{{item.position}}</text
+                  ><text wx:else class="review-step-meta">{{item.name}}，{{item.street}}</text
+                  ><text class="review-step-action">{{item.actual}}</text></view
+                ><text
+                  wx:if="{{reviewPerspective === 'hero' && !item.keep && item.label}}"
+                  class="review-label {{reviewPerspective === 'hero' ? 'consider' : ''}}"
+                  >{{item.label}}</text
                 >
-                <view
-                  wx:for="{{item.matchups.groups}}"
-                  wx:for-item="group"
-                  wx:key="direction"
-                  data-matchup-direction="{{group.direction}}"
-                >
-                  <text class="module-title">{{group.label}}</text>
-                  <text wx:if="{{!group.examples.length}}" class="muted">{{group.empty}}</text>
-                  <view wx:if="{{group.examples.length}}" class="review-matchup-examples">
-                    <view
-                      wx:for="{{group.examples}}"
-                      wx:for-item="example"
-                      wx:key="group"
-                      class="review-matchup-example"
+              </button></view
+            ></scroll-view
+          ></view
+        ><view class="review-main">
+          <view wx:if="{{selectedReviewStep}}" class="review-detail">
+            <view class="review-detail-header"
+              ><text
+                >{{reviewPerspective === 'hero' ? '第 ' + (reviewIndex + 1) + ' 步' :
+                selectedReviewStep.name}}，{{selectedReviewStep.street}}</text
+              ><text
+                wx:if="{{reviewPerspective === 'hero' && selectedReviewStep.label}}"
+                class="review-label {{selectedReviewStep.keep ? 'sound' : 'consider'}}"
+                >{{selectedReviewStep.label}}</text
+              ></view
+            >
+            <view class="review-scene">
+              <view class="review-card-rows"
+                ><view
+                  ><text wx:if="{{reviewPerspective === 'hero'}}" class="review-card-label"
+                    >你的底牌</text
+                  ><text wx:else class="review-card-label"
+                    >{{selectedReviewStep.name}} 当时的底牌</text
+                  ><view class="review-cards"
+                    ><view
+                      wx:for="{{selectedReviewStep.cards}}"
+                      wx:key="key"
+                      class="card review-card-face {{item.red ? 'red' : ''}}"
+                      ><text class="card-rank">{{item.rank}}</text
+                      ><text class="card-suit">{{item.suit}}</text
+                      ><text class="card-corner">{{item.rank}}</text></view
+                    ></view
+                  ></view
+                ><view
+                  ><text class="review-card-label">当时的公共牌</text
+                  ><view class="review-cards"
+                    ><view
+                      wx:for="{{selectedReviewStep.board}}"
+                      wx:key="key"
+                      class="card review-card-face {{item.red ? 'red' : ''}}"
+                      ><text class="card-rank">{{item.rank}}</text
+                      ><text class="card-suit">{{item.suit}}</text
+                      ><text class="card-corner">{{item.rank}}</text></view
+                    ><text wx:if="{{!selectedReviewStep.board.length}}" class="review-no-board"
+                      >公共牌尚未发出</text
+                    ></view
+                  ></view
+                ></view
+              >
+              <view class="review-scene-meta"
+                ><view><text>位置</text><text>{{selectedReviewStep.position}}</text></view
+                ><view><text>当时底池</text><text>{{selectedReviewStep.pot}}</text></view
+                ><view><text>剩余筹码</text><text>{{selectedReviewStep.stack}}</text></view></view
+              >
+            </view>
+            <view
+              class="review-coaching {{reviewPerspective === 'opponent' ? 'opponent-reason' : ''}}"
+            >
+              <text wx:if="{{!selectedReviewStep.paragraphs.length}}"
+                >{{selectedReviewStep.reason}}</text
+              >
+              <block wx:if="{{selectedReviewStep.commentary.length}}">
+                <block wx:for="{{selectedReviewStep.commentary}}" wx:key="index">
+                  <text
+                    wx:if="{{item.text}}"
+                    class="{{item.text === '复盘分析总结' ? 'review-analysis-heading' : ''}}"
+                    >{{item.text}}</text
+                  >
+                  <view wx:else class="review-matchups">
+                    <text class="module-title">{{item.matchups.title}}</text>
+                    <text class="review-board-summary">{{item.matchups.boardSummary}}</text>
+                    <text class="module-title">{{item.matchups.strengthTitle}}</text>
+                    <text class="review-matchup-hand">{{item.matchups.handLabel}}</text>
+                    <text wx:if="{{item.matchups.note}}" class="review-matchup-note"
+                      >{{item.matchups.note}}</text
                     >
-                      <text class="review-matchup-cards">{{example.text}}</text>
-                      <text class="review-matchup-caption">{{example.label}}</text>
+                    <view
+                      wx:for="{{item.matchups.groups}}"
+                      wx:for-item="group"
+                      wx:key="direction"
+                      data-matchup-direction="{{group.direction}}"
+                    >
+                      <text class="module-title">{{group.label}}</text>
+                      <text wx:if="{{!group.examples.length}}" class="muted">{{group.empty}}</text>
+                      <view wx:if="{{group.examples.length}}" class="review-matchup-examples">
+                        <view
+                          wx:for="{{group.examples}}"
+                          wx:for-item="example"
+                          wx:key="group"
+                          class="review-matchup-example"
+                        >
+                          <text class="review-matchup-cards">{{example.text}}</text>
+                          <text class="review-matchup-caption">{{example.label}}</text>
+                        </view>
+                      </view>
                     </view>
+                    <text
+                      wx:for="{{item.matchups.rangeNotes}}"
+                      wx:for-item="note"
+                      wx:key="*this"
+                      class="review-range-note"
+                      >{{note}}</text
+                    >
+                    <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
+                      >{{item.matchups.nutsNote}}</text
+                    >
                   </view>
-                </view>
-                <text
-                  wx:for="{{item.matchups.rangeNotes}}"
-                  wx:for-item="note"
-                  wx:key="*this"
-                  class="review-range-note"
-                  >{{note}}</text
-                >
-                <text wx:if="{{item.matchups.nutsNote}}" class="review-matchup-nuts"
-                  >{{item.matchups.nutsNote}}</text
-                >
+                </block>
+              </block>
+              <block wx:else>
+                <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
+              </block>
+              <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
+              <text wx:if="{{selectedReviewStep.warning}}" class="muted"
+                >{{selectedReviewStep.warning}}</text
+              >
+              <view
+                wx:if="{{reviewPerspective === 'hero' && !selectedReviewStep.keep}}"
+                class="review-practice-focus"
+              >
+                <text class="module-title">下次练习重点</text
+                ><text>{{selectedReviewStep.followUp}}</text>
               </view>
-            </block>
-          </block>
-          <block wx:else>
-            <text wx:for="{{selectedReviewStep.paragraphs}}" wx:key="index">{{item}}</text>
-          </block>
-          <text wx:for="{{selectedReviewStep.reasons}}" wx:key="*this">{{item}}</text>
-          <text wx:if="{{selectedReviewStep.warning}}" class="muted"
-            >{{selectedReviewStep.warning}}</text
-          >
-          <view
-            wx:if="{{reviewPerspective === 'hero' && !selectedReviewStep.keep}}"
-            class="review-practice-focus"
-          >
-            <text class="module-title">下次练习重点</text
-            ><text>{{selectedReviewStep.followUp}}</text>
+            </view>
+            <view wx:if="{{reviewPerspective === 'hero'}}" class="review-evidence">
+              <text class="module-title">当时的关键信息</text>
+              <view class="review-evidence-facts"
+                ><view
+                  wx:for="{{selectedReviewStep.evidence}}"
+                  wx:key="*this"
+                  class="review-evidence-fact"
+                  ><text>•</text><text>{{item}}</text></view
+                ></view
+              >
+            </view>
           </view>
-        </view>
-        <view wx:if="{{reviewPerspective === 'hero'}}" class="review-evidence">
-          <text class="module-title">当时的关键信息</text>
-          <view class="review-evidence-facts"
-            ><view
-              wx:for="{{selectedReviewStep.evidence}}"
-              wx:key="*this"
-              class="review-evidence-fact"
-              ><text>•</text><text>{{item}}</text></view
-            ></view
+          <text wx:elif="{{!reviewData.loading}}" class="muted"
+            >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
           >
-        </view>
-      </view>
-      <text wx:elif="{{!reviewData.loading}}" class="muted"
-        >本手没有主动决策，无法评价选择。盲注是强制投入，不会被归为操作失误。</text
+        </view></view
       >
       <view class="review-activity">
         <button

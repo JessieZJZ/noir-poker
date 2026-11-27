@@ -5,6 +5,7 @@
 />
 <import src="./table-templates.wxml" />
 <wxs module="rail" src="./raise-rail.wxs" />
+<wxs module="profileDetail" src="./profile-detail.wxs" />
 
 <view wx:if="{{!tableReady}}" class="launch-screen" aria-label="NOIR Poker">
   <image src="/assets/launch-icon.png" mode="aspectFit" />

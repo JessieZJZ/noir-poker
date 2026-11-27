@@ -1,0 +1,27 @@
+// The open style introduction follows the settings scroll in the render
+// layer, as Web's does (src/ui/profile-layout.js): it covers the visible part
+// of the choices, may reach past them only as far as it did to fit when it
+// opened, and leaves with them once the settings scroll on past them.
+// The service still receives each scroll offset, as before.
+function place(geometry, scrollTop) {
+  var visible =
+    Math.max(
+      scrollTop,
+      Math.min(geometry.gridOffset, scrollTop + geometry.viewHeight - geometry.height),
+    ) - geometry.gridOffset;
+  return Math.min(
+    Math.max(visible, Math.min(0, geometry.top)),
+    Math.max(geometry.gridHeight - geometry.height, geometry.top),
+  );
+}
+function sync(value, previous, owner, instance) {
+  instance.getState().geometry = value;
+}
+function scroll(event, owner) {
+  var panel = owner.selectComponent('#profile-detail');
+  var geometry = panel && panel.getState().geometry;
+  if (geometry && typeof geometry.gridOffset === 'number')
+    panel.setStyle({ top: place(geometry, event.detail.scrollTop) + 'px' });
+  owner.callMethod('settingsScrolled', { detail: { scrollTop: event.detail.scrollTop } });
+}
+module.exports = { place: place, sync: sync, scroll: scroll };

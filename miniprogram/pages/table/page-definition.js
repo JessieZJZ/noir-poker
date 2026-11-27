@@ -466,7 +466,17 @@ module.exports = {
     this.stopSounds();
   },
   onResize(event) {
-    this.updateWindow(event);
+    if (!this.updateWindow(event) || !this.data.settingsOpen) return;
+    // The style choices moved: measure them after the new layout and keep an
+    // open introduction over them.
+    this._profileGeometry = null;
+    const ticket = this._profileEpoch;
+    this.setData({}, () =>
+      this.measureProfiles((geometry) => {
+        if (geometry && ticket === this._profileEpoch && this.data.detailProfile)
+          this.setData({ detailBounds: this.profileBounds(this.data.selectedProfile, geometry) });
+      }),
+    );
   },
   onReady() {
     watchWindow(this);
@@ -1085,9 +1095,10 @@ module.exports = {
   },
   openSettings() {
     this._settingsScroll = 0;
+    this._profileGeometry = null;
     this.call('clearStakesError');
     this.setData({ smallBlindEditing: false, smallBlindDraft: '' });
-    this.setOverlay({ settingsOpen: true, settingsScrollTop: 0 });
+    this.setOverlay({ settingsOpen: true, settingsScrollTop: 0 }, () => this.measureProfiles());
   },
   closeSettings() {
     this.closeSelect();
@@ -1215,9 +1226,12 @@ module.exports = {
     this.call('peek', this._peekId);
     this._peekId = null;
   },
+  // Opening an introduction is one setData: its place comes from the
+  // choices measured when settings opened. A query after it corrects a place
+  // that content above the choices has since moved.
   viewProfile(event) {
-    this.setData({ selectedProfile: event.currentTarget.dataset.id });
-    const profile = this.data.profiles.find((p) => p.id === event.currentTarget.dataset.id);
+    const id = event.currentTarget.dataset.id;
+    const profile = this.data.profiles.find((p) => p.id === id);
     const detailProfile = profile
       ? {
           ...profile,
@@ -1230,46 +1244,78 @@ module.exports = {
           })),
         }
       : null;
-    this.positionProfile(event.currentTarget.dataset.id, detailProfile);
-  },
-  positionProfile(id, detailProfile) {
     const ticket = (this._profileEpoch = (this._profileEpoch || 0) + 1);
-    if (!wx.createSelectorQuery) {
-      this.setData({ detailProfile });
-      return;
-    }
-    const query = wx.createSelectorQuery();
-    query.select('.profile-grid').boundingClientRect();
-    query.select('.settings-modal .modal-scroll').boundingClientRect();
-    query.select(`#profile-${id}`).boundingClientRect();
-    query.exec(([grid, scroll, origin]) => {
-      if (
-        !grid ||
-        !scroll ||
-        !origin ||
-        ticket !== this._profileEpoch ||
-        !this.data.settingsOpen ||
-        this._hidden ||
-        this._destroyed
-      )
-        return;
-      const height = Math.min(grid.height, scroll.height);
-      const top = Math.max(scroll.top, Math.min(grid.top, scroll.bottom - height));
-      const x = Math.max(0, Math.min(grid.width, origin.left + origin.width / 2 - grid.left));
-      const y = Math.max(0, Math.min(height, origin.top + origin.height / 2 - top));
+    const live = () =>
+      ticket === this._profileEpoch && this.data.settingsOpen && !this._hidden && !this._destroyed;
+    const fallback = { top: 0, height: this.data.windowHeight * 0.6, x: 0, y: 0, radius: 0 };
+    const show = (geometry) =>
       this.setData({
+        selectedProfile: id,
         detailProfile,
-        detailBounds: {
-          left: grid.left,
-          top,
-          width: grid.width,
-          height,
-          x,
-          y,
-          radius: Math.hypot(Math.max(x, grid.width - x), Math.max(y, height - y)),
-        },
+        detailBounds: geometry ? this.profileBounds(id, geometry) : fallback,
       });
+    if (!wx.createSelectorQuery) return show(null);
+    if (!this._profileGeometry) return this.measureProfiles((geometry) => live() && show(geometry));
+    show(this._profileGeometry);
+    const shown = this.data.detailBounds;
+    this.measureProfiles((geometry) => {
+      if (!geometry || !live()) return;
+      const bounds = this.profileBounds(id, geometry);
+      if (Math.abs(bounds.top - shown.top) > 1 || Math.abs(bounds.height - shown.height) > 1)
+        this.setData({ detailBounds: bounds });
     });
+  },
+  // Where the style choices sit in the settings content and where each card
+  // is in them, so opening an introduction needs no measurement first.
+  measureProfiles(done) {
+    if (!wx.createSelectorQuery) return done?.(null);
+    const query = wx.createSelectorQuery();
+    query.select('#settings-scroll').boundingClientRect();
+    query.select('#settings-scroll').scrollOffset();
+    query.select('.profile-grid').boundingClientRect();
+    query.selectAll('.profile-card').boundingClientRect();
+    query.exec(([view, offset, grid, cards]) => {
+      if (!view || !offset || !grid || !cards || !this.data.settingsOpen || this._destroyed)
+        return done?.(null);
+      this._settingsScroll = offset.scrollTop;
+      this._profileGeometry = {
+        viewHeight: view.height,
+        gridOffset: grid.top - view.top + offset.scrollTop,
+        gridWidth: grid.width,
+        gridHeight: grid.height,
+        cards: Object.fromEntries(
+          cards.map((card) => [
+            card.dataset.id,
+            { x: card.left + card.width / 2 - grid.left, y: card.top + card.height / 2 - grid.top },
+          ]),
+        ),
+      };
+      done?.(this._profileGeometry);
+    });
+  },
+  // As on Web: the introduction covers the visible part of the choices, and
+  // when they sit low it starts above them so that it fits on screen. It is
+  // placed inside the choices and scrolls with the settings from there.
+  profileBounds(id, geometry) {
+    const scrollTop = this._settingsScroll || 0;
+    const { viewHeight, gridOffset, gridWidth, gridHeight } = geometry;
+    const height = Math.min(gridHeight, viewHeight);
+    const top =
+      Math.max(scrollTop, Math.min(gridOffset, scrollTop + viewHeight - height)) - gridOffset;
+    const card = geometry.cards[id] || { x: gridWidth / 2, y: top + height / 2 };
+    const x = Math.max(0, Math.min(gridWidth, card.x));
+    const y = Math.max(0, Math.min(height, card.y - top));
+    return {
+      top,
+      height,
+      x,
+      y,
+      radius: Math.hypot(Math.max(x, gridWidth - x), Math.max(y, height - y)),
+      // For profile-detail.wxs, which follows the settings scroll from here.
+      gridOffset,
+      gridHeight,
+      viewHeight,
+    };
   },
   settingsScrolled(event) {
     this._settingsScroll = event.detail.scrollTop;
@@ -1280,7 +1326,7 @@ module.exports = {
   },
   closeProfile() {
     this._profileEpoch = (this._profileEpoch || 0) + 1;
-    this.setData({ detailProfile: null });
+    this.setData({ detailProfile: null, detailBounds: null });
   },
   copyResearchSource(event) {
     const url = event.currentTarget.dataset.url;

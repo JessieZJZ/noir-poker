@@ -47,3 +47,17 @@
 .profile-detail .modal-scroll .modal-body {
   padding: 4px 14px 16px;
 }
+/* As on Web, the introduction lies over the choices inside the scrolling
+   settings, so a swipe past either end of it scrolls the settings and it
+   moves with the choices. Its top and height are set from the page. */
+.profile-stage {
+  position: relative;
+}
+.profile-stage > .profile-detail {
+  left: 0;
+  right: 0;
+  bottom: auto;
+}
+.profile-stage.detail-open > .profile-grid {
+  visibility: hidden;
+}

@@ -3,6 +3,7 @@ import { compactChips, compactActionAmounts } from '../../src/engine/chip-format
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import { renderCardArtwork } from '../../src/ui/cards.js';
 import { railLayout } from '../../src/ui/rail-layout.js';
+import { profileDetailBounds } from '../../src/ui/profile-layout.js';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -1315,6 +1316,121 @@ test('WeChat profile parameters keep stable unique keys when values repeat', (t)
   );
   page.closeProfile();
   assert.equal(page.data.detailProfile, null);
+});
+
+// Screen geometry a WeChat selector query reports for the settings: the
+// scroll view, its offset, the style grid and its cards.
+function settingsLayoutQuery(page, layout) {
+  let measured = 0;
+  const create = () => {
+    const results = [];
+    let target;
+    const query = {
+      select(selector) {
+        target = selector;
+        return query;
+      },
+      selectAll(selector) {
+        target = selector;
+        return query;
+      },
+      boundingClientRect() {
+        const gridTop = layout.grid.top - layout.scrollTop;
+        if (target === '#settings-scroll')
+          results.push({ ...layout.view, bottom: layout.view.top + layout.view.height });
+        else if (target === '.profile-grid') results.push({ ...layout.grid, top: gridTop });
+        else
+          results.push(
+            page.data.profiles.map((profile, i) => ({
+              dataset: { id: profile.id },
+              left: layout.grid.left + (i % 2) * 170,
+              width: 160,
+              top: gridTop + Math.floor(i / 2) * 120,
+              height: 110,
+            })),
+          );
+        return query;
+      },
+      scrollOffset() {
+        results.push({ scrollTop: layout.scrollTop });
+        return query;
+      },
+      exec(callback) {
+        measured++;
+        callback(results);
+      },
+    };
+    return query;
+  };
+  return { create, measured: () => measured };
+}
+
+test('WeChat opens a style introduction in one update, placed as on Web over the choices', (t) => {
+  const { page, wx } = setup(t);
+  const layout = {
+    view: { top: 100, height: 600 },
+    scrollTop: 0,
+    grid: { top: 400, left: 20, width: 340, height: 500 },
+  };
+  const query = settingsLayoutQuery(page, layout);
+  wx.createSelectorQuery = query.create;
+  page.openSettings();
+  assert.equal(query.measured(), 1, 'Opening settings measures the choices once');
+  const updates = [];
+  const setData = page.setData;
+  page.setData = function (value, callback) {
+    updates.push(Object.keys(value).sort());
+    return setData.call(this, value, callback);
+  };
+  const web = () =>
+    profileDetailBounds({
+      region: { top: layout.grid.top - layout.scrollTop, height: layout.grid.height },
+      viewport: { top: layout.view.top, bottom: layout.view.top + layout.view.height },
+      clientHeight: layout.view.height,
+    });
+  const open = (id) => {
+    updates.length = 0;
+    page.viewProfile({ currentTarget: { dataset: { id } } });
+    return copy(page.data.detailBounds);
+  };
+  // The choices sit low: it starts 200px above them to fit, as on Web.
+  let bounds = open('rook');
+  assert.deepEqual(updates, [['detailBounds', 'detailProfile', 'selectedProfile']]);
+  assert.deepEqual({ top: bounds.top, height: bounds.height }, web());
+  assert.deepEqual([bounds.top, bounds.height], [-200, 500]);
+  assert.equal(page.data.selectedProfile, 'rook');
+  // Content above the choices grew after the measurement: the check after
+  // opening moves it once.
+  page.closeProfile();
+  layout.grid.top += 40;
+  bounds = open('vale');
+  assert.deepEqual(updates, [
+    ['detailBounds', 'detailProfile', 'selectedProfile'],
+    ['detailBounds'],
+  ]);
+  assert.deepEqual({ top: bounds.top, height: bounds.height }, web());
+  // Scrolled to the choices: it starts at their top.
+  page.closeProfile();
+  layout.scrollTop = 250;
+  page.settingsScrolled({ detail: { scrollTop: 250 } });
+  bounds = open('owen');
+  assert.equal(updates.length, 1);
+  assert.deepEqual({ top: bounds.top, height: bounds.height }, web());
+  assert.equal(bounds.top, 0);
+  page.closeProfile();
+  assert.deepEqual([page.data.detailProfile, page.data.detailBounds], [null, null]);
+  // The introduction is part of the scrolling settings, over the choices.
+  const order = [
+    'id="settings-scroll"',
+    'class="profile-stage ',
+    'class="profile-grid"',
+    'class="profile-detail is-revealing"',
+    'class="settings-save-row"',
+  ].map((marker) => template.indexOf(marker));
+  assert.ok(
+    order.every((index, i) => index > 0 && (i === 0 || index > order[i - 1])),
+    String(order),
+  );
 });
 
 function cssNumber(selector, property) {

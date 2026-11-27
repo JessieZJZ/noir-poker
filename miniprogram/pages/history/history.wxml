@@ -5,6 +5,7 @@
 />
 <import src="../table/table-templates.wxml" />
 <wxs module="rail" src="../table/raise-rail.wxs" />
+<wxs module="profileDetail" src="../table/profile-detail.wxs" />
 
 <include src="../table/table-surface.wxml" />
 <include src="../table/back-guard.wxml" />
