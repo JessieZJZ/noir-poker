@@ -1,0 +1,8 @@
+<page-container
+  show="{{(tutorialActive || exitGuard || layerGuard) && guardArmed}}"
+  overlay="{{false}}"
+  duration="{{0}}"
+  z-index="{{0}}"
+  custom-style="height: 0; overflow: hidden; background: transparent;"
+  bind:beforeleave="pageBack"
+/>

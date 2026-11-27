@@ -61,7 +61,13 @@ const railStylesheet = readFileSync(
   new URL('../../miniprogram/pages/table/rail.wxss', import.meta.url),
   'utf8',
 );
-const template = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml', 'practice-home.wxml']
+const template = [
+  'table.wxml',
+  'back-guard.wxml',
+  'table-surface.wxml',
+  'table-templates.wxml',
+  'practice-home.wxml',
+]
   .map((name) =>
     readFileSync(new URL('../../miniprogram/pages/table/' + name, import.meta.url), 'utf8'),
   )
@@ -3473,15 +3479,118 @@ test('WeChat Back on an iPhone table asks for a second swipe like Android', (t) 
   assert.equal(page.data.exitGuard, false, 'The next swipe within two seconds leaves');
 });
 
-test('WeChat Back on a saved hand closes its review before leaving the page', (t) => {
-  const { page } = setup(t);
+// The page container as DevTools runs it. A Back the user makes calls
+// pageBack while the container is still shown. Turning its show off while it
+// is shown (inside that handler or at any other time) calls pageBack again,
+// before that setData's callback. A Back with the container hidden leaves.
+function attachContainer(page) {
+  const container = { visible: guarded(page), leaves: 0, transitions: 0 };
+  const setData = page.setData;
+  page.setData = function (value, callback) {
+    const before = guarded(page);
+    setData.call(this, value, () => {
+      const after = guarded(page);
+      if (before && !after && container.visible) {
+        container.transitions++;
+        container.visible = false;
+        page.pageBack({ type: 'beforeleave' });
+      } else if (!before && after) {
+        container.transitions++;
+        container.visible = true;
+      }
+      callback?.();
+    });
+  };
+  container.back = () => {
+    if (!container.visible) return void container.leaves++;
+    const transitions = container.transitions;
+    page.pageBack({ type: 'beforeleave' });
+    // With nothing re-shown during the handler, the container has left.
+    if (container.transitions === transitions) container.visible = false;
+  };
+  return container;
+}
+
+test('both table pages carry the same Back container', () => {
+  assert.match(template, /<page-container[^>]*bind:beforeleave="pageBack"/);
+  const read = (file) =>
+    readFileSync(new URL(`../../miniprogram/pages/${file}`, import.meta.url), 'utf8');
+  assert.match(read('table/table.wxml'), /<include src="\.\/back-guard\.wxml" \/>/);
+  assert.match(read('history/history.wxml'), /<include src="\.\.\/table\/back-guard\.wxml" \/>/);
+  for (const file of ['table/table.wxml', 'history/history.wxml'])
+    assert.doesNotMatch(read(file), /<page-container/, `${file} uses the shared container`);
+});
+
+test('WeChat Back in the tutorial intro leaves it without the exit prompt', (t) => {
+  const { page, toasts } = setup(t);
+  page.onShow();
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  const container = attachContainer(page);
+  const controller = page._controller;
+  let exits = 0;
+  page._controller = {
+    ...controller,
+    exitTutorial: () => (++exits, page.setData({ tutorialActive: false })),
+  };
+  t.after(() => (page._controller = controller));
+  page.setData({ tutorialActive: true });
+  container.back();
+  assert.equal(exits, 1);
+  assert.equal(prompts(), 0, 'Leaving the tutorial is not the first press of an exit');
+  assert.equal(container.visible, true, 'The table guards the next Back');
+  assert.equal(page.data.exitGuard, true);
+  // A guide opened over the tutorial closes alone.
+  page.setData({ tutorialActive: true });
+  page.setOverlay({ guideOpen: true });
+  container.back();
+  assert.deepEqual([page.data.guideOpen, page.data.tutorialActive, exits], [false, true, 1]);
+  container.back();
+  assert.deepEqual([page.data.tutorialActive, exits, prompts()], [false, 2, 0]);
+  // Only the empty table asks.
+  container.back();
+  assert.equal(prompts(), 1);
+  assert.equal(container.leaves, 0);
+});
+
+test('WeChat Back closes one layer per press, and a closing button is not a Back', (t) => {
+  const { page, toasts } = setup(t);
+  page.onShow();
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  const container = attachContainer(page);
+  page.openSettings();
+  page.setData({ detailProfile: { name: 'Mia' } });
+  container.back();
+  assert.deepEqual([page.data.detailProfile, page.data.settingsOpen], [null, true]);
+  container.back();
+  assert.equal(page.data.settingsOpen, false);
+  page.openSettings();
+  page.closeSettings();
+  assert.equal(prompts(), 0);
+  assert.equal(container.visible, true);
+});
+
+test('WeChat Back on a saved hand closes its review and stays on the hand', (t) => {
+  const { page, toasts } = setup(t);
   page.setData({ historyReadOnly: true, exitGuard: false });
-  assert.equal(guarded(page), false, 'With nothing open, Back leaves the saved hand');
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  const container = attachContainer(page);
+  assert.equal(container.visible, false, 'With nothing open, Back leaves the saved hand');
   page.setOverlay({ reviewOpen: true });
-  assert.equal(guarded(page), true);
-  page.pageBack();
+  assert.equal(container.visible, true);
+  container.back();
   assert.equal(page.data.reviewOpen, false);
-  assert.equal(guarded(page), false);
+  assert.equal(container.leaves, 0, 'The saved hand stays');
+  container.back();
+  assert.equal(container.leaves, 1, 'The next Back returns to the records list');
+  // Closing the review with its button hides the container without a Back.
+  page.setOverlay({ reviewOpen: true });
+  page.setOverlay({ potOpen: true });
+  container.back();
+  assert.deepEqual([page.data.potOpen, page.data.reviewOpen], [false, true]);
+  page.closeReview();
+  assert.equal(page.data.reviewOpen, false);
+  assert.equal(container.visible, false);
+  assert.equal(prompts(), 0, 'A saved hand never asks to exit');
 });
 
 test('WeChat Back on the live table asks for a second press before leaving', (t) => {

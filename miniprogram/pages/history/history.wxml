@@ -7,3 +7,4 @@
 <wxs module="rail" src="../table/raise-rail.wxs" />
 
 <include src="../table/table-surface.wxml" />
+<include src="../table/back-guard.wxml" />

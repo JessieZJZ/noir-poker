@@ -1393,11 +1393,19 @@ module.exports = {
     if (!this.data.exitGuard || !this.data.containedScroll)
       this.setData({ exitGuard: true, containedScroll: true });
   },
+  // Mirrors the container's show in back-guard.wxml.
+  backGuardShown(data = this.data) {
+    return Boolean((data.tutorialActive || data.exitGuard || data.layerGuard) && data.guardArmed);
+  },
   // Back from the page-container closes the top layer, innermost first, as
   // Android Back and the browser Back do on the Web. With no layer open the
   // tutorial closes; otherwise the first press asks for a second one within
   // EXIT_CONFIRM_MS before the mini program may leave.
   pageBack() {
+    // The container also fires beforeleave when the page itself turns its
+    // show off: the re-arm below, a layer closed by its own button, the
+    // tutorial ending or the exit prompt. Those are not a Back.
+    if (this._rearmingGuard || !this.backGuardShown()) return;
     // One Back, one step: a closed layer leaves the tutorial running.
     if (this.closeTopLayer()) {
       this.rearmBackGuard();
@@ -1435,7 +1443,12 @@ module.exports = {
     return true;
   },
   rearmBackGuard() {
-    this.setData({ guardArmed: false }, () => this.setData({ guardArmed: true }));
+    this._rearmingGuard = true;
+    this.setData({ guardArmed: false }, () =>
+      this.setData({ guardArmed: true }, () => {
+        this._rearmingGuard = false;
+      }),
+    );
   },
   tutorialBack() {
     this.call('exitTutorial');
