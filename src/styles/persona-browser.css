@@ -75,6 +75,9 @@
     background: #13282a;
     box-shadow: 0 8px 28px #0005;
   }
+  .native-ios .profile-stage > .profile-detail {
+    overscroll-behavior-y: none;
+  }
   .profile-stage .profile-detail-heading {
     position: sticky;
     z-index: 1;

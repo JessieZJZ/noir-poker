@@ -139,13 +139,13 @@ try {
   report.checks.push(
     'no snapshots or unchanged polling transfers; individual patches below 256 KiB',
   );
-  const title = await rect('.records-nav');
+  const title = await rect('.records-heading');
   const firstSession = await rect('.records-session');
   // The browsing note is gone; the first game follows the title directly.
   const titleGap = firstSession.top - title.top - title.height;
   assert.ok(titleGap >= 8 && titleGap <= 24, `Title to first game: ${titleGap}px`);
-  // No return button: records rely on the native Back button or gesture.
   assert.equal(await page.$('#records-back'), null);
+  assert.ok(await page.$('.records-nav .tool-brand'));
   report.recordsHeader = { title };
   await mini.screenshot({ path: path.join(output, 'records-header.png') });
   // Games start expanded; rows exist only near the viewport, so scroll there.

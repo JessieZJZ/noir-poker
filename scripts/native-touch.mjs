@@ -30,20 +30,24 @@ export async function performNativeTouch(
   duration,
   from = 0.5,
   to = null,
-  { tap = false } = {},
+  { tap = false, vertical = false, within = null } = {},
 ) {
   const target = await evaluate(
-    (selector, from, to) => {
+    (selector, from, to, vertical, within) => {
       const element = document.querySelector(selector),
         r = element.getBoundingClientRect(),
-        x = r.x + r.width * from,
-        y = r.y + r.height / 2,
+        clip = within ? document.querySelector(within).getBoundingClientRect() : r,
+        top = Math.max(0, r.top, clip.top),
+        bottom = Math.min(innerHeight, r.bottom, clip.bottom),
+        x = r.x + r.width * (vertical ? 0.5 : from),
+        y = vertical ? top + (bottom - top) * from : r.y + r.height / 2,
         hit = document.elementFromPoint(x, y);
       if (!hit || !element.contains(hit)) throw Error('Native touch target is covered');
       return {
         x,
         y,
-        endX: to === null ? null : r.x + r.width * to,
+        endX: to === null || vertical ? null : r.x + r.width * to,
+        endY: to === null || !vertical ? null : top + (bottom - top) * to,
         width: innerWidth,
         height: innerHeight,
       };
@@ -51,6 +55,8 @@ export async function performNativeTouch(
     selector,
     from,
     to,
+    vertical,
+    within,
   );
   await command('POST', '/context', { name: 'NATIVE_APP' });
   try {
@@ -98,14 +104,18 @@ export async function performNativeTouch(
           actions: [
             { type: 'pointerMove', duration: 0, origin: 'viewport', ...point },
             { type: 'pointerDown', button: 0 },
-            ...(target.endX === null
+            ...(target.endX == null && target.endY == null
               ? [{ type: 'pause', duration }]
               : [
                   {
                     type: 'pointerMove',
                     duration,
                     origin: 'viewport',
-                    ...nativePoint({ ...target, x: target.endX }, target, frame),
+                    ...nativePoint(
+                      { x: target.endX ?? target.x, y: target.endY ?? target.y },
+                      target,
+                      frame,
+                    ),
                   },
                 ]),
             { type: 'pointerUp', button: 0 },

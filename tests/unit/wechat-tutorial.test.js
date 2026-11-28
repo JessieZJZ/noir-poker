@@ -4,7 +4,7 @@ import { readFileSync } from 'node:fs';
 import { createWechatController } from '../../src/platform/wechat-controller.js';
 import { act, legalActions } from '../../src/engine/poker.js';
 
-function setup() {
+function setup(loadTutorial = () => import('../../src/engine/tutorial.js')) {
   const views = [],
     timers = new Map(),
     sounds = [],
@@ -12,7 +12,7 @@ function setup() {
   let nextTimer = 1;
   const store = new Map();
   const controller = createWechatController({
-    loadTutorial: () => import('../../src/engine/tutorial.js'),
+    loadTutorial,
     publish: (view) => views.push(view),
     storage: {
       getItem: (key) => store.get(key) ?? null,
@@ -210,6 +210,24 @@ test('a missing tutorial subpackage leaves the live table playable and can be re
   assert.equal(await controller.startTutorial(), true);
   assert.equal(attempts, 2);
   assert.ok(views.at(-1).tutorial.dialog);
+});
+
+test('returning to the table cancels a pending tutorial load without cancelling a later open', async () => {
+  const lessons = await import('../../src/engine/tutorial.js');
+  const loads = [];
+  const { controller, last } = setup(() => new Promise((resolve) => loads.push(resolve)));
+  controller.start();
+  const live = controller.getGame();
+  const first = controller.startTutorial();
+  controller.exitTutorial();
+  const second = controller.startTutorial();
+  loads[0](lessons);
+  assert.equal(await first, false);
+  assert.equal(last().tutorial, null);
+  assert.equal(controller.getGame(), live);
+  loads[1](lessons);
+  assert.equal(await second, true);
+  assert.equal(last().tutorial.stage, 'intro');
 });
 
 test('the mini-program panel follows Web: short phones, a side column on landscape tablets', () => {

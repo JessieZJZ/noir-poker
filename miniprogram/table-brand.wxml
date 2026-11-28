@@ -1,0 +1,19 @@
+<template name="table-brand">
+  <view
+    class="{{tableNav ? 'brand' : 'tool-brand'}}"
+    bindtap="returnToGame"
+    aria-role="button"
+    aria-label="回到牌桌"
+  >
+    <image
+      class="{{tableNav ? 'app-icon' : 'tool-brand-icon'}}"
+      src="/assets/app-icon.png"
+      mode="aspectFit"
+      aria-hidden="true"
+    />
+    <text>NOIR</text>
+    <text wx:if="{{!abbreviated}}" class="{{tableNav ? 'brand-sub' : 'tool-brand-sub'}}"
+      >POKER</text
+    >
+  </view>
+</template>

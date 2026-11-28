@@ -483,14 +483,9 @@ try {
   await page.waitFor(150);
   assert.ok(await page.$('#resource-guide'));
   assert.ok(await page.$('#resource-records'));
-  report.menuLayers = {
-    nav: Number(await (await waitElement('.nav')).style('z-index')),
-    dismiss: Number(await (await waitElement('.resource-dismiss')).style('z-index')),
-  };
-  assert.ok(
-    report.menuLayers.nav > report.menuLayers.dismiss,
-    'The whole menu stacking context clears the dismiss mask',
-  );
+  await waitElement('.resource-popover > .resource-dismiss');
+  await waitElement('.resource-popover > .resource-menu');
+  assert.equal(await page.$('.screen .resource-menu'), null);
   await capture('02-resources-menu');
   await tap('#resource-records');
   await waitRoute('pages/records/records');
@@ -593,7 +588,6 @@ try {
   assert.equal((await page.$$('.history-nav-title')).length, 0);
   assert.equal((await page.$$('.history-replay-tag')).length, 0);
   assert.equal((await page.$$('#history-back')).length, 0);
-  // No return button: the saved hand relies on the native Back button or gesture.
   assert.equal((await page.$$('#history-return-game')).length, 0);
   assert.ok(await page.$('.activity-panel'));
   await capture('04-historical-settlement');
@@ -639,6 +633,11 @@ try {
     name: 'separate-historical-page-readonly-review-does-not-mutate-live-or-archive',
   });
   await mini.evaluate(() => getCurrentPages().at(-1).closeReview());
+  await wait(
+    'Historical review sheet unmounted',
+    () => page.$('.review-sheet'),
+    (sheet) => !sheet,
+  );
   await mini.navigateBack();
   await waitRoute('pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
@@ -651,23 +650,47 @@ try {
     await mini.navigateBack();
     await waitRoute('pages/records/records');
   }
-  // Records rely on the native Back button or gesture.
   assert.equal(await page.$('#records-back'), null);
-  await mini.navigateBack();
+  const rememberPages = () =>
+    mini.evaluate(() => {
+      getApp().__brandReturnPages = getCurrentPages().slice();
+      return true;
+    });
+  const assertUnloaded = async (secondaryPages) =>
+    assert.equal(
+      await mini.evaluate((count) => {
+        const before = getApp().__brandReturnPages;
+        delete getApp().__brandReturnPages;
+        return (
+          before.length === count + 1 &&
+          getCurrentPages()[0] === before[0] &&
+          before.slice(1).every((old) => old._destroyed)
+        );
+      }, secondaryPages),
+      true,
+    );
+  await rememberPages();
+  await tap('.records-nav .tool-brand');
   await waitRoute('pages/table/table');
   await assertStack('pages/table/table');
+  await assertUnloaded(1);
   await tap('#resource-menu-button');
   await tap('#resource-records');
   await waitRoute('pages/records/records');
   await tap(`.hand-item[data-id="${archived.id}"]`);
   await waitRoute('pages/history/history');
-  // Native Back unwinds the saved hand, then the list, to the live table.
-  await mini.navigateBack();
-  await waitRoute('pages/records/records');
-  await mini.navigateBack();
+  await wait(
+    'Historical header ready',
+    () => page.data(),
+    (view) => view.tableReady,
+  );
+  await rememberPages();
+  await tap('.nav .brand');
   await waitRoute('pages/table/table');
   await assertStack('pages/table/table');
-  report.checks.push({ name: 'native-back-and-return-game-preserve-a-bounded-page-stack' });
+  await assertUnloaded(2);
+  assert.deepEqual(await readLive(), liveBeforeReview);
+  report.checks.push({ name: 'brand-unloads-secondary-pages-and-retains-the-live-table' });
   await mini.evaluate(() => getApp().noirController.nextHand());
   const beforeLeave = await readLive();
   assert.equal(beforeLeave.hand, 3);
@@ -699,7 +722,7 @@ try {
     hand: resumed.hand,
     bankrolls,
   });
-  await waitHero();
+  report.stage = 'unfinished-records-disabled-gate';
   await tap('#resource-menu-button');
   await tap('#resource-records');
   await waitRoute('pages/records/records');
@@ -709,7 +732,6 @@ try {
   assert.equal((await mini.currentPage()).path, 'pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
   await capture('07-full-width-unfinished-records');
-  // Records rely on the native Back button or gesture.
   assert.equal(await page.$('#records-back'), null);
   await mini.navigateBack();
   await waitRoute('pages/table/table');

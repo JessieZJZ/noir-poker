@@ -780,6 +780,28 @@ dialog::backdrop {
   justify-content: space-between;
   align-items: center;
 }
+.dialog-brand {
+  flex: none;
+  gap: 6px;
+  min-height: 32px;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.dialog-brand .brand-mark img {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+}
+.dialog-brand .brand-light {
+  margin-left: 4px;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.dialog-brand + .eyebrow {
+  margin-inline: auto;
+  padding-inline: 6px;
+  text-align: center;
+}
 .dialog-header .icon-button {
   font-size: 25px;
   width: 32px;

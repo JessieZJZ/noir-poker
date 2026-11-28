@@ -1,4 +1,5 @@
 @import '../../shared/ui/game-effects.wxss';
+@import '../../table-brand.wxss';
 /* Mirrors the Web records list at phone width (src/styles/game-records.css). */
 page {
   background: #0b1017;
@@ -16,10 +17,13 @@ page {
   padding: 0 12px;
 }
 .records-nav {
+  position: absolute;
+  left: 12px;
+  height: 36px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+}
+.records-heading {
   margin-bottom: 16px;
   font-size: 19px;
   font-weight: 600;
@@ -237,6 +241,9 @@ page {
     padding-inline: 20px;
   }
   .records-nav {
+    left: 20px;
+  }
+  .records-heading {
     font-size: 24px;
   }
   .session-number,

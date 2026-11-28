@@ -1,6 +1,7 @@
 @import '../../shared/ui/hero-turn.wxss';
 @import '../../shared/ui/game-effects.wxss';
 @import '../../shared/ui/emotion-effects.wxss';
+@import '../../table-brand.wxss';
 .screen {
   display: flex;
   flex-direction: column;
@@ -1490,13 +1491,21 @@
   border-radius: 7px;
 }
 
+.resource-popover {
+  position: fixed;
+  inset: 0;
+  z-index: 26;
+}
+.resource-dismiss {
+  position: absolute;
+  inset: 0;
+}
 .resource-menu {
   position: absolute;
-  top: 46px;
-  right: 0;
+  z-index: 1;
+  box-sizing: border-box;
   width: 140px;
   padding: 5px;
-  z-index: 72;
   border: 1px solid #31434e;
   border-radius: 12px;
   background: #14212a;
@@ -1511,18 +1520,9 @@
   background: transparent;
   font-size: 14px;
 }
-.resource-dismiss {
-  position: fixed;
-  inset: 0;
-  z-index: 68;
-}
-.nav.resource-menu-active {
-  z-index: 70;
-}
 .nav-actions {
   position: relative;
   left: 6px;
-  z-index: 70;
   gap: 4px;
 }
 .guide-button {

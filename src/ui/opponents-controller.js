@@ -1,5 +1,6 @@
 import { COMPACT_PLAY_QUERY } from './play-geometry.js';
 import { profileDetailBounds } from './profile-layout.js';
+import { chainProfileTouchScroll } from './profile-touch-scroll.js';
 import { setLocalizedHTML, setLocalizedText } from '../i18n/index.js';
 import {
   BOT_PROFILES,
@@ -212,6 +213,8 @@ export function createOpponentsController({ getGame, getCount, getSettings, onSa
   panel.onclick = (event) => {
     if (event.target.closest('[data-close-profile-detail]')) closeDetail();
   };
+  if (document.documentElement.classList.contains('native-ios'))
+    chainProfileTouchScroll(panel, body, () => detailOpen);
   dialog.addEventListener('keydown', (event) => {
     if (event.key !== 'Escape' || !detailOpen) return;
     event.preventDefault();

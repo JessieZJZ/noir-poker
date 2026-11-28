@@ -450,6 +450,50 @@ test('scrolling past the end of a style introduction moves on to the settings', 
   await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeCloseTo(before, 0);
 });
 
+test('iOS detail touch movement forwards both scroll edges to the outer settings', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.addInitScript(() => {
+    if (document.documentElement) document.documentElement.classList.add('native-ios');
+    else
+      new MutationObserver((_, observer) => {
+        if (!document.documentElement) return;
+        document.documentElement.classList.add('native-ios');
+        observer.disconnect();
+      }).observe(document, { childList: true });
+  });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+  await openSettings(page);
+  await page.locator('[data-profile-preview="owen"]').click();
+  const detail = page.locator('#profile-detail');
+  await expect(detail).toHaveCSS('overscroll-behavior-y', 'none');
+  const offsets = await detail.evaluate((panel) => {
+    const body = panel.closest('.opponents-body');
+    const swipe = (from, to) => {
+      for (const [type, y] of [
+        ['touchstart', from],
+        ['touchmove', to],
+        ['touchend', null],
+      ]) {
+        const touches =
+          y === null ? [] : [new Touch({ identifier: 1, target: panel, clientX: 100, clientY: y })];
+        panel.dispatchEvent(new TouchEvent(type, { touches, cancelable: true, bubbles: true }));
+      }
+    };
+    const before = body.scrollTop;
+    panel.scrollTop = panel.scrollHeight;
+    swipe(200, 140);
+    const down = body.scrollTop;
+    panel.scrollTop = 0;
+    swipe(140, 200);
+    return { before, down, up: body.scrollTop };
+  });
+  expect(offsets.down).toBe(offsets.before + 60);
+  expect(offsets.up).toBe(offsets.before);
+});
+
 test('reduced motion preserves usable details and Escape closes only the detail before the settings dialog', async ({
   page,
 }) => {

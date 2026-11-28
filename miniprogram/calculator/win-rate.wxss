@@ -1,3 +1,4 @@
+@import '../table-brand.wxss';
 /* Values mirror src/styles/win-rate.css so the page matches Web and the apps. */
 page {
   /* Keeps the 640px content column Web uses on tablets. */
@@ -38,8 +39,13 @@ page {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: 8px;
   font-size: 19px;
   font-weight: 600;
+}
+.win-rate-title {
+  text-align: center;
+  line-height: 1.2;
 }
 .win-rate-close {
   position: relative;

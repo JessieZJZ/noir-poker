@@ -2074,8 +2074,20 @@ test('WeChat record navigation keeps live bot progress and actual app background
   assert.ok(jobs.size > 0);
 });
 
-test('WeChat combined resources menu keeps both choices and rotates only while closed', (t) => {
-  const { page, jobs } = setup(t);
+test('WeChat resources share a fixed layer and the menu label rotates only while closed', (t) => {
+  const { page, jobs, wx } = setup(t);
+  let measure;
+  wx.createSelectorQuery = () => ({
+    select(selector) {
+      assert.equal(selector, '#resource-menu-button');
+      return this;
+    },
+    boundingClientRect(callback) {
+      measure = callback;
+      return this;
+    },
+    exec() {},
+  });
   page._controller.hide();
   page.startResourceRotation();
   const tick = () => {
@@ -2096,6 +2108,14 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   }
   assert.deepEqual(seen, ['新手引导', '玩法指南', '胜率计算器', '对局记录']);
   page.toggleResourceMenu();
+  page.toggleResourceMenu();
+  measure({ left: 360, bottom: 114 });
+  assert.equal(page.data.resourceMenuOpen, false, 'A cancelled measurement must not open the menu');
+  page.toggleResourceMenu();
+  measure({ left: 360, bottom: 114 });
+  assert.equal(page.data.resourceMenuOpen, true);
+  assert.equal(page.data.resourceMenuLeft, page.data.windowWidth - 140 - 8);
+  assert.equal(page.data.resourceMenuTop, 116);
   assert.equal(page.data.resourceRolling, false);
   tick();
   assert.equal(page.data.resourceLabel, '对局记录', 'An open menu stops the rotation');
@@ -2109,11 +2129,11 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   assert.equal(page.data.guideOpen, true);
   assert.match(template, /id="resource-guide"/);
   assert.match(template, /id="resource-records"/);
-  assert.match(template, /resourceMenuOpen \? 'resource-menu-active' : ''/);
-  assert.ok(
-    cssNumber('.nav.resource-menu-active', 'z-index') > cssNumber('.resource-dismiss', 'z-index'),
-    'The entire sticky header must sit above the dismiss mask; child z-index cannot escape its parent',
+  assert.match(
+    template,
+    /class="resource-popover">\s*<view class="resource-dismiss"[^>]*\/>\s*<view class="resource-menu"/,
   );
+  assert.match(stylesheet, /\.resource-popover \{\s*position: fixed;/);
   assert.match(
     stylesheet,
     /@keyframes resource-label-in\s*\{\s*from\s*\{\s*transform: translateY\(-100%\)/,
@@ -2590,7 +2610,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   );
 });
 
-test('WeChat history uses a compact review dock and records rely on native Back', () => {
+test('WeChat history uses a compact review dock and records display the shared table brand', () => {
   assert.match(
     template,
     /tableHeight \+ tableHeaderHeight \+ tutorialCoachHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)/,
@@ -2605,8 +2625,9 @@ test('WeChat history uses a compact review dock and records rely on native Back'
     new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
     'utf8',
   );
-  // System Back or the edge gesture returns from records; no return button.
-  assert.match(markup, /<view class="records-nav"><text>对局记录<\/text><\/view>/);
+  assert.match(markup, /class="records-nav"[^>]*>\s*<template is="table-brand"/);
+  assert.match(markup, /<view class="records-heading"><text>对局记录<\/text><\/view>/);
+  assert.match(template, /class="nav [^>]*>\s*<template\s+is="table-brand"/);
   assert.doesNotMatch(markup, /records-back|返回游戏/);
   assert.doesNotMatch(markup, /每一局的练习足迹/);
   assert.doesNotMatch(css, /\.records-nav button/);
@@ -3384,7 +3405,12 @@ test('WeChat practice home uses the real local routes and starts only one hand',
     assert.match(home, new RegExp(`id="${id}"[^>]*bindtap="${handler}"`));
   assert.match(home, /单机牌桌 · 开始训练/);
   assert.match(home, /无需登录 · AI对战/);
-  assert.match(template, /src="\/assets\/app-icon\.png"/);
+  const brand = readFileSync(
+    new URL('../../miniprogram/table-brand.wxml', import.meta.url),
+    'utf8',
+  );
+  assert.match(brand, /src="\/assets\/app-icon\.png"/);
+  assert.match(brand, /bindtap="returnToGame"/);
   assert.doesNotMatch(home, /筹码|盲注|买入|余额/);
   const { page, scrolls } = setup(t, { waiting: true });
   assert.equal(page._controller.getGame().hand, 0);

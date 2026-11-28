@@ -68,6 +68,25 @@ test('closing a layer itself drops its entry without calling its Back handler', 
   assert.deepEqual(window.history.state, { noirRecords: { page: 'game' } });
 });
 
+test('return to the live table waits for dialog layers and their history traversal', async () => {
+  const { window, flush } = fakeWindow({ noirRecords: { page: 'hand' } });
+  const layers = createHistoryLayers(window);
+  const guide = layers.register('guide');
+  const settings = layers.register('settings');
+  guide.open();
+  settings.open();
+  let returned = false;
+  const ready = layers.whenClosed().then(() => (returned = true));
+  settings.close();
+  guide.close();
+  await Promise.resolve();
+  assert.equal(returned, false);
+  flush();
+  await ready;
+  assert.equal(returned, true);
+  assert.deepEqual(window.history.state, { noirRecords: { page: 'hand' } });
+});
+
 test('a layer opened over another takes over the one entry; the old close cannot pop it', () => {
   const { window, flush } = fakeWindow();
   const closed = [];

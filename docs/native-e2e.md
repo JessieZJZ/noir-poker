@@ -171,4 +171,6 @@ Web/iOS/Android 的 13 种牌点改用固定 Manrope 700 矢量轮廓，保留�
 
 失败报告位于 `.artifacts/card-native/android/`、`android-final/`、`android-api35/`、`android-api35-final/`、`ios/`、`ios-final/`、`ios-verified/`；启动和驱动日志为 `.artifacts/card-android-*.log`、`card-native-*.log`。整个验证使用独立测试设备，未清除用户正在使用的 Android 模拟器牌局或其他任务设备的数据。
 
-CI 的 iOS 六项安装冒烟场景分为 entry、interaction 两组，各自使用独立模拟器与完整的原超时上限；`ios` 汇总检查要求两组全部通过。分组不缩减场景或降低断言。
+CI 的 iOS 安装冒烟场景分为 entry、interaction 两组，各自使用独立模拟器；`ios` 汇总检查要求两组全部通过。iOS 和 Android 安装冒烟都通过实际点击品牌区验证新手引导、记录列表及胜率计算器返回原牌局。
+
+`ios-profile-touch-scroll-handoff` 在安装后的 iOS WebView 内用原生拖动验证风格详情先自行滚动，然后用同一次拖动跨过上下边界，继续滚动设置页。报告保留详情与设置的滚动位置。

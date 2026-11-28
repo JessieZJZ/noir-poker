@@ -1,4 +1,5 @@
 <import src="./table-templates.wxml" />
+<import src="../../table-brand.wxml" />
 <view class="safe-chrome top-chrome" style="height: {{topInset + 36}}px;" aria-hidden="true" />
 <view class="safe-chrome bottom-chrome" style="height: {{bottomInset}}px;" aria-hidden="true" />
 
@@ -8,18 +9,13 @@
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'height: ' + windowHeight + 'px;' : ''}}"
 >
   <view
-    class="nav {{waitingForSeat ? 'practice-home-nav' : ''}} {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
+    class="nav {{waitingForSeat ? 'practice-home-nav' : ''}} {{compactNav ? 'nav-compact' : ''}}"
     style="top: {{topInset + 36}}px;"
   >
-    <view class="brand"
-      ><image
-        class="app-icon"
-        src="/assets/app-icon.png"
-        mode="aspectFit"
-        aria-hidden="true"
-      /><text>NOIR</text
-      ><text wx:if="{{waitingForSeat || !compactNav}}" class="brand-sub">POKER</text></view
-    >
+    <template
+      is="table-brand"
+      data="{{tableNav: true, abbreviated: !waitingForSeat && compactNav}}"
+    />
     <view wx:if="{{!historyReadOnly && !tutorialPlaying}}" class="nav-actions"
       ><button
         hover-class="none"
@@ -41,13 +37,7 @@
       >
         <view class="gear-icon" /><text>设置</text>
       </button>
-      <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
-        <button id="resource-records" bindtap="openRecords">对局记录</button>
-        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
-        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
-        <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
-      </view></view
-    >
+    </view>
   </view>
   <block wx:if="{{waitingForSeat && !historyReadOnly}}">
     <include src="./practice-home.wxml" />
@@ -596,7 +586,15 @@
     ><template is="trophy" /></view
   ><text class="trophy-caption">{{ceremony.caption}}</text></view
 >
-<view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />
+<view wx:if="{{resourceMenuOpen}}" class="resource-popover">
+  <view class="resource-dismiss" bindtap="closeResourceMenu" />
+  <view class="resource-menu" style="left: {{resourceMenuLeft}}px; top: {{resourceMenuTop}}px;">
+    <button id="resource-records" bindtap="openRecords">对局记录</button>
+    <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
+    <button id="resource-guide" bindtap="openGuide">玩法指南</button>
+    <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
+  </view>
+</view>
 
 <view
   wx:if="{{settingsOpen}}"
@@ -604,7 +602,7 @@
   style="top: 0; bottom: 0; padding-top: {{52 + topInset}}px; padding-bottom: {{16 + bottomInset}}px;"
 >
   <view class="modal-header"
-    ><text class="eyebrow">SETTINGS</text
+    ><template is="table-brand" /><text class="eyebrow">SETTINGS</text
     ><button hover-class="none" class="close" bindtap="closeSettings" aria-label="关闭设置">
       <view class="close-icon" /></button
   ></view>
@@ -950,7 +948,7 @@
   style="top: {{topInset + (windowHeight - topInset - bottomInset) / 2}}px; max-height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
   <view class="dialog-heading"
-    ><text class="eyebrow">{{tutorial.dialog.eyebrow}}</text
+    ><template is="table-brand" /><text class="eyebrow">{{tutorial.dialog.eyebrow}}</text
     ><button hover-class="none" class="close" bindtap="exitTutorial" aria-label="退出新手引导">
       <view class="close-icon" /></button
   ></view>
@@ -986,7 +984,7 @@
   style="top: {{topInset + (windowHeight - topInset - bottomInset) * 0.075}}px; height: {{(windowHeight - topInset - bottomInset) * 0.85}}px;"
 >
   <view class="dialog-heading guide-heading"
-    ><text class="eyebrow">QUICK GUIDE</text
+    ><template is="table-brand" /><text class="eyebrow">QUICK GUIDE</text
     ><button hover-class="none" class="close" bindtap="closeGuide" aria-label="关闭玩法指南">
       <view class="close-icon" /></button
   ></view>
@@ -1006,7 +1004,7 @@
   <scroll-view scroll-y class="sheet-scroll"
     ><view class="sheet-body">
       <view class="dialog-heading"
-        ><text class="eyebrow">HAND REVIEW</text
+        ><template is="table-brand" /><text class="eyebrow">HAND REVIEW</text
         ><button hover-class="none" class="close" bindtap="closeReview" aria-label="关闭复盘">
           <view class="close-icon" /></button
       ></view>
@@ -1252,7 +1250,7 @@
   <scroll-view scroll-y class="sheet-scroll"
     ><view class="sheet-body">
       <view class="dialog-heading"
-        ><text class="eyebrow">POT BREAKDOWN</text
+        ><template is="table-brand" /><text class="eyebrow">POT BREAKDOWN</text
         ><button hover-class="none" class="close" bindtap="closePots" aria-label="关闭底池明细">
           <view class="close-icon" /></button
       ></view>
@@ -1316,7 +1314,7 @@
 >
   <view class="sheet-body"
     ><view class="dialog-heading"
-      ><text class="eyebrow">FRESH START</text
+      ><template is="table-brand" /><text class="eyebrow">FRESH START</text
       ><button hover-class="none" class="close" bindtap="closeReset" aria-label="关闭重新开局">
         <view class="close-icon" /></button></view
     ><text class="dialog-title">重新开始练习？</text

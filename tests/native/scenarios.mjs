@@ -353,14 +353,17 @@ export async function nativeScenarios(app) {
   if (selectedScenarios?.some((name) => !name))
     throw Error('NOIR_NATIVE_SCENARIOS must contain nonempty scenario names');
   const seenScenarios = new Set();
-  const check = async (name, run) => {
+  const check = async (name, run, platform) => {
     seenScenarios.add(name);
-    if (selectedScenarios && !selectedScenarios.includes(name)) {
+    const selected = !selectedScenarios || selectedScenarios.includes(name);
+    if (!selected || (platform && app.platform !== platform)) {
       const entry = {
         name,
         status: 'skipped',
         elapsedMs: 0,
-        reason: 'Not selected by the test-only NOIR_NATIVE_SCENARIOS filter',
+        reason: selected
+          ? `Requires the native ${platform} app`
+          : 'Not selected by the test-only NOIR_NATIVE_SCENARIOS filter',
       };
       result.push(entry);
       app.record(entry);
@@ -954,7 +957,7 @@ export async function nativeScenarios(app) {
       chipUnit: 100,
     });
     const artwork = await app.evaluate(() => {
-      const image = document.querySelector('.brand-mark img');
+      const image = document.querySelector('.header .brand-mark img');
       return {
         src: image.getAttribute('src'),
         loaded: image.complete && image.naturalWidth > 0,
@@ -4684,6 +4687,120 @@ export async function nativeScenarios(app) {
       nativeBack: { reviewBeforeBack, reviewBack, returnGameBack },
     };
   });
+  await check('table-brand-returns-to-live-practice', async () => {
+    const live = await app.waitFor(
+      async () => {
+        const state = await app.state();
+        return state.phase === 'done' || (state.actor === '你' && state.entryState === 'playing')
+          ? state
+          : null;
+      },
+      90000,
+      'The live hand must wait for the hero or settle',
+    );
+    const recordCount = await app.evaluate(() => window.noir.getRecords().length);
+    const openTool = async (menu, dialog) => {
+      await app.click('#rules-button');
+      await app.click(menu);
+      await app.waitFor(() => app.visible(dialog), 10000, `Open ${dialog}`);
+    };
+    await openTool('#tutorial-menu-item', '#tutorial-dialog');
+    await app.click('#tutorial-dialog .brand');
+    await app.waitFor(async () => (await app.state()).tutorial === null, 10000, 'Exit intro');
+    await openTool('#tutorial-menu-item', '#tutorial-dialog');
+    await app.click('#tutorial-dialog-primary');
+    await app.waitFor(() => app.visible('#tutorial-coach'), 10000, 'Open practice hand');
+    await app.screenshot('table-brand-tutorial-practice');
+    await app.click('.header .brand');
+    await app.waitFor(async () => (await app.state()).tutorial === null, 10000, 'Exit practice');
+    await openTool('#records-menu-item', '#records-page');
+    await app.click('.header .brand');
+    await app.waitFor(
+      () => app.visible('main.main'),
+      10000,
+      'Return from records to the live game',
+    );
+    await openTool('#win-rate-menu-item', '#win-rate-dialog');
+    await app.click('#win-rate-dialog .brand');
+    await app.waitFor(
+      async () => !(await app.visible('#win-rate-dialog')),
+      10000,
+      'Exit calculator',
+    );
+    const resumed = await app.state();
+    for (const field of ['sessionNumber', 'hand', 'phase', 'hole', 'pot', 'players'])
+      assert.deepEqual(resumed[field], live[field], `Retain live ${field}`);
+    assert.equal(await app.evaluate(() => window.noir.getRecords().length), recordCount);
+    return { hand: resumed.hand, session: resumed.sessionNumber };
+  });
+  await check(
+    'ios-profile-touch-scroll-handoff',
+    async () => {
+      await app.click('#opponents-button');
+      await app.click('[data-profile-preview="owen"]');
+      const panel = '#profile-detail';
+      const within = '.opponents-body';
+      const drag = (from, to) => app.nativeDrag(panel, from, to, { vertical: true, within });
+      const offsets = () =>
+        app.evaluate(() => {
+          const detail = document.querySelector('#profile-detail');
+          const settings = document.querySelector('.opponents-body');
+          return {
+            detail: detail.scrollTop,
+            limit: detail.scrollHeight - detail.clientHeight,
+            settings: settings.scrollTop,
+          };
+        });
+      const start = await offsets();
+      assert.ok(start.limit > 140, 'The profile must have enough content to scroll independently');
+      await drag(0.7, 0.5);
+      const inside = await app.waitFor(
+        async () => {
+          const read = await offsets();
+          return read.detail > start.detail + 10 ? read : null;
+        },
+        10000,
+        'The profile consumes vertical swipes inside its content',
+      );
+      assert.ok(Math.abs(inside.settings - start.settings) <= 1);
+
+      const results = {};
+      for (const direction of ['bottom', 'top']) {
+        await app.evaluate((direction) => {
+          const detail = document.querySelector('#profile-detail');
+          detail.scrollTop =
+            direction === 'bottom' ? detail.scrollHeight - detail.clientHeight - 12 : 12;
+        }, direction);
+        const before = await offsets();
+        const down = direction === 'bottom';
+        await drag(down ? 0.75 : 0.25, down ? 0.25 : 0.75);
+        results[direction] = await app.waitFor(
+          async () => {
+            const after = await offsets();
+            return (after.settings - before.settings) * (down ? 1 : -1) > 12
+              ? { before, after }
+              : null;
+          },
+          10000,
+          `A single touch drag across the ${direction} scroll boundary moves the settings`,
+        );
+      }
+      await app.click('[data-close-profile-detail]');
+      await app.waitFor(
+        async () => Math.abs((await offsets()).settings - start.settings) <= 1,
+        10000,
+        'Closing the profile restores the original settings position',
+      );
+      await app.click('#opponents-dialog .close-dialog');
+      await app.waitFor(
+        async () => !(await app.visible('#opponents-dialog')),
+        10000,
+        'Close settings',
+      );
+      return { start, inside, ...results };
+    },
+    'ios',
+  );
   await check('beginner-tutorial-guided-hand', async () => {
     const before = await app.state();
     const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));

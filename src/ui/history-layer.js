@@ -7,6 +7,7 @@
 export function createHistoryLayers(window) {
   const stack = [];
   const handlers = new Map();
+  const waiting = [];
   // Our own history.back() calls still to arrive as popstate.
   let pendingBacks = 0;
   const marked = () => typeof window.history.state?.noirLayer === 'string';
@@ -26,9 +27,12 @@ export function createHistoryLayers(window) {
     window.history.scrollRestoration = 'manual';
   };
   const releaseScroll = () => {
-    if (restoration === null || stack.length || pendingBacks) return;
-    window.history.scrollRestoration = restoration;
-    restoration = null;
+    if (stack.length || pendingBacks) return;
+    if (restoration !== null) {
+      window.history.scrollRestoration = restoration;
+      restoration = null;
+    }
+    waiting.splice(0).forEach((resolve) => resolve());
   };
   // A reload while a layer was open leaves its entry behind with no layer.
   if (marked()) {
@@ -50,6 +54,10 @@ export function createHistoryLayers(window) {
     releaseScroll();
   });
   return {
+    whenClosed() {
+      if (!stack.length && !pendingBacks) return Promise.resolve();
+      return new Promise((resolve) => waiting.push(resolve));
+    },
     register(key, onBack) {
       handlers.set(key, onBack);
       return {

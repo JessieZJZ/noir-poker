@@ -8,7 +8,7 @@ test('default stakes, local icon and custom new games use the per-hand denominat
   await page.evaluate(() => window.qa.stop());
   expect((await page.evaluate(() => window.noir.getState())).stakes).toEqual(defaults);
   await expect(page.locator('#blind-values')).toHaveText('100 / 200');
-  await expect(page.locator('.brand-mark img')).toHaveAttribute('src', '/app-icon.png');
+  await expect(page.locator('.header .brand-mark img')).toHaveAttribute('src', '/app-icon.png');
   await expect(page.locator('link[rel="icon"]')).toHaveAttribute('href', 'favicon.png');
   await expect(page.locator('#starting-stack')).toHaveCount(0);
   for (const stakes of [
