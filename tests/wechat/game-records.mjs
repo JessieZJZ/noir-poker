@@ -638,6 +638,11 @@ try {
     name: 'separate-historical-page-readonly-review-does-not-mutate-live-or-archive',
   });
   await mini.evaluate(() => getCurrentPages().at(-1).closeReview());
+  await wait(
+    'Historical review sheet unmounted',
+    () => page.$('.review-sheet'),
+    (sheet) => !sheet,
+  );
   await mini.navigateBack();
   await waitRoute('pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
