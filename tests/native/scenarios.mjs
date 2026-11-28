@@ -954,7 +954,7 @@ export async function nativeScenarios(app) {
       chipUnit: 100,
     });
     const artwork = await app.evaluate(() => {
-      const image = document.querySelector('.brand-mark img');
+      const image = document.querySelector('.header .brand-mark img');
       return {
         src: image.getAttribute('src'),
         loaded: image.complete && image.naturalWidth > 0,

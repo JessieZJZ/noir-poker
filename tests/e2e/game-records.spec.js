@@ -291,9 +291,10 @@ test('stored historical labels remain text and cannot execute markup', async ({ 
   await page.locator(`[data-record-hand="${record.id}"]`).click();
   await page.locator('#history-pot-details-button').click();
   await expect(page.locator('#pot-dialog')).toBeVisible();
-  await expect(page.locator('#pot-dialog')).toContainText(source);
+  const potContent = page.locator('#pot-dialog-content');
+  await expect(potContent).toContainText(source);
   expect(await page.evaluate(() => window.historyMarkupExecuted)).toBeUndefined();
-  await expect(page.locator('#pot-dialog img')).toHaveCount(0);
+  await expect(potContent.locator('img')).toHaveCount(0);
   await page.locator('#pot-dialog .close-dialog').first().click();
   await expect(page.locator('#history-arena .seat-name-label').first()).toHaveText(source);
   await expect(page.locator('#history-arena .seat-action').first()).toHaveText(source);
