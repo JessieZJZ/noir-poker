@@ -722,7 +722,7 @@ try {
     hand: resumed.hand,
     bankrolls,
   });
-  await waitHero();
+  report.stage = 'unfinished-records-disabled-gate';
   await tap('#resource-menu-button');
   await tap('#resource-records');
   await waitRoute('pages/records/records');
@@ -732,7 +732,6 @@ try {
   assert.equal((await mini.currentPage()).path, 'pages/records/records');
   await assertStack('pages/table/table', 'pages/records/records');
   await capture('07-full-width-unfinished-records');
-  // Records rely on the native Back button or gesture.
   assert.equal(await page.$('#records-back'), null);
   await mini.navigateBack();
   await waitRoute('pages/table/table');
