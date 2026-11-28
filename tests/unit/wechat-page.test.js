@@ -3385,7 +3385,10 @@ test('WeChat practice home uses the real local routes and starts only one hand',
     assert.match(home, new RegExp(`id="${id}"[^>]*bindtap="${handler}"`));
   assert.match(home, /单机牌桌 · 开始训练/);
   assert.match(home, /无需登录 · AI对战/);
-  const brand = readFileSync(new URL('../../miniprogram/table-brand.wxml', import.meta.url), 'utf8');
+  const brand = readFileSync(
+    new URL('../../miniprogram/table-brand.wxml', import.meta.url),
+    'utf8',
+  );
   assert.match(brand, /src="\/assets\/app-icon\.png"/);
   assert.match(brand, /bindtap="returnToGame"/);
   assert.doesNotMatch(home, /筹码|盲注|买入|余额/);
