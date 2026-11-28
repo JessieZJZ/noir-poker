@@ -115,11 +115,14 @@ CLI 工程路径使用绝对路径。清理的仅是编译缓存，保留设置�
 
 ```sh
 node tests/wechat/game-records.mjs ws://127.0.0.1:9483 .artifacts/wechat-records/local
+node tests/wechat/resource-menu.mjs ws://127.0.0.1:9483 .artifacts/wechat-resource-menu/local
 node tests/wechat/win-rate.mjs ws://127.0.0.1:9483 .artifacts/wechat-win-rate
 node tests/wechat/blind-levels.mjs ws://127.0.0.1:9483 .artifacts/wechat-blind-levels
 ```
 
 `blind-levels.mjs` 检查设置中的涨盲结构，进入决赛圈与涨盲提示带在发牌前依次横跨屏幕、提示结束后才发牌，以及决赛圈关闭补码，并保存截图。
+
+`resource-menu.mjs` 在独立、无用户牌谱的预览工程中，从待入座页和实时牌桌逐项点击四个顶部工具，检查内容实际打开、品牌区回到同一牌桌，以及点击空白处关闭菜单。验收报告记录模拟器的实际视口尺寸。
 
 音乐导航专项复用已有已结算记录，连续三轮进入列表、详情并返回，检查隐藏牌桌更新不暂停音乐、不重新创建播放源；另外检查记录页切后台与恢复、静音后查看详情。脚本只包装真实音频 API 观察计数，结束恢复原设置，不替换音频数据或生成测试牌谱：
 

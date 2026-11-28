@@ -483,14 +483,9 @@ try {
   await page.waitFor(150);
   assert.ok(await page.$('#resource-guide'));
   assert.ok(await page.$('#resource-records'));
-  report.menuLayers = {
-    nav: Number(await (await waitElement('.nav')).style('z-index')),
-    dismiss: Number(await (await waitElement('.resource-dismiss')).style('z-index')),
-  };
-  assert.ok(
-    report.menuLayers.nav > report.menuLayers.dismiss,
-    'The whole menu stacking context clears the dismiss mask',
-  );
+  await waitElement('.resource-popover > .resource-dismiss');
+  await waitElement('.resource-popover > .resource-menu');
+  assert.equal(await page.$('.screen .resource-menu'), null);
   await capture('02-resources-menu');
   await tap('#resource-records');
   await waitRoute('pages/records/records');

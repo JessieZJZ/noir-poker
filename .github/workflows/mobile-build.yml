@@ -264,7 +264,7 @@ jobs:
           - group: entry
             scenarios: entry-waiting-music-and-first-deal,entry-high-stakes-layout,practice-reset-in-card-heading
           - group: interaction
-            scenarios: local-launch-and-no-login,raise-rail-and-vibration-preview,review-hand-groups-two-columns,table-brand-returns-to-live-practice
+            scenarios: local-launch-and-no-login,raise-rail-and-vibration-preview,review-hand-groups-two-columns,table-brand-returns-to-live-practice,ios-profile-touch-scroll-handoff
     runs-on: macos-26
     timeout-minutes: 45
     env:

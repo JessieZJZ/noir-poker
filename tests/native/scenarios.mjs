@@ -353,14 +353,17 @@ export async function nativeScenarios(app) {
   if (selectedScenarios?.some((name) => !name))
     throw Error('NOIR_NATIVE_SCENARIOS must contain nonempty scenario names');
   const seenScenarios = new Set();
-  const check = async (name, run) => {
+  const check = async (name, run, platform) => {
     seenScenarios.add(name);
-    if (selectedScenarios && !selectedScenarios.includes(name)) {
+    const selected = !selectedScenarios || selectedScenarios.includes(name);
+    if (!selected || (platform && app.platform !== platform)) {
       const entry = {
         name,
         status: 'skipped',
         elapsedMs: 0,
-        reason: 'Not selected by the test-only NOIR_NATIVE_SCENARIOS filter',
+        reason: selected
+          ? `Requires the native ${platform} app`
+          : 'Not selected by the test-only NOIR_NATIVE_SCENARIOS filter',
       };
       result.push(entry);
       app.record(entry);
@@ -4730,6 +4733,74 @@ export async function nativeScenarios(app) {
     assert.equal(await app.evaluate(() => window.noir.getRecords().length), recordCount);
     return { hand: resumed.hand, session: resumed.sessionNumber };
   });
+  await check(
+    'ios-profile-touch-scroll-handoff',
+    async () => {
+      await app.click('#opponents-button');
+      await app.click('[data-profile-preview="owen"]');
+      const panel = '#profile-detail';
+      const within = '.opponents-body';
+      const drag = (from, to) => app.nativeDrag(panel, from, to, { vertical: true, within });
+      const offsets = () =>
+        app.evaluate(() => {
+          const detail = document.querySelector('#profile-detail');
+          const settings = document.querySelector('.opponents-body');
+          return {
+            detail: detail.scrollTop,
+            limit: detail.scrollHeight - detail.clientHeight,
+            settings: settings.scrollTop,
+          };
+        });
+      const start = await offsets();
+      assert.ok(start.limit > 140, 'The profile must have enough content to scroll independently');
+      await drag(0.7, 0.5);
+      const inside = await app.waitFor(
+        async () => {
+          const read = await offsets();
+          return read.detail > start.detail + 10 ? read : null;
+        },
+        10000,
+        'The profile consumes vertical swipes inside its content',
+      );
+      assert.ok(Math.abs(inside.settings - start.settings) <= 1);
+
+      const results = {};
+      for (const direction of ['bottom', 'top']) {
+        await app.evaluate((direction) => {
+          const detail = document.querySelector('#profile-detail');
+          detail.scrollTop =
+            direction === 'bottom' ? detail.scrollHeight - detail.clientHeight - 12 : 12;
+        }, direction);
+        const before = await offsets();
+        const down = direction === 'bottom';
+        await drag(down ? 0.75 : 0.25, down ? 0.25 : 0.75);
+        results[direction] = await app.waitFor(
+          async () => {
+            const after = await offsets();
+            return (after.settings - before.settings) * (down ? 1 : -1) > 12
+              ? { before, after }
+              : null;
+          },
+          10000,
+          `A single touch drag across the ${direction} scroll boundary moves the settings`,
+        );
+      }
+      await app.click('[data-close-profile-detail]');
+      await app.waitFor(
+        async () => Math.abs((await offsets()).settings - start.settings) <= 1,
+        10000,
+        'Closing the profile restores the original settings position',
+      );
+      await app.click('#opponents-dialog .close-dialog');
+      await app.waitFor(
+        async () => !(await app.visible('#opponents-dialog')),
+        10000,
+        'Close settings',
+      );
+      return { start, inside, ...results };
+    },
+    'ios',
+  );
   await check('beginner-tutorial-guided-hand', async () => {
     const before = await app.state();
     const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));

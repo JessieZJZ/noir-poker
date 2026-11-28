@@ -723,7 +723,7 @@ try {
     state,
     click,
     nativeTap,
-    nativeDrag: (selector, from, to) => nativeTouch(selector, 600, from, to),
+    nativeDrag: (selector, from, to, options) => nativeTouch(selector, 600, from, to, options),
     nativeHold,
     select,
     visible,

@@ -2074,8 +2074,20 @@ test('WeChat record navigation keeps live bot progress and actual app background
   assert.ok(jobs.size > 0);
 });
 
-test('WeChat combined resources menu keeps both choices and rotates only while closed', (t) => {
-  const { page, jobs } = setup(t);
+test('WeChat resources share a fixed layer and the menu label rotates only while closed', (t) => {
+  const { page, jobs, wx } = setup(t);
+  let measure;
+  wx.createSelectorQuery = () => ({
+    select(selector) {
+      assert.equal(selector, '#resource-menu-button');
+      return this;
+    },
+    boundingClientRect(callback) {
+      measure = callback;
+      return this;
+    },
+    exec() {},
+  });
   page._controller.hide();
   page.startResourceRotation();
   const tick = () => {
@@ -2096,6 +2108,14 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   }
   assert.deepEqual(seen, ['新手引导', '玩法指南', '胜率计算器', '对局记录']);
   page.toggleResourceMenu();
+  page.toggleResourceMenu();
+  measure({ left: 360, bottom: 114 });
+  assert.equal(page.data.resourceMenuOpen, false, 'A cancelled measurement must not open the menu');
+  page.toggleResourceMenu();
+  measure({ left: 360, bottom: 114 });
+  assert.equal(page.data.resourceMenuOpen, true);
+  assert.equal(page.data.resourceMenuLeft, page.data.windowWidth - 140 - 8);
+  assert.equal(page.data.resourceMenuTop, 116);
   assert.equal(page.data.resourceRolling, false);
   tick();
   assert.equal(page.data.resourceLabel, '对局记录', 'An open menu stops the rotation');
@@ -2109,11 +2129,11 @@ test('WeChat combined resources menu keeps both choices and rotates only while c
   assert.equal(page.data.guideOpen, true);
   assert.match(template, /id="resource-guide"/);
   assert.match(template, /id="resource-records"/);
-  assert.match(template, /resourceMenuOpen \? 'resource-menu-active' : ''/);
-  assert.ok(
-    cssNumber('.nav.resource-menu-active', 'z-index') > cssNumber('.resource-dismiss', 'z-index'),
-    'The entire sticky header must sit above the dismiss mask; child z-index cannot escape its parent',
+  assert.match(
+    template,
+    /class="resource-popover">\s*<view class="resource-dismiss"[^>]*\/>\s*<view class="resource-menu"/,
   );
+  assert.match(stylesheet, /\.resource-popover \{\s*position: fixed;/);
   assert.match(
     stylesheet,
     /@keyframes resource-label-in\s*\{\s*from\s*\{\s*transform: translateY\(-100%\)/,

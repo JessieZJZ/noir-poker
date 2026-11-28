@@ -9,7 +9,7 @@
   style="padding-top: {{topInset + 36}}px; padding-bottom: {{bottomInset}}px; {{homeLocked ? 'top: ' + homeOffset + 'px;' : ''}} {{(tutorialActive || containedScroll) && !historyReadOnly ? 'height: ' + windowHeight + 'px;' : ''}}"
 >
   <view
-    class="nav {{waitingForSeat ? 'practice-home-nav' : ''}} {{compactNav ? 'nav-compact' : ''}} {{resourceMenuOpen ? 'resource-menu-active' : ''}}"
+    class="nav {{waitingForSeat ? 'practice-home-nav' : ''}} {{compactNav ? 'nav-compact' : ''}}"
     style="top: {{topInset + 36}}px;"
   >
     <template
@@ -37,13 +37,7 @@
       >
         <view class="gear-icon" /><text>设置</text>
       </button>
-      <view wx:if="{{resourceMenuOpen}}" class="resource-menu">
-        <button id="resource-records" bindtap="openRecords">对局记录</button>
-        <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
-        <button id="resource-guide" bindtap="openGuide">玩法指南</button>
-        <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
-      </view></view
-    >
+    </view>
   </view>
   <block wx:if="{{waitingForSeat && !historyReadOnly}}">
     <include src="./practice-home.wxml" />
@@ -592,7 +586,15 @@
     ><template is="trophy" /></view
   ><text class="trophy-caption">{{ceremony.caption}}</text></view
 >
-<view wx:if="{{resourceMenuOpen}}" class="resource-dismiss" bindtap="closeResourceMenu" />
+<view wx:if="{{resourceMenuOpen}}" class="resource-popover">
+  <view class="resource-dismiss" bindtap="closeResourceMenu" />
+  <view class="resource-menu" style="left: {{resourceMenuLeft}}px; top: {{resourceMenuTop}}px;">
+    <button id="resource-records" bindtap="openRecords">对局记录</button>
+    <button id="resource-tutorial" bindtap="openTutorial">新手引导</button>
+    <button id="resource-guide" bindtap="openGuide">玩法指南</button>
+    <button id="resource-win-rate" bindtap="openWinRate">胜率计算器</button>
+  </view>
+</view>
 
 <view
   wx:if="{{settingsOpen}}"

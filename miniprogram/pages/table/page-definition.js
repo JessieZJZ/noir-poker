@@ -32,6 +32,7 @@ const {
 // A second Back within this window leaves the mini program.
 const EXIT_CONFIRM_MS = 2000;
 const RESOURCE_LABELS = ['对局记录', '新手引导', '玩法指南', '胜率计算器'];
+const RESOURCE_MENU_WIDTH = 140;
 const TUTORIAL_SIDE_WIDTH = 312;
 // Scripted hands lock the slider, so short phones give its row to the table.
 const TUTORIAL_SLIDER_HEIGHT = 27;
@@ -86,6 +87,8 @@ module.exports = {
     compactNav: false,
     ...viewportChrome(390, 800),
     resourceMenuOpen: false,
+    resourceMenuLeft: 0,
+    resourceMenuTop: 0,
     resourceLabel: RESOURCE_LABELS[0],
     resourcePreviousLabel: RESOURCE_LABELS.at(-1),
     resourceRolling: false,
@@ -425,6 +428,7 @@ module.exports = {
   onHide() {
     stopWindowWatch(this);
     this._hidden = true;
+    this.closeResourceMenu();
     clearTimeout(this._exitTimer);
     this.cancelRaise();
     clearTimeout(this._resourceTimer);
@@ -466,7 +470,9 @@ module.exports = {
     this.stopSounds();
   },
   onResize(event) {
-    if (!this.updateWindow(event) || !this.data.settingsOpen) return;
+    if (!this.updateWindow(event)) return;
+    this.closeResourceMenu();
+    if (!this.data.settingsOpen) return;
     // The style choices moved: measure them after the new layout and keep an
     // open introduction over them.
     this._profileGeometry = null;
@@ -1393,12 +1399,32 @@ module.exports = {
     query.exec();
   },
   toggleResourceMenu() {
+    if (this.data.resourceMenuOpen || this._resourceMenuRequest) return this.closeResourceMenu();
     this._audioUnlocked = true;
     clearTimeout(this._resourceMotionTimer);
-    this.setData({ resourceMenuOpen: !this.data.resourceMenuOpen, resourceRolling: false });
+    if (this.data.resourceRolling) this.setData({ resourceRolling: false });
+    const request = (this._resourceMenuRequest = {});
+    // The menu and its dismiss target share a layer outside the scrolling table.
+    wx.createSelectorQuery()
+      .select('#resource-menu-button')
+      .boundingClientRect((rect) => {
+        if (this._resourceMenuRequest !== request) return;
+        this._resourceMenuRequest = null;
+        if (!rect || this._hidden || this._destroyed) return;
+        this.setData({
+          resourceMenuOpen: true,
+          resourceMenuLeft: Math.max(
+            8,
+            Math.min(rect.left, this.data.windowWidth - RESOURCE_MENU_WIDTH - 8),
+          ),
+          resourceMenuTop: rect.bottom + 2,
+        });
+      })
+      .exec();
   },
   closeResourceMenu() {
-    this.setData({ resourceMenuOpen: false });
+    this._resourceMenuRequest = null;
+    if (this.data.resourceMenuOpen) this.setData({ resourceMenuOpen: false });
   },
   returnToGame() {
     if (this.data.historyReadOnly) return navigation.returnToGame();
