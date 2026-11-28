@@ -83,7 +83,8 @@ test('priced 3-bet defense stops at large sizes, short stacks, all-ins and 4-bet
     { difficulty: 'easy' },
     { currentBet: 525 },
     { stack: 500 },
-    { contestable: 200 },
+    // Over the 38% price ceiling.
+    { contestable: 195 },
     { opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 999 } : p)) },
     { opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, allin: true } : p)) },
     { legal: { ...v.legal, toCall: 375, callAmount: 375 } },
@@ -159,20 +160,26 @@ test('a large opener treats a 3-bet to about twice its open as small', () => {
         assert.equal(d.trace.affordableThreeBet, true, label);
         assert.deepEqual(
           d.trace.threeBetLimits,
-          { reopenedOpener: true, threeBetLimit: 3000, threeBetCallLimit: 1800 },
+          { reopenedOpener: true, threeBetLimit: 3000, threeBetCallLimit: 2000 },
           label,
         );
         assert.equal(d.action, 'call', label);
         assert.equal(d.trace.reason, 'small-reraise-continue', label);
       }
-  // 2.5x the open and 1.5x the open to call are inclusive limits.
+  // 2.5x the open in total is an inclusive limit; the call limit is the larger
+  // of 1.5x the open and a tenth of the opener's own chips (2K here).
   const atLimit = openerFacing('Ks Qh', 3000, { contestable: 6500 });
   assert.equal(decide(atLimit).trace.affordableThreeBet, true);
   const overLimit = openerFacing('Ks Qh', 3100, { contestable: 9000 });
   assert.equal(decide(overLimit).trace.affordableThreeBet, false);
-  // The price ceiling still applies at the natural pot for a 2.5x 3-bet.
-  assert.equal(decide(openerFacing('Ks Qh', 3000)).trace.affordableThreeBet, false);
-  // A cold caller facing the same 2.6K keeps the fixed 10BB/7BB limits.
+  // The 38% price ceiling still applies.
+  assert.equal(decide(openerFacing('Ks Qh', 3000)).trace.affordableThreeBet, true);
+  assert.equal(
+    decide(openerFacing('Ks Qh', 3000, { contestable: 4700 })).trace.affordableThreeBet,
+    false,
+  );
+  // A cold caller facing the same 2.6K: a tenth of 20K allows a 2K call and
+  // about 2.86K in total, so this call is over the limit.
   const cold = decide({
     ...openerFacing('Ks Qh'),
     id: 5,
@@ -187,7 +194,8 @@ test('a large opener treats a 3-bet to about twice its open as small', () => {
     legal: { ...openerFacing().legal, toCall: 2600, callAmount: 2600 },
   });
   assert.equal(cold.trace.threeBetLimits.reopenedOpener, false);
-  assert.equal(cold.trace.threeBetLimits.threeBetLimit, 2000);
+  assert.equal(cold.trace.threeBetLimits.threeBetCallLimit, 2000);
+  assert.equal(Math.round(cold.trace.threeBetLimits.threeBetLimit), 2857);
   assert.equal(cold.trace.affordableThreeBet, false);
 });
 

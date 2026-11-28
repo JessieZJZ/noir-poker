@@ -4,6 +4,8 @@ import {
   readRecordTableGeometry,
   recordGeometryDifferences,
 } from '../fixtures/records-geometry.js';
+import { closeSettings } from './settings-helpers.js';
+import { settleDialogBack } from './history-helpers.js';
 
 const records = (page) => page.evaluate(() => window.noir.getRecords());
 // The saved index with each hand's snapshot attached, for tests to edit and
@@ -539,7 +541,7 @@ test('historical headers show each attempt start date with the year, align the r
   await page.locator(`[data-record-hand="${session.attempts[0].id}"]`).click();
   await page.locator('#opponents-button').click();
   await page.locator('#language-select').selectOption('en');
-  await page.locator('#opponents-dialog .close-dialog').click();
+  await closeSettings(page);
   await expect(page.locator('#records-hand-start')).toHaveText('01/01/2026, 08:01');
   await expect(page.locator('#records-hand-start')).toHaveAttribute('datetime', starts[0]);
   await page.reload();
@@ -628,7 +630,7 @@ test('reloading a historical URL retains its list parent and does not reload pra
   expect((await state(page)).hand).toBe(resumed.hand);
 });
 
-test('same-page locale refresh preserves historical review while Back closes it with the page', async ({
+test('same-page locale refresh preserves historical review; Back closes it, then the page', async ({
   page,
 }) => {
   const pageErrors = [];
@@ -648,9 +650,13 @@ test('same-page locale refresh preserves historical review while Back closes it 
   });
   await expect(page.locator('#review-dialog')).toBeVisible();
   expect((await state(page)).recordsRoute).toEqual({ page: 'hand', id: attempt.id });
+  // Back closes the open review first and keeps the saved hand on screen,
+  // like Android Back in the app and Back in the WeChat mini program.
+  await page.goBack();
+  await expect(page.locator('#review-dialog')).toBeHidden();
+  expect((await state(page)).recordsRoute).toEqual({ page: 'hand', id: attempt.id });
   await page.goBack();
   await expect(page).toHaveURL(/#records$/);
-  await expect(page.locator('#review-dialog')).toBeHidden();
   expect(await records(page)).toEqual(saved);
   expect(pageErrors).toEqual([]);
 });
@@ -784,6 +790,8 @@ test('historical settlement and review stay fixed while the live game advances',
     timeout: 120000,
   });
   await page.locator('#review-dialog .close-dialog').first().click();
+  // Closing pops the review's Back entry; let that finish before going back.
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBe(null);
   await page.goBack();
   await expect(page).toHaveURL(/#records$/);
   await backToGame(page);
@@ -1078,12 +1086,41 @@ test('historical pot dialogs and showdown stay bound to the saved hand while liv
   await expect(page.locator('#history-showdown-scene')).toHaveText(showdownText);
   await page.locator('#pot-dialog .close-dialog').first().click();
   await expect(page.locator('#pot-dialog')).toBeHidden();
+  await settleDialogBack(page, 'pot-dialog');
   await expect(page.locator('#history-showdown-stage')).toBeVisible();
   await page.screenshot({ path: test.info().outputPath('history-showdown.png') });
   await backToGame(page);
   await page.locator('#pot-details-button').click();
   await expect(page.locator('#pot-dialog')).toBeVisible();
   expect(await page.locator('#pot-dialog-content').textContent()).not.toBe(potText);
+});
+
+test('the header brand returns to the live hand without reloading the app', async ({ page }) => {
+  await page.evaluate(() => window.qa.recordsFinish());
+  const live = await state(page);
+  await page.evaluate(() => (window.__sameDocument = true));
+  await openRecords(page);
+  const attempt = (await records(page))
+    .flatMap((session) => session.attempts)
+    .find((item) => item.status === 'completed');
+  await page.locator(`[data-record-hand="${attempt.id}"]`).click();
+  await expect(page).toHaveURL(/#records\//);
+  await page.locator('.header .brand').click();
+  await expect(page).not.toHaveURL(/#records/);
+  await expect(page.locator('#records-page')).toBeHidden();
+  await expect(page.locator('main.main')).toBeVisible();
+  const back = await state(page);
+  expect([back.sessionNumber, back.hand, back.phase]).toEqual([
+    live.sessionNumber,
+    live.hand,
+    live.phase,
+  ]);
+  // On the table itself the brand stays on the same hand and scrolls up.
+  await page.evaluate(() => window.scrollTo(0, 300));
+  await page.locator('.header .brand').click();
+  await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
+  expect((await state(page)).hand).toBe(live.hand);
+  expect(await page.evaluate(() => window.__sameDocument)).toBe(true);
 });
 
 // Records rely on system Back: unwind the detail and list pages to the game.

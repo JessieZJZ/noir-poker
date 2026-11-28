@@ -116,34 +116,42 @@ test('safety limits: air never raises a bet, one pair never raises a multiway be
 });
 
 test('estimated-value bets keep whole chips and conserve the table at both stake boundaries', () => {
-  for (const smallBlind of [25, 50000]) {
-    const random = seeded(smallBlind + 3);
-    const g = engine.newGame(6, stakesFromSmallBlind(smallBlind));
-    g.difficulty = 'normal';
-    g.emotionMode = 'off';
-    g.risingBlinds = false;
-    const total = g.players.reduce((sum, p) => sum + p.stack, 0);
-    let evRaises = 0;
-    for (let hand = 0; hand < 25 && !g.over && !engine.needsHeroRebuy(g); hand++) {
-      engine.startHand(g);
-      while (g.phase !== 'done') {
-        if (g.phase === 'between') engine.advanceStreet(g);
-        else {
-          const d = engine.botDecision(g, random, { trials: 8 });
-          if (d.action === 'raise') {
-            assert.equal(d.amount % g.chipUnit, 0);
-            if (d.trace.style.linePlan?.source === undefined && d.trace.style.linePlan?.options)
-              evRaises++;
+  // The deal is seeded too: with a random deck the bot-played hero could bust
+  // before any estimated-value bet and end the run early.
+  const globalRandom = Math.random;
+  try {
+    for (const smallBlind of [25, 50000]) {
+      const random = seeded(smallBlind + 3);
+      Math.random = seeded(smallBlind + 11);
+      const g = engine.newGame(6, stakesFromSmallBlind(smallBlind));
+      g.difficulty = 'normal';
+      g.emotionMode = 'off';
+      g.risingBlinds = false;
+      const total = g.players.reduce((sum, p) => sum + p.stack, 0);
+      let evRaises = 0;
+      for (let hand = 0; hand < 25 && !g.over && !engine.needsHeroRebuy(g); hand++) {
+        engine.startHand(g);
+        while (g.phase !== 'done') {
+          if (g.phase === 'between') engine.advanceStreet(g);
+          else {
+            const d = engine.botDecision(g, random, { trials: 8 });
+            if (d.action === 'raise') {
+              assert.equal(d.amount % g.chipUnit, 0);
+              if (d.trace.style.linePlan?.source === undefined && d.trace.style.linePlan?.options)
+                evRaises++;
+            }
+            engine.act(g, g.actor, d.action, d.amount);
           }
-          engine.act(g, g.actor, d.action, d.amount);
         }
+        assert.equal(
+          g.players.reduce((sum, p) => sum + p.stack, 0),
+          total,
+        );
+        for (const p of g.players) assert.equal(p.stack % g.chipUnit, 0);
       }
-      assert.equal(
-        g.players.reduce((sum, p) => sum + p.stack, 0),
-        total,
-      );
-      for (const p of g.players) assert.equal(p.stack % g.chipUnit, 0);
+      assert.ok(evRaises > 0, 'the estimated-value step chose some bets');
     }
-    assert.ok(evRaises > 0, 'the estimated-value step chose some bets');
+  } finally {
+    Math.random = globalRandom;
   }
 });

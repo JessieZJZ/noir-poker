@@ -180,3 +180,30 @@
     height: 36px;
   }
 }
+
+/* As on Web, landscape keeps the side list for any number of decisions: the
+   decisions stack beside the detail instead of a row above it. */
+@media (min-width: 701px) and (orientation: landscape) {
+  .review-layout {
+    display: grid;
+    grid-template-columns: 235px minmax(0, 1fr);
+    column-gap: 24px;
+    align-items: start;
+  }
+  .review-layout .review-timeline {
+    max-height: 600px;
+    white-space: normal;
+  }
+  .review-layout .review-timeline-inner {
+    flex-direction: column;
+    padding-bottom: 2px;
+  }
+  .review-layout .review-step,
+  .review-layout .opponent .review-step,
+  .review-layout .review-timeline.has-overflow .review-step {
+    flex: none;
+    width: 100% !important;
+    min-width: 0;
+    max-width: none;
+  }
+}

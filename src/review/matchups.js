@@ -169,8 +169,13 @@ export function preflopRangeNotes(s) {
     );
   const callAllIn = s.stack > 0 && s.legal.callAmount >= s.stack,
     commitment = callAllIn || s.players?.some((p) => p.id !== 0 && !p.folded && p.allin);
+  // What the earlier callers may hold matters to a decision to continue, not
+  // to a fold made on the hand's own weakness. "平跟" would also mislabel calls
+  // of a raise, so the note says "这些跟注".
+  const callerRange =
+    s.action === 'fold' ? '' : '这些跟注可能是小对子、同花牌或连接牌，也可能藏着强牌。';
   if (lead) {
-    const flatCalls = '这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。';
+    const flatCalls = callerRange;
     if (limpers.length)
       notes.push([...groupedCalls(limpers, true), callers.length ? '' : flatCalls].join(''));
     notes.push(lead);
@@ -180,19 +185,26 @@ export function preflopRangeNotes(s) {
       [
         ...groupedCalls(limpers, true),
         ...groupedCalls(callers, false),
-        '这类平跟可能是小对子、同花牌或连接牌，也可能藏着强牌。',
+        callerRange,
         observer || s.action === 'fold'
           ? ''
           : commitment
             ? callAllIn
               ? '本人跟注后就已全下，不能把后街取值或追中后的额外收益当成继续依据。'
               : '已全下者不能再被逼弃牌，其他仍有筹码玩家的后续投入需按边池另行判断。'
-            : s.legal.canRaise
-              ? `${subject}若再加注，需要同时考虑加注范围和跟注入池的范围。`
+            : s.action === 'raise'
+              ? '你这次再加注，要同时面对加注者和跟注者的范围。'
               : '',
       ].join(''),
     );
-  if (!s.reviewSubject && s.hole.some((card) => card.rank === 14))
+  // An ace removes some strong aces from a raiser's or caller's range. That
+  // matters when this decision faces or makes a raise, not to a fold.
+  if (
+    !s.reviewSubject &&
+    s.action !== 'fold' &&
+    (last || s.action === 'raise') &&
+    s.hole.some((card) => card.rank === 14)
+  )
     notes.push(
       `${s.players?.find((p) => p.id === 0)?.name || '你'}手中的 A 会减少对手拿到 AA、AK、AQ、AJ 的组合，但这些强牌仍然可能出现。`,
     );

@@ -194,3 +194,31 @@ test('broken session storage does not prevent routing and destroy removes system
   h.systemBack();
   assert.deepEqual(h.navigation.route(), { page: 'list' });
 });
+
+// The iPhone edge swipe sends records Back straight from the native layer.
+// A review open over the saved hand closes first; the next swipe leaves.
+test('system Back closes a dialog over a saved hand before leaving the hand', () => {
+  const h = harness();
+  h.navigation.navigate({ page: 'list' });
+  h.navigation.navigate({ page: 'hand', id: 'hand/retry' });
+  const review = {
+    id: 'review-dialog',
+    open: true,
+    close() {
+      review.open = false;
+    },
+  };
+  h.window.document = {
+    querySelectorAll: () =>
+      [
+        { id: 'orientation-dialog', open: true, close: () => assert.fail('No Back on the prompt') },
+        ...(review.open ? [review] : []),
+      ].filter((dialog) => dialog.id !== 'orientation-dialog' || review.open),
+  };
+  h.systemBack();
+  assert.equal(review.open, false);
+  assert.deepEqual(h.navigation.route(), { page: 'hand', id: 'hand/retry' });
+  h.window.document = { querySelectorAll: () => [] };
+  h.systemBack();
+  assert.deepEqual(h.navigation.route(), { page: 'list' });
+});

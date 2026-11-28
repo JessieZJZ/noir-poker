@@ -197,15 +197,18 @@ test('the ordinary-open branch stops above eight BB and at stack, all-in and re-
   assert.equal(decision(sizedOpen('Ts Td', 8)).trace.affordableOpen, true);
   assert.equal(decision(sizedOpen('Ts Td', 8)).trace.reason, 'price-continue');
   assert.equal(decision(sizedOpen('Ts Td', 8.02)).trace.affordableOpen, false);
-  const shortRaiser = {
+  // Ten calls behind is the floor; the widening then ramps up to fifteen.
+  const raiserBehind = (stack) => ({
     ...v,
-    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 2249 } : p)),
-  };
-  const enoughRaiser = {
-    ...v,
-    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack: 2250 } : p)),
-  };
+    opponents: v.opponents.map((p) => (p.id === 0 ? { ...p, stack } : p)),
+  });
+  const shortRaiser = raiserBehind(1500);
+  const aboveFloor = decision(raiserBehind(1525)).trace;
+  assert.equal(aboveFloor.affordableOpen, true);
+  assert.ok(Math.abs(aboveFloor.entryContext.openDepthWeight - 1 / 30) < 1e-9);
+  const enoughRaiser = raiserBehind(2250);
   assert.equal(decision(enoughRaiser).trace.affordableOpen, true);
+  assert.equal(decision(enoughRaiser).trace.entryContext.openDepthWeight, 1);
   const unsafe = [
     { ...v, opponents: undefined },
     { ...v, opponents: v.opponents.filter((p) => p.id !== 0) },

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { closeSettings } from './settings-helpers.js';
 const locales = ['zh-CN', 'en', 'zh-TW', 'ja', 'ko', 'es', 'it', 'pt', 'de', 'fr', 'ru'];
 const practiceTitles = {
   'zh-CN': '本局练习',
@@ -57,7 +58,10 @@ for (const locale of locales) {
     await page.addInitScript((value) => localStorage.setItem('noir-locale', value), locale);
     await page.goto('/');
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
-    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    // A loaded runner can take over five seconds to load every startup module.
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', {
+      timeout: 30000,
+    });
     await expect(page.locator('.session-card .section-title h2')).toHaveText(
       practiceTitles[locale],
     );
@@ -68,8 +72,12 @@ for (const locale of locales) {
     await page.locator('#player-count').selectOption('9');
     await expect(page.locator('#opponents-dialog')).toBeVisible();
     await page.locator('#opponents-dialog .close-dialog').click();
+    // Closing pops the dialog's Back entry; let that finish before reloading.
+    await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBe(null);
     await page.reload();
-    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true');
+    await expect(page.locator('html')).toHaveAttribute('data-app-ready', 'true', {
+      timeout: 30000,
+    });
     await expect(page.locator('html')).toHaveAttribute('lang', locale);
     await page.locator('#opponents-button').click();
     await expect(page.locator('#player-count')).toHaveValue('9');
@@ -235,7 +243,7 @@ test('live switching keeps settings, controls and the entire current hand across
       (await page.locator('[data-profile-preview="balanced"] strong').textContent()).slice(0, 1),
     );
   }
-  await dialog.locator('.close-dialog').click();
+  await closeSettings(page);
   await expect(page.locator('#call-button')).toBeEnabled();
   await page.locator('#call-button').click();
   await page.evaluate(() => window.qa.stop());

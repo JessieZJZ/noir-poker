@@ -94,7 +94,7 @@ test('unpaired preflop value comparisons name worse kickers rather than smaller 
     const s = preflop({ hole, action: 'raise', amount: 5000, call: 1400 });
     const c = coachDecision(s, estimate(s, { status: 'consider' }));
     conditionalSurface(c);
-    assert.match(c.explanation, /只有更差踢脚的高牌.*仍愿意支付/);
+    assert.match(c.explanation, /这次加注要有更差踢脚的高牌.*愿意跟，才算取值/);
     assert.match(c.followUp, /更差踢脚的高牌/);
     assert.doesNotMatch(c.explanation + c.followUp, /更小对子|较弱对子或高牌/);
   }
@@ -195,7 +195,10 @@ test('a value-family code cannot bypass the unproven cold re-raise condition', (
   conditionalSurface(c);
   assert.equal(c.evKind, 'uncertain');
   assert.equal(c.supported, false);
-  assert.match(c.explanation, /更差踢脚的高牌[^。]*仍愿意支付|较弱牌[^。]*(?:付费|跟注)/);
+  assert.match(
+    c.explanation,
+    /更差踢脚的高牌[^。]*(?:仍愿意支付|愿意跟)|较弱牌[^。]*(?:付费|跟注)/,
+  );
 });
 
 test('actual full-stack weak isolation distinguishes showdown from a hypothetical smaller call', () => {
@@ -276,7 +279,7 @@ test('a better candidate than a bad shove still carries the bluff and payment pr
     assert.equal(c.recommendedAction.summary, c.label);
     assert.match(c.recommendedAction.condition, /弃牌空间/);
     if (hole === 'Ah Td') assert.match(c.recommendedAction.condition, /较弱起手牌愿意/);
-    assert.match(c.explanation, /这手建议.*只有|这手建议.*取值需要/);
+    assert.match(c.explanation, /这手建议.*能不能这样打|这手建议.*已有对手全下|这手建议.*取值需要/);
     assert.doesNotMatch(c.explanation, /只有仍有筹码的开池者/);
   }
 });

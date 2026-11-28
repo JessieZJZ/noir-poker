@@ -420,3 +420,46 @@ test('range narration retains a three-bettor who called a four-bet and the live 
   assert.match(range.text, /截至当前的公开行动/);
   assert.doesNotMatch(range.text, /你翻前跟注、对手跟注/);
 });
+
+// A card-rule sizing sentence ties the board's stronger hands to a bet size.
+// When the response model's own comparison already names them, keep only that.
+test('the model size comparison replaces the card-rule sizing sentence only when it names stronger hands', async () => {
+  const { enrichStrategy } = await import('../../src/review/strategy-context.js');
+  const s = snapshot({ action: 'raise', amount: 400 });
+  const rule =
+    '这次只投入底池的约 40%：牌面能让对手组成顺子、同花，这些牌都能赢这手一对。下注过大时，愿意跟的多半是这些更强的牌；小注更容易让更弱的成牌也跟注。';
+  const coaching = {
+    paragraphs: ['你下注至 400。' + rule],
+    paragraphParts: [['你下注至 400。', rule]],
+    coveredTopics: [],
+  };
+  const sized = assessment({
+    draw: noDraw,
+    options: [
+      {
+        amount: 400,
+        worseMadeCallMass: 0.3,
+        drawCallMass: 0,
+        aheadContinueMass: 0.1,
+        continueMass: 0.5,
+        aheadContinueByCategory: { 1: 0.1 },
+      },
+      {
+        amount: 800,
+        worseMadeCallMass: 0.05,
+        drawCallMass: 0,
+        aheadContinueMass: 0.24,
+        continueMass: 0.4,
+        aheadContinueByCategory: { 5: 0.12, 4: 0.1, 2: 0.02 },
+      },
+    ],
+  });
+  const named = enrichStrategy(coaching, s, sized, { action: 'raise', amount: 400 });
+  assert.match(named.explanation, /留下来继续跟注或加注的也多半是领先当前成牌的同花或顺子/);
+  assert.doesNotMatch(named.explanation, /这次只投入底池的约|下注过大时，愿意跟的多半/);
+  const plain = enrichStrategy(coaching, s, assessment({ draw: noDraw }), {
+    action: 'raise',
+    amount: 400,
+  });
+  assert.match(plain.explanation, /这次只投入底池的约 40%/);
+});

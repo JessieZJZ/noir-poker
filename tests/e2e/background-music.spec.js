@@ -174,12 +174,12 @@ test('the native pause signal fades music and cues before the app turns inactive
   await openSettings(page);
   await expect.poll(async () => (await musicState(page)).paused).toBe(false);
   await page.locator('#opponents-dialog .close-dialog').click();
-  // A long cue is playing when the app starts to leave.
+  // A cue is playing when the app starts to leave. The pause arrives in the
+  // same task as the fold: the 0.18s fold cue can end during a slow runner's
+  // next evaluate round trip, leaving nothing to release.
   await page.evaluate(() => {
     window.qa.heroTurn(5);
     document.querySelector('#fold-button').click();
-  });
-  await page.evaluate(() => {
     window.cueRelease.ramps.length = 0;
     window.cueRelease.stops.length = 0;
     document.dispatchEvent(new CustomEvent('noir:app-pausing'));

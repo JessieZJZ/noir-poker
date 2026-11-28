@@ -87,7 +87,7 @@ test('actual rendered review clauses switch through all supported locales withou
       expect(text, `${locale}/${amount}`).toContain(amount);
     if (!['zh-CN', 'zh-TW', 'ja'].includes(locale))
       expect(text, locale).not.toMatch(/\p{Script=Han}/u);
-    if (locale !== 'zh-CN') expect(text, locale).not.toMatch(/这类平跟|与底牌同花色/);
+    if (locale !== 'zh-CN') expect(text, locale).not.toMatch(/这些跟注|这类平跟|与底牌同花色/);
     if (!['zh-CN', 'zh-TW'].includes(locale)) expect(text, locale).not.toMatch(/都先跟注/);
   }
 });

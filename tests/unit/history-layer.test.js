@@ -91,3 +91,47 @@ test('a reload while a layer was open clears the stale marker', () => {
   createHistoryLayers(window);
   assert.deepEqual(window.history.state, { noirRecords: { page: 'game' } });
 });
+
+test('stacked layers: Back closes the top one and gives the entry back to the one beneath', () => {
+  const { window, flush } = fakeWindow();
+  const closed = [];
+  const layers = createHistoryLayers(window);
+  const calculator = layers.register('win-rate', () => closed.push('win-rate'));
+  const picker = layers.register('dialog:win-rate-picker', () => closed.push('picker'));
+  calculator.open();
+  picker.open();
+  assert.equal(window.history.length, 2, 'Layers share one entry');
+  window.history.back();
+  flush();
+  assert.deepEqual(closed, ['picker']);
+  assert.equal(window.history.state.noirLayer, 'win-rate');
+  window.history.back();
+  flush();
+  assert.deepEqual(closed, ['picker', 'win-rate']);
+  assert.deepEqual(window.history.state, { noirRecords: { page: 'game' } });
+  // A layer that stays open (a sub-view closed instead) takes its entry back.
+  const settings = layers.register('dialog:settings', () => settings.open());
+  settings.open();
+  window.history.back();
+  flush();
+  assert.equal(window.history.state.noirLayer, 'dialog:settings');
+});
+
+test('a layer opened while the previous layer’s entry is being popped keeps Back', () => {
+  const { window, flush } = fakeWindow();
+  const closed = [];
+  const layers = createHistoryLayers(window);
+  const guide = layers.register('dialog:rules-dialog', () => closed.push('guide'));
+  const tutorial = layers.register('tutorial', () => closed.push('tutorial'));
+  guide.open();
+  // Starting the tutorial from the guide: the guide closes, then the tutorial
+  // opens before the guide's entry has been popped.
+  guide.close();
+  tutorial.open();
+  flush();
+  assert.deepEqual(closed, [], 'The pop of the guide entry does not close the tutorial');
+  assert.equal(window.history.state.noirLayer, 'tutorial');
+  window.history.back();
+  flush();
+  assert.deepEqual(closed, ['tutorial']);
+});

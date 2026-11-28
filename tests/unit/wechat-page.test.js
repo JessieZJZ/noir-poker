@@ -3,6 +3,7 @@ import { compactChips, compactActionAmounts } from '../../src/engine/chip-format
 import { compactTableLayout } from '../../src/ui/compact-table-layout.js';
 import { renderCardArtwork } from '../../src/ui/cards.js';
 import { railLayout } from '../../src/ui/rail-layout.js';
+import { profileDetailBounds } from '../../src/ui/profile-layout.js';
 import { PROFILE_PORTRAITS } from '../../src/ui/portraits.js';
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -61,7 +62,13 @@ const railStylesheet = readFileSync(
   new URL('../../miniprogram/pages/table/rail.wxss', import.meta.url),
   'utf8',
 );
-const template = ['table.wxml', 'table-surface.wxml', 'table-templates.wxml', 'practice-home.wxml']
+const template = [
+  'table.wxml',
+  'back-guard.wxml',
+  'table-surface.wxml',
+  'table-templates.wxml',
+  'practice-home.wxml',
+]
   .map((name) =>
     readFileSync(new URL('../../miniprogram/pages/table/' + name, import.meta.url), 'utf8'),
   )
@@ -1309,6 +1316,121 @@ test('WeChat profile parameters keep stable unique keys when values repeat', (t)
   );
   page.closeProfile();
   assert.equal(page.data.detailProfile, null);
+});
+
+// Screen geometry a WeChat selector query reports for the settings: the
+// scroll view, its offset, the style grid and its cards.
+function settingsLayoutQuery(page, layout) {
+  let measured = 0;
+  const create = () => {
+    const results = [];
+    let target;
+    const query = {
+      select(selector) {
+        target = selector;
+        return query;
+      },
+      selectAll(selector) {
+        target = selector;
+        return query;
+      },
+      boundingClientRect() {
+        const gridTop = layout.grid.top - layout.scrollTop;
+        if (target === '#settings-scroll')
+          results.push({ ...layout.view, bottom: layout.view.top + layout.view.height });
+        else if (target === '.profile-grid') results.push({ ...layout.grid, top: gridTop });
+        else
+          results.push(
+            page.data.profiles.map((profile, i) => ({
+              dataset: { id: profile.id },
+              left: layout.grid.left + (i % 2) * 170,
+              width: 160,
+              top: gridTop + Math.floor(i / 2) * 120,
+              height: 110,
+            })),
+          );
+        return query;
+      },
+      scrollOffset() {
+        results.push({ scrollTop: layout.scrollTop });
+        return query;
+      },
+      exec(callback) {
+        measured++;
+        callback(results);
+      },
+    };
+    return query;
+  };
+  return { create, measured: () => measured };
+}
+
+test('WeChat opens a style introduction in one update, placed as on Web over the choices', (t) => {
+  const { page, wx } = setup(t);
+  const layout = {
+    view: { top: 100, height: 600 },
+    scrollTop: 0,
+    grid: { top: 400, left: 20, width: 340, height: 500 },
+  };
+  const query = settingsLayoutQuery(page, layout);
+  wx.createSelectorQuery = query.create;
+  page.openSettings();
+  assert.equal(query.measured(), 1, 'Opening settings measures the choices once');
+  const updates = [];
+  const setData = page.setData;
+  page.setData = function (value, callback) {
+    updates.push(Object.keys(value).sort());
+    return setData.call(this, value, callback);
+  };
+  const web = () =>
+    profileDetailBounds({
+      region: { top: layout.grid.top - layout.scrollTop, height: layout.grid.height },
+      viewport: { top: layout.view.top, bottom: layout.view.top + layout.view.height },
+      clientHeight: layout.view.height,
+    });
+  const open = (id) => {
+    updates.length = 0;
+    page.viewProfile({ currentTarget: { dataset: { id } } });
+    return copy(page.data.detailBounds);
+  };
+  // The choices sit low: it starts 200px above them to fit, as on Web.
+  let bounds = open('rook');
+  assert.deepEqual(updates, [['detailBounds', 'detailProfile', 'selectedProfile']]);
+  assert.deepEqual({ top: bounds.top, height: bounds.height }, web());
+  assert.deepEqual([bounds.top, bounds.height], [-200, 500]);
+  assert.equal(page.data.selectedProfile, 'rook');
+  // Content above the choices grew after the measurement: the check after
+  // opening moves it once.
+  page.closeProfile();
+  layout.grid.top += 40;
+  bounds = open('vale');
+  assert.deepEqual(updates, [
+    ['detailBounds', 'detailProfile', 'selectedProfile'],
+    ['detailBounds'],
+  ]);
+  assert.deepEqual({ top: bounds.top, height: bounds.height }, web());
+  // Scrolled to the choices: it starts at their top.
+  page.closeProfile();
+  layout.scrollTop = 250;
+  page.settingsScrolled({ detail: { scrollTop: 250 } });
+  bounds = open('owen');
+  assert.equal(updates.length, 1);
+  assert.deepEqual({ top: bounds.top, height: bounds.height }, web());
+  assert.equal(bounds.top, 0);
+  page.closeProfile();
+  assert.deepEqual([page.data.detailProfile, page.data.detailBounds], [null, null]);
+  // The introduction is part of the scrolling settings, over the choices.
+  const order = [
+    'id="settings-scroll"',
+    'class="profile-stage ',
+    'class="profile-grid"',
+    'class="profile-detail is-revealing"',
+    'class="settings-save-row"',
+  ].map((marker) => template.indexOf(marker));
+  assert.ok(
+    order.every((index, i) => index > 0 && (i === 0 || index > order[i - 1])),
+    String(order),
+  );
 });
 
 function cssNumber(selector, property) {
@@ -3390,7 +3512,7 @@ test('WeChat Back during the tutorial returns to the table instead of closing th
   // the tutorial (intro card included) is open, and only then.
   assert.match(
     template,
-    /<page-container\s+show="\{\{tutorialActive \|\| exitGuard\}\}"\s+overlay="\{\{false\}\}"\s+duration="\{\{0\}\}"[^>]*custom-style="height: 0;[^"]*"\s+bind:beforeleave="pageBack"/,
+    /<page-container\s+show="\{\{\(tutorialActive \|\| exitGuard \|\| layerGuard\) && guardArmed\}\}"\s+overlay="\{\{false\}\}"\s+duration="\{\{0\}\}"[^>]*custom-style="height: 0;[^"]*"\s+bind:beforeleave="pageBack"/,
   );
   assert.equal(page.data.tutorialActive, false);
   const controller = page._controller;
@@ -3402,6 +3524,189 @@ test('WeChat Back during the tutorial returns to the table instead of closing th
   assert.equal(exits, 1);
   // The container is reopened so the table guards the next Back.
   assert.equal(page.data.exitGuard, true);
+});
+
+// Back closes what is open, innermost first, as Android Back and the browser
+// Back do for the app and the Web; only an empty table asks to leave.
+const guarded = (page) =>
+  !!(
+    (page.data.tutorialActive || page.data.exitGuard || page.data.layerGuard) &&
+    page.data.guardArmed
+  );
+
+test('WeChat Back closes the top layer, innermost first, before the tutorial or the exit prompt', (t) => {
+  const { page, toasts } = setup(t);
+  page.onShow();
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  page.openSettings();
+  page.setData({ detailProfile: { name: 'Mia' } });
+  page.pageBack();
+  assert.equal(page.data.detailProfile, null, 'An opponent detail closes before settings');
+  assert.equal(page.data.settingsOpen, true);
+  assert.equal(guarded(page), true, 'The container is shown again for the next Back');
+  page.pageBack();
+  assert.equal(page.data.settingsOpen, false);
+  page.setOverlay({ reviewOpen: true });
+  page.setOverlay({ potOpen: true });
+  page.pageBack();
+  assert.deepEqual([page.data.potOpen, page.data.reviewOpen], [false, true]);
+  page.pageBack();
+  assert.equal(page.data.reviewOpen, false);
+  for (const [open, flag] of [
+    ['resetPractice', 'resetOpen'],
+    ['openActivity', 'activityOpen'],
+  ]) {
+    page[open]();
+    page.pageBack();
+    assert.equal(page.data[flag], false, flag);
+  }
+  page.setData({ resourceMenuOpen: true });
+  page.pageBack();
+  assert.equal(page.data.resourceMenuOpen, false);
+  assert.equal(prompts(), 0, 'No exit prompt while something was open');
+  // A layer over the tutorial closes alone; the next Back leaves the tutorial.
+  const controller = page._controller;
+  let exits = 0;
+  page._controller = { ...controller, exitTutorial: () => ++exits };
+  page.setData({ tutorialActive: true });
+  page.setOverlay({ guideOpen: true });
+  page.pageBack();
+  assert.deepEqual([page.data.guideOpen, exits], [false, 0]);
+  page.pageBack();
+  assert.equal(exits, 1);
+  page._controller = controller;
+  page.setData({ tutorialActive: false });
+  page.pageBack();
+  assert.equal(prompts(), 1);
+});
+
+test('WeChat Back on an iPhone table asks for a second swipe like Android', (t) => {
+  // On iPhone the left-edge swipe is Back; on the first page it would leave
+  // the mini program, so the container takes it and asks first.
+  const { page, toasts, wx } = setup(t);
+  wx.getDeviceInfo = () => ({ platform: 'ios' });
+  page.onShow();
+  page.openSettings();
+  page.pageBack();
+  assert.equal(page.data.settingsOpen, false, 'A layer closes first');
+  assert.equal(toasts.filter((toast) => toast.title === '再按一次退出').length, 0);
+  page.pageBack();
+  assert.equal(toasts.filter((toast) => toast.title === '再按一次退出').length, 1);
+  assert.equal(page.data.exitGuard, false, 'The next swipe within two seconds leaves');
+});
+
+// The page container as DevTools runs it. A Back the user makes calls
+// pageBack while the container is still shown. Turning its show off while it
+// is shown (inside that handler or at any other time) calls pageBack again,
+// before that setData's callback. A Back with the container hidden leaves.
+function attachContainer(page) {
+  const container = { visible: guarded(page), leaves: 0, transitions: 0 };
+  const setData = page.setData;
+  page.setData = function (value, callback) {
+    const before = guarded(page);
+    setData.call(this, value, () => {
+      const after = guarded(page);
+      if (before && !after && container.visible) {
+        container.transitions++;
+        container.visible = false;
+        page.pageBack({ type: 'beforeleave' });
+      } else if (!before && after) {
+        container.transitions++;
+        container.visible = true;
+      }
+      callback?.();
+    });
+  };
+  container.back = () => {
+    if (!container.visible) return void container.leaves++;
+    const transitions = container.transitions;
+    page.pageBack({ type: 'beforeleave' });
+    // With nothing re-shown during the handler, the container has left.
+    if (container.transitions === transitions) container.visible = false;
+  };
+  return container;
+}
+
+test('both table pages carry the same Back container', () => {
+  assert.match(template, /<page-container[^>]*bind:beforeleave="pageBack"/);
+  const read = (file) =>
+    readFileSync(new URL(`../../miniprogram/pages/${file}`, import.meta.url), 'utf8');
+  assert.match(read('table/table.wxml'), /<include src="\.\/back-guard\.wxml" \/>/);
+  assert.match(read('history/history.wxml'), /<include src="\.\.\/table\/back-guard\.wxml" \/>/);
+  for (const file of ['table/table.wxml', 'history/history.wxml'])
+    assert.doesNotMatch(read(file), /<page-container/, `${file} uses the shared container`);
+});
+
+test('WeChat Back in the tutorial intro leaves it without the exit prompt', (t) => {
+  const { page, toasts } = setup(t);
+  page.onShow();
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  const container = attachContainer(page);
+  const controller = page._controller;
+  let exits = 0;
+  page._controller = {
+    ...controller,
+    exitTutorial: () => (++exits, page.setData({ tutorialActive: false })),
+  };
+  t.after(() => (page._controller = controller));
+  page.setData({ tutorialActive: true });
+  container.back();
+  assert.equal(exits, 1);
+  assert.equal(prompts(), 0, 'Leaving the tutorial is not the first press of an exit');
+  assert.equal(container.visible, true, 'The table guards the next Back');
+  assert.equal(page.data.exitGuard, true);
+  // A guide opened over the tutorial closes alone.
+  page.setData({ tutorialActive: true });
+  page.setOverlay({ guideOpen: true });
+  container.back();
+  assert.deepEqual([page.data.guideOpen, page.data.tutorialActive, exits], [false, true, 1]);
+  container.back();
+  assert.deepEqual([page.data.tutorialActive, exits, prompts()], [false, 2, 0]);
+  // Only the empty table asks.
+  container.back();
+  assert.equal(prompts(), 1);
+  assert.equal(container.leaves, 0);
+});
+
+test('WeChat Back closes one layer per press, and a closing button is not a Back', (t) => {
+  const { page, toasts } = setup(t);
+  page.onShow();
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  const container = attachContainer(page);
+  page.openSettings();
+  page.setData({ detailProfile: { name: 'Mia' } });
+  container.back();
+  assert.deepEqual([page.data.detailProfile, page.data.settingsOpen], [null, true]);
+  container.back();
+  assert.equal(page.data.settingsOpen, false);
+  page.openSettings();
+  page.closeSettings();
+  assert.equal(prompts(), 0);
+  assert.equal(container.visible, true);
+});
+
+test('WeChat Back on a saved hand closes its review and stays on the hand', (t) => {
+  const { page, toasts } = setup(t);
+  page.setData({ historyReadOnly: true, exitGuard: false });
+  const prompts = () => toasts.filter((toast) => toast.title === '再按一次退出').length;
+  const container = attachContainer(page);
+  assert.equal(container.visible, false, 'With nothing open, Back leaves the saved hand');
+  page.setOverlay({ reviewOpen: true });
+  assert.equal(container.visible, true);
+  container.back();
+  assert.equal(page.data.reviewOpen, false);
+  assert.equal(container.leaves, 0, 'The saved hand stays');
+  container.back();
+  assert.equal(container.leaves, 1, 'The next Back returns to the records list');
+  // Closing the review with its button hides the container without a Back.
+  page.setOverlay({ reviewOpen: true });
+  page.setOverlay({ potOpen: true });
+  container.back();
+  assert.deepEqual([page.data.potOpen, page.data.reviewOpen], [false, true]);
+  page.closeReview();
+  assert.equal(page.data.reviewOpen, false);
+  assert.equal(container.visible, false);
+  assert.equal(prompts(), 0, 'A saved hand never asks to exit');
 });
 
 test('WeChat Back on the live table asks for a second press before leaving', (t) => {

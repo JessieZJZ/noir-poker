@@ -410,6 +410,46 @@ test('mobile persona details cover the selector in place and closing restores it
   }
 });
 
+test('scrolling past the end of a style introduction moves on to the settings', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await openSettings(page);
+  const card = page.locator('[data-profile-preview="owen"]');
+  await card.scrollIntoViewIfNeeded();
+  await card.click();
+  await expect(page.locator('#profile-stage')).toHaveAttribute('data-detail-open', 'true');
+  const detail = page.locator('#profile-detail');
+  const body = page.locator('.opponents-body');
+  const before = await body.evaluate((el) => el.scrollTop);
+  // Read to the end of the introduction, then keep scrolling over it.
+  await detail.evaluate((el) => (el.scrollTop = el.scrollHeight));
+  const box = await detail.boundingBox();
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await expect
+    .poll(
+      async () => {
+        await page.mouse.wheel(0, 300);
+        return body.evaluate((el) => el.scrollTop);
+      },
+      { timeout: 10000 },
+    )
+    .toBeGreaterThan(before + 200);
+  // The introduction goes with the choices; the seat roster below shows.
+  const layout = await page.evaluate(() => {
+    const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+    const view = box('.opponents-body');
+    return {
+      insideChoices: box('#profile-detail').bottom <= box('#profile-stage').bottom + 1,
+      rosterShown: box('#opponent-roster').top < view.bottom,
+    };
+  });
+  expect(layout).toEqual({ insideChoices: true, rosterShown: true });
+  // Closing still returns to where the settings were when it opened.
+  await page.locator('[data-close-profile-detail]').click();
+  await expect.poll(() => body.evaluate((el) => el.scrollTop)).toBeCloseTo(before, 0);
+});
+
 test('reduced motion preserves usable details and Escape closes only the detail before the settings dialog', async ({
   page,
 }) => {

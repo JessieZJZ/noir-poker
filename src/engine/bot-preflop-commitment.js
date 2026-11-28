@@ -133,6 +133,61 @@ export function committedOpenPlan(view, profile, equity) {
   return { ...plan, action: 'fold', reason: 'committed-fold' };
 }
 
+// The opener facing a 3-bet with 40BB or less (or with a call that would
+// leave less than COMMITTED_SPR times the pot behind) moves all-in with a
+// range that narrows with depth: about 88+, ATs+, AJo+ and KQs at 20BB, down
+// to TT+ and AQ+ at 40BB and deeper. A flat call there keeps no fold equity.
+// Other hands go on to the normal price and range decision, so a good price
+// against a small 3-bet can still be called. `mix(share)` is asked only for a
+// hand between the two ranges and returns whether it moves in. Only our
+// cards, public stacks and the public sizing enter.
+export function reopenedCommitmentPlan(view, mix) {
+  const legal = view.legal;
+  if (view.street !== 0 || view.allIn || view.difficulty === 'easy') return null;
+  if (!legal.canRaise || legal.toCall <= 0 || legal.callAmount >= view.stack) return null;
+  if (view.opponents?.some((p) => p.allin)) return null;
+  const raises = view.history.filter((a) => a.street === 0 && a.action === 'raise');
+  if (raises.length !== 2 || raises[0].id !== view.id) return null;
+  const threeBettor = view.opponents?.find((p) => p.id === raises[1].id);
+  if (!threeBettor || threeBettor.stack <= 0) return null;
+  const bigBlind = bigBlindOf(view);
+  const own = view.stack + (view.total ?? view.bet ?? 0),
+    theirs = threeBettor.stack + (threeBettor.total ?? threeBettor.bet ?? 0);
+  const depthBB = Math.min(own, theirs) / bigBlind;
+  const behindAfterCall = Math.min(view.stack - legal.callAmount, threeBettor.stack);
+  const spr = behindAfterCall / Math.max(1, view.contestable);
+  if (depthBB > COMMITTED_DEPTH_BB && spr >= COMMITTED_SPR) return null;
+  const [high, low] = view.hole.map((c) => c.rank).sort((a, b) => b - a);
+  const pair = high === low,
+    suited = view.hole[0].suit === view.hole[1].suit;
+  const tight = (pair && high >= 10) || (high === 14 && low >= 12);
+  const wide =
+    (pair && high >= 8) ||
+    (high === 14 && low >= (suited ? 10 : 11)) ||
+    (suited && high === 13 && low === 12);
+  const wideShare = Math.min(1, Math.max(0, (COMMITTED_DEPTH_BB - depthBB) / 20));
+  const jam = tight || (wide && wideShare > 0 && mix(wideShare));
+  const short = depthBB <= COMMITTED_DEPTH_BB;
+  const plan = {
+    depthBB,
+    spr,
+    behindAfterCall,
+    behind: 0,
+    percentile: startingPercentile(view.hole),
+    reshove: true,
+    reopened: true,
+    tier: tight ? 'tight' : wide ? 'wide' : null,
+    wideShare,
+  };
+  if (!jam) return null;
+  return {
+    ...plan,
+    action: 'raise',
+    amount: legal.maxRaiseTo,
+    reason: short ? 'short-reshove' : 'value-raise',
+  };
+}
+
 // Deliberate value commitments for the training opponents. This is a bounded
 // policy mix, not a solver chart. Only the actor's cards and public ledgers enter.
 export function preflopJamPlan(view, profile) {

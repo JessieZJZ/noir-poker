@@ -112,7 +112,11 @@ test('a lower full house on a double-paired board names the higher full house an
   });
   r.amount = 1100;
   const text = summary(explainOpponent(r));
-  assert.match(text, /A 对.*底牌中的 A.*三张 A.*更大葫芦.*三张 10/);
+  // A value bet ties the higher full house to its size instead of listing it alone.
+  assert.match(
+    text,
+    /这次投入约为底池的 \d+%，而牌面能让对手组成更大的葫芦.*这些牌都能赢这手葫芦：下得越大/,
+  );
   assert.doesNotMatch(text, /河牌已经发完，价值来自较弱成牌愿意跟注/);
 });
 

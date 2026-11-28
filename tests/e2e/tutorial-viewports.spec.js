@@ -165,6 +165,17 @@ test('rotating a tablet moves the panel without losing the lesson or the table',
     .toBeGreaterThan(600);
   await expectLessonOnScreen(page);
   expect(await coach(page)).toEqual(portrait);
+  // The hand activity below spans the table and the lesson panel.
+  const row = await page.evaluate(() => {
+    const box = (selector) => document.querySelector(selector).getBoundingClientRect();
+    const activity = box('.main > .sidebar > .activity-card');
+    return {
+      left: Math.abs(activity.left - box('.game-surface').left),
+      right: Math.abs(activity.right - box('#tutorial-coach').right),
+    };
+  });
+  expect(row.left).toBeLessThan(1);
+  expect(row.right).toBeLessThan(1);
   await page.evaluate(() => window.scrollTo(0, 240));
   await rotate(false);
   await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);

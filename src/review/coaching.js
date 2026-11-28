@@ -25,7 +25,13 @@ import {
 } from './presentation.js';
 import { heavyPreflopPressure } from './presentation.js';
 import { rangeNoteClauses } from './matchups.js';
-import { checkReasoning, checkRisks, madeRedrawReasoning } from './check-reasoning.js';
+import {
+  callRiskNote,
+  checkReasoning,
+  checkRisks,
+  madeRedrawReasoning,
+  valueSizingNote,
+} from './check-reasoning.js';
 import { guaranteedBoardCoaching, closedDrawChance, riverRangeReason } from './strategy-facts.js';
 import { valueDrawNote, flushCompletionNote, showdownTargets } from './value-targets.js';
 import { REVIEW_TOPICS as TOPIC, proseReason, unpackProseReason } from './prose-topics.js';
@@ -118,6 +124,37 @@ function preflopPayTargets(s) {
       ? `较小对子（如 ${smaller}${smaller}）或部分未成对高牌`
       : '部分尚未成对的起手牌'
     : `更差踢脚的高牌（如 ${rankText(high)}${smaller}）、较弱同花牌或连接牌`;
+}
+
+// A preflop raise that leans on folds, said as two plain questions: who has
+// to fold and what that wins now, and what a call risks. Public stacks only.
+// Returns the lead sentence (with any chips nobody can match) and the basis
+// as separate sentences, each localized as its own paragraph part.
+export function preflopPressureBasis(s, suggested, action) {
+  const actorId = s.id ?? 0,
+    extra = action.amount - s.bet,
+    uncalled = guaranteedUncalledRaise(s, action.amount),
+    matched = extra - uncalled,
+    allIn = action.amount >= s.legal.maxRaiseTo,
+    live = (s.players || []).filter((p) => p.id !== actorId && !p.folded),
+    targets = live.filter((p) => !p.allin && p.stack > 0),
+    name = targets.length === 1 ? targets[0].name : '';
+  const lead = !uncalled
+    ? `这手建议${suggested}，额外投入 ${fmt(extra)}。`
+    : name
+      ? `这手建议${suggested}，额外投入 ${fmt(extra)}，其中 ${name} 跟不起的 ${fmt(uncalled)} 会退回给你。`
+      : `这手建议${suggested}，额外投入 ${fmt(extra)}，其中对手都跟不起的 ${fmt(uncalled)} 会退回给你。`;
+  const basis =
+    !targets.length || live.some((p) => p.allin)
+      ? `已有对手全下，其他人弃牌也不能让你直接拿下底池，这次加注主要看你的牌对上跟注的牌赢面够不够，最多要再付出 ${fmt(matched)}。`
+      : name
+        ? allIn
+          ? `能不能这样打，看两点：${name} 弃牌的次数够不够多——弃牌时你直接赢下现在 ${fmt(s.pot)} 的底池；被跟注时，你的牌赢面够不够——输了要再付出 ${fmt(matched)}。`
+          : `能不能这样打，看两点：${name} 弃牌的次数够不够多——弃牌时你直接赢下现在 ${fmt(s.pot)} 的底池；被跟注时，你的牌在翻牌后能不能撑起这 ${fmt(matched)} 的投入。`
+        : allIn
+          ? `能不能这样打，看两点：其余 ${targets.length} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 ${fmt(s.pot)} 的底池；有人跟注时，你的牌赢面够不够——输了最多再付出 ${fmt(matched)}。`
+          : `能不能这样打，看两点：其余 ${targets.length} 位对手是不是经常都弃牌——都弃牌时你直接赢下现在 ${fmt(s.pot)} 的底池；有人跟注时，你的牌在翻牌后能不能撑起这 ${fmt(matched)} 的投入。`;
+  return { lead, basis };
 }
 
 function costlyPreflopEntry(s, c, metrics) {
@@ -272,7 +309,11 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
         : [],
     );
   if (r.code === 'weak-late-limp') return [r.reason, waitingNote(s, c)].filter(Boolean);
-  if (['short-stack-push-fold', 'survival-call'].includes(r.code)) return [r.reason];
+  // The push/fold reason joins whole catalog sentences. Keep each its own
+  // part: one beginning with the hand label cannot be matched mid-paragraph,
+  // so joined it stayed half translated outside Chinese.
+  if (r.code === 'short-stack-push-fold') return r.reason.split(/(?<=。)/).filter(Boolean);
+  if (r.code === 'survival-call') return [r.reason];
   if (['unbacked-small-pair-reraise', 'unbacked-pair-reraise'].includes(r.code))
     return proseReason(
       [
@@ -504,12 +545,14 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
         : c.preflopRaises >= 2
           ? '前面已有多次加注，愿意继续的范围通常比普通开池更强，不能只凭起手牌级别把这次再加注当作价值下注。'
           : c.preflopRaises && c.tier >= 2
-            ? `面对已有开池，只有${preflopPayTargets(s)}仍愿意支付这个尺度时，才有取值依据。若主要靠对手弃牌，需要开池者及其他尚未弃牌的对手都有足够弃牌空间。`
+            ? `面对已有开池，这次加注要有${preflopPayTargets(s)}愿意跟，才算取值；如果主要靠对手弃牌，开池者和其他没弃牌的人都得经常放弃。`
             : c.preflopRaises
-              ? c.opponents === 1
-                ? '这次再加注主要依赖开池者弃牌，被跟注后的摊牌机会也必须与投入尺度相称。'
-                : '这次再加注主要依赖开池者和其他尚未弃牌、仍有筹码的对手共同弃牌，被跟注后的摊牌机会也必须与投入尺度相称。'
-              : '这次进攻需要后面的对手有足够弃牌空间，或愿意用较弱牌跟注，底牌潜力本身不能证明这个尺度划算。',
+              ? // The action story already says every live opponent must fold;
+                // add only what a call costs. An all-in says so just below.
+                exhaustsStack(s)
+                ? ''
+                : `被跟注时，这次拿出的 ${fmt(c.matchedExtra || c.extra)} 要靠翻牌后改善或继续施压才能收回，这手牌本身很难在摊牌时赢。`
+              : '这次开池要靠后面的人经常弃牌，或被更弱的牌跟注，才能划算；光有底牌潜力不够。',
       c.preflopRaises >= 2 ? preflopPressureFocus(s, c) : '',
       exhaustsStack(s)
         ? '你实际已经全下，被跟注后只能以这手牌争取摊牌，不能再靠后街施压弥补成本。'
@@ -750,18 +793,24 @@ function explanation(s, r, evKind, suggested, kind, { comparisonOwned = false } 
       suitedConnector ? waitingNote(s, c) : '',
     ].filter(Boolean);
   }
-  if (s.action === 'fold' && !s.legal.canCheck && s.street === 0)
+  if (s.action === 'fold' && !s.legal.canCheck && s.street === 0) {
+    // State the decision first, then weigh the hand's potential against it.
+    const potential = preflopPotential(s);
     return [
-      ...preflopPotential(s),
       '前面还没有对手加注，当前是在决定是否跟大盲入池。',
+      ...potential,
       c.tier >= 2
         ? suggested.action === 'fold'
           ? '这手起手牌仍有竞争力，弃牌放弃了用位置、摊牌机会或加注争取底池的选择。是否继续取决于对手的入池与再加注范围。'
           : '这手起手牌有较强竞争力，可以比较主动加注与跟注，不必自动放弃。'
         : s.hole[0].rank === s.hole[1].rank
           ? '这手小对子已有摊牌机会，也能争取翻牌击中暗三条，需要结合位置、跟注价格、有效筹码和后面的再加注风险判断。'
-          : '这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。',
+          : // A potential sentence that already turns ("但…") needs no second turn.
+            potential.length && !potential.some((text) => /但/.test(text))
+            ? '但这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。'
+            : '这手起手牌击中一对后仍可能偏弱，需要结合位置、跟注价格和后面的待行动玩家判断，不能只因为便宜就入池。',
     ];
+  }
   if (s.action === 'fold' && !s.legal.canCheck)
     return draw.outs
       ? [`跟注需要至少约 ${pricePct(r.metrics.required)} 的胜率。`, ...drawFoldReasons(s, c)]
@@ -1093,10 +1142,20 @@ export function coachDecision(s, r) {
       facts = situationEntries(s, r.context),
       continuation = continuationNote(s, r.context, r.metrics.closing);
     let recommendation = '';
+    // Sentences shown as their own paragraph parts after the recommendation.
+    const recommendationFollow = [];
     // Repeating the same action as a recommendation adds no new decision.
     // Retain changed-action advice and the explicit uncertain-draw comparison.
     if (kind !== 'keep' && (!unchanged || unprovenDraw)) {
       const suggested = actionLabel(s, action.action, action.amount);
+      // A preflop raise that leans on folds gets the plain two-question basis.
+      const pressure =
+        !(unprovenDraw && !confirmed) &&
+        action.action === 'raise' &&
+        conditionalCandidate &&
+        r.context.tier < 2
+          ? preflopPressureBasis(s, suggested, action)
+          : null;
       recommendation =
         unprovenDraw && !confirmed
           ? unchanged
@@ -1107,7 +1166,7 @@ export function coachDecision(s, r) {
             : action.action === 'raise'
               ? conditionalCandidate
                 ? r.context.tier < 2
-                  ? `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}。只有仍有筹码的已入池对手和其他待回应玩家共同留下足够弃牌空间，且被跟注后的摊牌机会与投入尺度相称时，才有施压依据。`
+                  ? pressure.lead
                   : `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}。取值需要${preflopPayTargets(s)}愿意支付这个尺度，若它们退出而强牌继续，就不能仅凭底牌级别肯定加注。`
                 : `这手建议${suggested}，额外投入 ${fmt(action.amount - s.bet)}，${r.context.valuePlan?.primary?.action === 'raise' ? (s.street ? '让较弱成牌付费，并控制这次投入的尺度' : '让较弱起手牌付费，并控制这次投入的尺度') : r.context.draw.outs ? (foldPressure(s).hasAllInOpponent ? '保留补牌机会，施压对象限于仍有筹码的对手' : '保留补牌机会，同时给对手弃牌的压力') : ['pressure-bet', 'large-unbacked-bet'].includes(r.code) ? (foldPressure(s).hasAllInOpponent ? '这次只能争取仍有筹码的对手弃牌，要控制为这个底池付出的后手' : '这次主要争取对手弃牌，要控制为这个底池付出的后手') : s.street ? '让较弱成牌付费，并控制这次投入的尺度' : '让较弱起手牌付费，并控制这次投入的尺度'}。`
               : action.action === 'check'
@@ -1145,14 +1204,19 @@ export function coachDecision(s, r) {
         ]
           .filter(Boolean)
           .join('');
+      if (pressure) recommendationFollow.push(pressure.basis);
       if (
         !s.street &&
         exhaustsStack(s) &&
         action.action === 'raise' &&
         action.amount < s.legal.maxRaiseTo
-      )
-        recommendation += `若改用这个较小加注，会留下 ${fmt(s.stack - (action.amount - s.bet))} 筹码。面对对手再次全下，仍需按新的跟注价格与继续范围决定，不能因为已经加注就自动跟到底。`;
-      if (action.action === 'raise') {
+      ) {
+        const smaller = `若改用这个较小加注，会留下 ${fmt(s.stack - (action.amount - s.bet))} 筹码。面对对手再次全下，仍需按新的跟注价格与继续范围决定，不能因为已经加注就自动跟到底。`;
+        if (pressure) recommendationFollow.push(smaller);
+        else recommendation += smaller;
+      }
+      // The plain pressure basis already says which chips come back.
+      if (action.action === 'raise' && !pressure) {
         const uncalled = guaranteedUncalledRaise(s, action.amount);
         if (uncalled)
           recommendation += `这个建议出价中至少 ${fmt(uncalled)} 无法被匹配，会退回。新增投入最多 ${fmt(action.amount - s.bet - uncalled)} 可被匹配。`;
@@ -1167,11 +1231,19 @@ export function coachDecision(s, r) {
       if (duplicate >= 0) reasonParts.splice(duplicate, 1);
       if (!reasonParts.includes(completedFlush)) reasonParts.unshift(completedFlush);
     }
+    // The board's stronger hands mean different things by action: the size
+    // of a made-hand bet, the risk of a call, the caution behind a fold.
+    const threatNotes =
+      s.action === 'raise'
+        ? [valueSizingNote(s, r.context, r.context.extra)]
+        : s.action === 'call'
+          ? [callRiskNote(s, r.context)]
+          : risks;
     const publicAdditions =
       s.street && s.action !== 'check'
         ? [
             completedFlush,
-            ...risks,
+            ...threatNotes,
             ...madeRedrawReasoning(s, r.context),
             r.code !== 'flush-board-shove' && action.action === 'raise'
               ? valueDrawNote(s, r.context)
@@ -1233,6 +1305,7 @@ export function coachDecision(s, r) {
           : []),
         ...supporting,
         recommendation,
+        ...recommendationFollow,
       ].filter(Boolean),
     ].filter((parts) => parts[0]);
     if (

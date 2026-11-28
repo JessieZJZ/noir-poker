@@ -5,6 +5,7 @@
 />
 <import src="./table-templates.wxml" />
 <wxs module="rail" src="./raise-rail.wxs" />
+<wxs module="profileDetail" src="./profile-detail.wxs" />
 
 <view wx:if="{{!tableReady}}" class="launch-screen" aria-label="NOIR Poker">
   <image src="/assets/launch-icon.png" mode="aspectFit" />
@@ -12,11 +13,4 @@
   <view class="launch-progress" />
 </view>
 <include src="./table-surface.wxml" />
-<page-container
-  show="{{tutorialActive || exitGuard}}"
-  overlay="{{false}}"
-  duration="{{0}}"
-  z-index="{{0}}"
-  custom-style="height: 0; overflow: hidden; background: transparent;"
-  bind:beforeleave="pageBack"
-/>
+<include src="./back-guard.wxml" />
