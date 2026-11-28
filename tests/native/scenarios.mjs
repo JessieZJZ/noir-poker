@@ -4684,6 +4684,52 @@ export async function nativeScenarios(app) {
       nativeBack: { reviewBeforeBack, reviewBack, returnGameBack },
     };
   });
+  await check('table-brand-returns-to-live-practice', async () => {
+    const live = await app.waitFor(
+      async () => {
+        const state = await app.state();
+        return state.phase === 'done' || (state.actor === '你' && state.entryState === 'playing')
+          ? state
+          : null;
+      },
+      90000,
+      'The live hand must wait for the hero or settle',
+    );
+    const recordCount = await app.evaluate(() => window.noir.getRecords().length);
+    const openTool = async (menu, dialog) => {
+      await app.click('#rules-button');
+      await app.click(menu);
+      await app.waitFor(() => app.visible(dialog), 10000, `Open ${dialog}`);
+    };
+    await openTool('#tutorial-menu-item', '#tutorial-dialog');
+    await app.click('#tutorial-dialog .brand');
+    await app.waitFor(async () => (await app.state()).tutorial === null, 10000, 'Exit intro');
+    await openTool('#tutorial-menu-item', '#tutorial-dialog');
+    await app.click('#tutorial-dialog-primary');
+    await app.waitFor(() => app.visible('#tutorial-coach'), 10000, 'Open practice hand');
+    await app.screenshot('table-brand-tutorial-practice');
+    await app.click('.header .brand');
+    await app.waitFor(async () => (await app.state()).tutorial === null, 10000, 'Exit practice');
+    await openTool('#records-menu-item', '#records-page');
+    await app.click('.header .brand');
+    await app.waitFor(
+      () => app.visible('main.main'),
+      10000,
+      'Return from records to the live game',
+    );
+    await openTool('#win-rate-menu-item', '#win-rate-dialog');
+    await app.click('#win-rate-dialog .brand');
+    await app.waitFor(
+      async () => !(await app.visible('#win-rate-dialog')),
+      10000,
+      'Exit calculator',
+    );
+    const resumed = await app.state();
+    for (const field of ['sessionNumber', 'hand', 'phase', 'hole', 'pot', 'players'])
+      assert.deepEqual(resumed[field], live[field], `Retain live ${field}`);
+    assert.equal(await app.evaluate(() => window.noir.getRecords().length), recordCount);
+    return { hand: resumed.hand, session: resumed.sessionNumber };
+  });
   await check('beginner-tutorial-guided-hand', async () => {
     const before = await app.state();
     const records = await app.evaluate(() => JSON.stringify(window.noir.getRecords()));

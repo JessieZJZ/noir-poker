@@ -57,6 +57,22 @@ try {
   await wait('Intro', (view) => view.tutorial?.stage === 'intro');
   assert.equal((await page.$$('.tutorial-step')).length, 5);
   await capture('intro');
+  await tap('.tutorial-sheet .tool-brand');
+  await wait('Brand returns from intro', (view) => view.tutorial === null && view.waitingForSeat);
+  await tap('#home-tutorial-button');
+  await wait('Reopened intro', (view) => view.tutorial?.stage === 'intro');
+  await tap('.tutorial-sheet-actions .primary');
+  await wait(
+    'First practice table',
+    (view) => view.tutorialPlaying && view.heroCards[0]?.rank === '10',
+  );
+  await tap('.nav .brand');
+  await wait(
+    'Brand returns from practice',
+    (view) => view.tutorial === null && view.waitingForSeat,
+  );
+  await tap('#home-tutorial-button');
+  await wait('Reopened intro', (view) => view.tutorial?.stage === 'intro');
   await tap('.tutorial-sheet-actions .primary');
   await wait('Coach', (view) => view.tutorialPlaying && view.heroCards[0]?.rank === '10');
   await capture('lesson-read-step');
@@ -109,7 +125,7 @@ try {
   assert.equal(done.done, true);
   assert.equal(done.heroWinner, true);
   await capture('lesson-summary');
-  await tap('.tutorial-sheet .close');
+  await tap('.tutorial-sheet .tool-brand');
   await wait('Live table', (view) => view.tutorial === null && !view.tutorialPlaying);
   assert.equal(
     await mini.evaluate(() => {

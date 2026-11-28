@@ -56,6 +56,9 @@ Page({
     watchWindow(this);
     this.refreshRecords();
   },
+  returnToGame() {
+    navigation.returnToGame();
+  },
   onResize(event) {
     this.updateWindow(event);
     // Rotating changes wrapped row heights and the observer's screen margin.

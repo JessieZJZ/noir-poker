@@ -2590,7 +2590,7 @@ test('WeChat record lists send bounded summary patches and remain idle without r
   );
 });
 
-test('WeChat history uses a compact review dock and records rely on native Back', () => {
+test('WeChat history uses a compact review dock and records display the shared table brand', () => {
   assert.match(
     template,
     /tableHeight \+ tableHeaderHeight \+ tutorialCoachHeight \+ \(waitingForSeat \? 0 : historyReadOnly \|\| compactActions \? compactDockHeight : liveDockHeight\)/,
@@ -2605,8 +2605,9 @@ test('WeChat history uses a compact review dock and records rely on native Back'
     new URL('../../miniprogram/pages/records/records.wxss', import.meta.url),
     'utf8',
   );
-  // System Back or the edge gesture returns from records; no return button.
-  assert.match(markup, /<view class="records-nav"><text>对局记录<\/text><\/view>/);
+  assert.match(markup, /class="records-nav"[^>]*>\s*<template is="table-brand"/);
+  assert.match(markup, /<view class="records-heading"><text>对局记录<\/text><\/view>/);
+  assert.match(template, /class="nav [^>]*>\s*<template\s+is="table-brand"/);
   assert.doesNotMatch(markup, /records-back|返回游戏/);
   assert.doesNotMatch(markup, /每一局的练习足迹/);
   assert.doesNotMatch(css, /\.records-nav button/);

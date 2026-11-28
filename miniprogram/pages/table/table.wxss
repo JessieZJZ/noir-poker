@@ -1,6 +1,7 @@
 @import '../../shared/ui/hero-turn.wxss';
 @import '../../shared/ui/game-effects.wxss';
 @import '../../shared/ui/emotion-effects.wxss';
+@import '../../table-brand.wxss';
 .screen {
   display: flex;
   flex-direction: column;

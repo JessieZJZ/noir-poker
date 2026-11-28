@@ -1400,6 +1400,13 @@ module.exports = {
   closeResourceMenu() {
     this.setData({ resourceMenuOpen: false });
   },
+  returnToGame() {
+    if (this.data.historyReadOnly) return navigation.returnToGame();
+    this._homeScroll = 0;
+    while (this.closeTopLayer()) {}
+    this.call('exitTutorial');
+    wx.pageScrollTo?.({ scrollTop: 0, duration: 0 });
+  },
   openRecords() {
     this.closeResourceMenu();
     this._browsingRecords = true;

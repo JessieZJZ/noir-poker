@@ -194,7 +194,7 @@ export function createWechatController({
     newSession = false,
     tutorial = null,
     tutorialReturn = null,
-    tutorialLoading = false,
+    tutorialLoad = null,
     tutorialDeals = 0;
   playerObservations?.restore(game);
   game.history ||= [];
@@ -770,6 +770,7 @@ export function createWechatController({
     return true;
   }
   function exitTutorial() {
+    tutorialLoad = null;
     if (!tutorial) return false;
     stopTable();
     tutorial = null;
@@ -1446,15 +1447,19 @@ export function createWechatController({
     // The tutorial borrows the real table; the live hand waits untouched.
     // Lessons live in their own subpackage, so the first open can wait on it.
     async startTutorial() {
-      if (readOnlyAttempt || disposed || tutorial || tutorialLoading) return false;
-      tutorialLoading = true;
+      if (readOnlyAttempt || disposed || tutorial || tutorialLoad) return false;
+      const ticket = (tutorialLoad = {});
       let lessons;
       try {
         lessons = await loadTutorial();
-      } finally {
-        tutorialLoading = false;
+      } catch (error) {
+        if (tutorialLoad !== ticket) return false;
+        tutorialLoad = null;
+        throw error;
       }
-      if (disposed || tutorial) return false;
+      if (tutorialLoad !== ticket) return false;
+      tutorialLoad = null;
+      if (disposed) return false;
       tutorialReturn = { game, raiseTo, peeked: new Map(peeked) };
       stopTable();
       tutorial = lessons.createTutorial(game.stakes);

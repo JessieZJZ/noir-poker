@@ -1100,6 +1100,9 @@ test('the header brand returns to the live hand without reloading the app', asyn
   const live = await state(page);
   await page.evaluate(() => (window.__sameDocument = true));
   await openRecords(page);
+  await page.locator('.header .brand').click();
+  await expect(page).not.toHaveURL(/#records/);
+  await openRecords(page);
   const attempt = (await records(page))
     .flatMap((session) => session.attempts)
     .find((item) => item.status === 'completed');
@@ -1121,6 +1124,28 @@ test('the header brand returns to the live hand without reloading the app', asyn
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
   expect((await state(page)).hand).toBe(live.hand);
   expect(await page.evaluate(() => window.__sameDocument)).toBe(true);
+});
+
+test('the brand closes a tool over a saved hand and returns directly to the live table', async ({
+  page,
+}) => {
+  await page.evaluate(() => window.qa.recordsFinish());
+  const live = await state(page);
+  await openRecords(page);
+  await page.locator('[data-record-hand]').first().click();
+  await expect(page).toHaveURL(/#records\//);
+  await page.locator('#rules-button').click();
+  await page.locator('#win-rate-menu-item').click();
+  const dialog = page.locator('#win-rate-dialog');
+  await expect(dialog).toBeVisible();
+  await dialog.locator('.brand').click();
+  await expect(dialog).toBeHidden();
+  await expect(page).not.toHaveURL(/#records/);
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBeNull();
+  expect(await state(page)).toEqual(live);
+  await openRecords(page);
+  await page.goBack();
+  await expect(page.locator('main.main')).toBeVisible();
 });
 
 // Records rely on system Back: unwind the detail and list pages to the game.

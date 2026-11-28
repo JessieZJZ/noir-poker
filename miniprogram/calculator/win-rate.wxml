@@ -1,7 +1,9 @@
 <page-meta page-orientation="{{pageOrientation}}" bindresize="onResize" />
+<import src="../table-brand.wxml" />
 <view class="win-rate-chrome" style="height: {{topInset + 84}}px;">
   <view class="win-rate-heading" style="top: {{topInset + 36}}px;">
-    <text>胜率计算器</text>
+    <template is="table-brand" />
+    <text class="win-rate-title">胜率计算器</text>
     <view
       id="win-rate-close"
       class="win-rate-close"

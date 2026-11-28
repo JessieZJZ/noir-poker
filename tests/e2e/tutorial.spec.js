@@ -77,7 +77,7 @@ test('the guide menu opens a tutorial that pauses the live hand and restores it 
   await expect(page.locator('.hero-cards-wrap')).toHaveAttribute('data-tutorial-focus', 'true');
   await expect.poll(() => page.evaluate(() => window.noir.getState().hole)).toEqual(['10♥', '9♥']);
 
-  await page.locator('#tutorial-exit').click();
+  await page.locator('.header .brand').click();
   await expect(page.locator('#tutorial-coach')).toBeHidden();
   await expect(page.locator('.header-actions')).toBeVisible();
   await expect(page.locator('[data-tutorial-focus]')).toHaveCount(0);
@@ -103,6 +103,17 @@ test('closing the intro leaves the live table exactly as it was', async ({ page 
   const after = await page.evaluate(() => window.noir.getState());
   expect(after.hole).toEqual(before.hole);
   await expect(page.locator('#tutorial-coach')).toBeHidden();
+});
+
+test('the brand exits the tutorial intro and its browser history layer', async ({ page }) => {
+  await ready(page);
+  const before = await page.evaluate(() => window.noir.getState());
+  await openTutorial(page);
+  await page.locator('#tutorial-dialog .brand').click();
+  await expect(page.locator('#tutorial-dialog')).toBeHidden();
+  await expect.poll(() => coach(page)).toBeNull();
+  await expect.poll(() => page.evaluate(() => history.state?.noirLayer ?? null)).toBeNull();
+  expect(await page.evaluate(() => window.noir.getState())).toEqual(before);
 });
 
 test('the tutorial opens from the waiting table and returns to it unseated', async ({ page }) => {

@@ -79,9 +79,18 @@ test('WeChat records routes have one game, one list and one replaceable detail d
   assert.equal(stack.length, 2);
   nav.openHand('third');
   finish();
-  // Records have no return button; native Back pops the detail and the list.
-  stack.splice(1);
-  assert.equal(stack.length, 1);
+  assert.equal(nav.returnToGame(), true);
+  assert.equal(nav.returnToGame(), false);
+  assert.equal(calls.at(-1)[0], 'navigateBack');
+  assert.equal(calls.at(-1)[1].delta, 2);
+  finish();
+  assert.deepEqual(stack, [game]);
+  nav.openRecords();
+  finish();
+  assert.equal(nav.returnToGame(), true);
+  assert.equal(calls.at(-1)[1].delta, 1);
+  finish();
+  assert.deepEqual(stack, [game]);
   for (let i = 0; i < 8; i++) {
     nav.openRecords();
     finish();

@@ -382,16 +382,6 @@ export function createGameRecordsView({
       content.querySelector(`[data-history-peek="${id}"]`).focus({ preventScroll: true });
     }
   });
-  // The header brand returns to the live table. Following its link would
-  // reload the page and restart the app on the waiting table. A modified
-  // click (a new tab or window) keeps the link.
-  document.querySelector('.header .brand')?.addEventListener('click', (event) => {
-    if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
-      return;
-    event.preventDefault();
-    if (route.page !== 'game') navigate({ page: 'game' });
-    else window.scrollTo(0, 0);
-  });
   document.addEventListener('noir:locale-changed', () => {
     fingerprint = '';
     if (route.page !== 'game') showRoute(route);
@@ -409,5 +399,10 @@ export function createGameRecordsView({
     route: () => ({ ...route }),
     initialize: () => navigation.initialize(),
     show: () => navigate({ page: 'list' }),
+    returnToGame() {
+      guideMenu.close();
+      if (route.page !== 'game') navigate({ page: 'game' });
+      else window.scrollTo(0, 0);
+    },
   };
 }

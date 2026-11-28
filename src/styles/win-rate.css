@@ -34,6 +34,8 @@
   margin: 0;
   font-size: 19px;
   font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
 }
 /* The header and board stay at the top together; only the seats scroll. */
 .win-rate-dock {

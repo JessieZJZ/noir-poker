@@ -1711,6 +1711,37 @@ function syncTutorial() {
 }
 document.addEventListener('noir:tutorial-exit', exitTutorial);
 document.addEventListener('noir:locale-changed', syncTutorial);
+
+async function returnToTable(event) {
+  if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+    return;
+  event.preventDefault();
+  const dialogs = [...document.querySelectorAll('dialog[open]')].reverse();
+  const closed = dialogs
+    .filter((dialog) => dialog.id !== 'orientation-dialog')
+    .map((dialog) => {
+      const done = new Promise((resolve) =>
+        dialog.addEventListener('close', resolve, { once: true }),
+      );
+      dialog.close();
+      return done;
+    });
+  exitTutorial();
+  await Promise.all(closed);
+  // A dialog over a record has its own history entry above the records route.
+  await historyLayers.whenClosed();
+  recordsView.returnToGame();
+}
+const tableBrand = $('.header .brand');
+tableBrand.addEventListener('click', returnToTable);
+// Modal dialogs make the underlying header inert, so offer the same action inside.
+for (const heading of document.querySelectorAll('dialog > .dialog-header')) {
+  const brand = tableBrand.cloneNode(true);
+  brand.classList.add('dialog-brand');
+  brand.addEventListener('click', returnToTable);
+  heading.prepend(brand);
+}
+
 function publicState() {
   const details = potDetails();
   return {
